@@ -4,14 +4,12 @@
 
 
 A small python application designed for text generation, retrieval-augmented 
-generation (RAG), and semantic search using the **Leeroy** LLM running via `llama.cpp`.
-
+generation (RAG), and semantic search using the **Leeroy** LLM running via `llama.cpp`. 
 The LLM itself is a fine-tuned variant of Meta's Llama 3.2 1B Instruct, quantized to Q4_K_M GGUF 
 format for high-efficiency, and low-latency inference. With strong alignment capabilities, 
 multilingual robustness, and support for complex multi-step reasoning, Leeroy strikes a 
-balance between performance, size, and instruction quality. 
-
-Designed for use on CPUs and modest GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and similar GGUF-compatible environments.
+balance between performance, size, and instruction quality. Designed for use on CPUs and modest 
+GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and GGUF-compatible environments.
 
 ---
 
