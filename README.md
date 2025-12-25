@@ -1,7 +1,7 @@
 ###### Leeroy
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/images/leeroy_project.png)
 
-### Local LLM for Text Generation & Retreival Augmentation
+
 
 A small python application designed for text generation, retrieval-augmented 
 generation (RAG), and semantic search using the **Leeroy** LLM running via `llama.cpp`.
