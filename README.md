@@ -3,7 +3,7 @@
 
 ### Local LLM for Text Generation & Retreival Augmentation
 
-Leeroy is a small python application designed for text generation, retrieval-augmented 
+A small python application designed for text generation, retrieval-augmented 
 generation (RAG), and semantic search using the **Leeroy** LLM running via `llama.cpp`.
 
 The LLM itself is a fine-tuned variant of Meta's Llama 3.2 1B Instruct, quantized to Q4_K_M GGUF 
@@ -28,6 +28,9 @@ Designed for use on CPUs and modest GPUs, Leeroy runs natively in llama.cpp, LM 
 * 🖥️ **Runs Fully Offline** (CPU-only supported)
 
 ---
+[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy-py.streamlit.app/)
+
+![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/Leeroy-streamlit.gif)
 
 ## 🧱 Architecture Overview
 
@@ -114,11 +117,11 @@ pip install -r requirements.txt
 
 The Leeroy application **does not ship with the model**.
 
-You must download the GGUF model from Hugging Face:
-
-👉 **[https://huggingface.co/leeroy-jankins/leeroy](https://huggingface.co/leeroy-jankins/leeroy)**
-
 Download the file:
+
+👉 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
+
+
 
 ```
 Leeroy-3B-Instruct.Q4_K_M.gguf
