@@ -1,6 +1,7 @@
 ###### Leeroy
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/images/leeroy_project.png)
 
+---
 
 
 A small python application designed for text generation, retrieval-augmented 
@@ -11,7 +12,6 @@ multilingual robustness, and support for complex multi-step reasoning, Leeroy st
 balance between performance, size, and instruction quality. Designed for use on CPUs and modest 
 GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and GGUF-compatible environments.
 
----
 
 ## ✨ Key Features
 
