@@ -1,0 +1,25 @@
+# ----------------------------
+# Core App Framework
+# ----------------------------
+streamlit>=1.32.0
+
+# ----------------------------
+# Local LLM Inference (GGUF)
+# ----------------------------
+llama-cpp-python>=0.2.90
+
+# ----------------------------
+# Semantic Search / Embeddings
+# ----------------------------
+sentence-transformers>=2.6.1
+numpy>=1.26.0
+
+# ----------------------------
+# Export (PDF)
+# ----------------------------
+reportlab>=4.0.8
+
+# ----------------------------
+# Standard Library Helpers
+# (sqlite3, multiprocessing, pathlib, io, base64 are stdlib)
+# ----------------------------
