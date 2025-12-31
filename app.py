@@ -130,7 +130,7 @@ def load_embedder():
 with st.sidebar:
     logo = image_to_base64("resources/images/leeroy_logo.png")
     st.markdown(
-        f"<img src='data:image/png;base64,{logo}' style='max-height:120px;'>",
+        f"<img src='data:image/png;base64,{logo}' style='max-height:100px;'>",
         unsafe_allow_html=True
     )
 
