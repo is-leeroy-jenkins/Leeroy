@@ -478,7 +478,7 @@ with tab_semantic:
 with tab_prompt:
     st.subheader("Prompt Engineering")
 
-    df = fetch_prompts_df()
+    df = fetch_prompts_df( )
 
     # Reflect selected_prompt_id into the table before rendering
     if st.session_state.selected_prompt_id is not None and not df.empty:
