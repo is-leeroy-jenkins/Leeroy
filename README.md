@@ -29,7 +29,7 @@ and modest GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and GGUF-
 ---
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy-py.streamlit.app/)
 
-![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/Leeroy-streamlit.gif)
+![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/images/leeroy-streamlit.gif)
 
 ## 🧱 Architecture Overview
 
