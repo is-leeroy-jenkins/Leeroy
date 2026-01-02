@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from llama_cpp import Llama
+import re
 from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 from sentence_transformers import SentenceTransformer
@@ -42,6 +43,13 @@ if not MODEL_PATH_OBJ.exists():
 DB_PATH = "stores/sqlite/leeroy.db"
 DEFAULT_CTX = 4096
 CPU_CORES = multiprocessing.cpu_count()
+
+XML_BLOCK_PATTERN: re.Pattern[str] = re.compile(
+    r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>",
+    re.DOTALL )
+
+MARKDOWN_HEADING_PATTERN: re.Pattern[str] = re.compile(
+    r"^##\s+(?P<title>.+?)\s*$")
 
 # ==============================================================================
 # Streamlit Config
@@ -69,6 +77,104 @@ def chunk_text(text: str, size: int = 1200, overlap: int = 200) -> List[str]:
 def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     return float(np.dot(a, b) / denom) if denom else 0.0
+
+def xml_converter(text: str) -> str:
+    """
+	    Purpose:
+	        Convert XML-delimited prompt text into Markdown by treating XML-like
+	        tags as section delimiters, not as strict XML.
+	
+	    Parameters:
+	        text (str):
+	            Prompt text containing XML-like opening and closing tags.
+	
+	    Returns:
+	        str:
+	            Markdown-formatted text using level-2 headings (##).
+    """
+
+    markdown_blocks: List[str] = []
+
+    for match in XML_BLOCK_PATTERN.finditer(text):
+        raw_tag: str = match.group("tag")
+        body: str = match.group("body").strip()
+
+        # Humanize tag name for Markdown heading
+        heading: str = raw_tag.replace("_", " ").replace("-", " ").title()
+
+        markdown_blocks.append(f"## {heading}")
+        if body:
+            markdown_blocks.append(body)
+
+    return "\n\n".join(markdown_blocks)
+
+def markdown_converter( markdown: str ) -> str:
+    """
+    
+	    Purpose:
+	        Convert Markdown-formatted system instructions back into
+	        XML-delimited prompt text by treating level-2 headings (##)
+	        as section delimiters.
+	
+	    Parameters:
+	        markdown (str):
+	            Markdown text using '##' headings to indicate sections.
+	
+	    Returns:
+	        str:
+	            XML-delimited text suitable for storage in the prompt database.
+	            
+    """
+
+    lines: List[str] = markdown.splitlines( )
+    output: List[str] = []
+
+    current_tag: Optional[str] = None
+    buffer: List[str] = []
+
+    def flush() -> None:
+        """
+        Emit the currently buffered section as an XML-delimited block.
+        """
+        nonlocal current_tag, buffer
+
+        if current_tag is None:
+            return
+
+        body: str = "\n".join(buffer).strip()
+
+        output.append(f"<{current_tag}>")
+        if body:
+            output.append(body)
+        output.append(f"</{current_tag}>")
+        output.append("")
+
+        buffer.clear()
+
+    for line in lines:
+        match = MARKDOWN_HEADING_PATTERN.match(line)
+
+        if match:
+            flush()
+
+            title: str = match.group("title")
+            current_tag = (
+                title.strip()
+                .lower()
+                .replace(" ", "_")
+                .replace("-", "_")
+            )
+        else:
+            if current_tag is not None:
+                buffer.append(line)
+
+    flush()
+
+    # Remove trailing whitespace blocks
+    while output and not output[-1].strip():
+        output.pop()
+
+    return "\n".join(output)
 
 # ==============================================================================
 # Database
@@ -184,23 +290,146 @@ def load_embedder() -> SentenceTransformer:
     return SentenceTransformer("all-MiniLM-L6-v2")
 
 # ==============================================================================
-# Sidebar
+# Sidebar (Model Parameters)
+# Purpose:
+#     Collect runtime model parameters used to configure llama.cpp initialization and inference.
+# Parameters:
+#     None
+# Returns:
+#     None
 # ==============================================================================
+
 with st.sidebar:
-    logo = image_to_base64("resources/images/leeroy_logo.png")
-    st.markdown(
-        f"<img src='data:image/png;base64,{logo}' "
-        f"style='max-height:80px; display:block; margin:auto;'>",
-        unsafe_allow_html=True
-    )
+    try:
+        logo = image_to_base64("resources/images/bro_logo.png")
+        st.markdown(
+            f"<img src='data:image/png;base64,{logo}' "
+            f"style='max-height:80px; display:block; margin:auto;'>",
+            unsafe_allow_html=True
+        )
+    except Exception:
+        st.write("Bro")
 
     st.header("⚙️ Mind Controls")
-    ctx = st.slider("Context Window", 2048, 8192, DEFAULT_CTX, 512)
-    threads = st.slider("CPU Threads", 1, CPU_CORES, CPU_CORES)
-    temperature = st.slider("Temperature", 0.1, 1.5, 0.7, 0.1)
-    top_p = st.slider("Top-p", 0.1, 1.0, 0.9, 0.05)
-    top_k = st.slider("Top-k", 1, 20, 5)
-    repeat_penalty = st.slider("Repeat Penalty", 1.0, 2.0, 1.1, 0.05)
+
+    # --------------------------------------------------------------------------
+    # Model initialization parameters
+    # --------------------------------------------------------------------------
+    ctx: int = st.slider(
+        "Context Window",
+        min_value=2048,
+        max_value=8192,
+        value=DEFAULT_CTX,
+        step=512,
+        help=(
+            "Maximum number of tokens the model can consider at once, including system instructions, "
+            "history, and context."
+        ),
+    )
+
+    threads: int = st.slider(
+        "CPU Threads",
+        min_value=1,
+        max_value=CPU_CORES,
+        value=CPU_CORES,
+        step=1,
+        help=(
+            "Number of CPU threads used for inference; higher values improve speed but increase CPU "
+            "usage."
+        ),
+    )
+
+    # --------------------------------------------------------------------------
+    # Inference parameters (already present + recommended additions)
+    # --------------------------------------------------------------------------
+    max_tokens: int = st.slider(
+        "Max Tokens",
+        min_value=128,
+        max_value=4096,
+        value=1024,
+        step=128,
+        help="Maximum number of tokens generated per response.",
+    )
+
+    temperature: float = st.slider(
+        "Temperature",
+        min_value=0.1,
+        max_value=1.5,
+        value=0.7,
+        step=0.1,
+        help=(
+            "Controls randomness in generation; lower values are more deterministic, higher values "
+            "increase creativity."
+        ),
+    )
+
+    top_p: float = st.slider(
+        "Top-p",
+        min_value=0.1,
+        max_value=1.0,
+        value=0.9,
+        step=0.05,
+        help=(
+            "Nucleus sampling threshold; limits token selection to the smallest set whose cumulative "
+            "probability exceeds this value."
+        ),
+    )
+
+    top_k: int = st.slider(
+        "Top-k",
+        min_value=1,
+        max_value=50,
+        value=5,
+        step=1,
+        help="Limits token selection to the top K most probable tokens at each step.",
+    )
+
+    repeat_penalty: float = st.slider(
+        "Repeat Penalty",
+        min_value=1.0,
+        max_value=2.0,
+        value=1.1,
+        step=0.05,
+        help="Penalizes repeated tokens to reduce looping and redundant responses.",
+    )
+
+    # --------------------------------------------------------------------------
+    # Recommended additions
+    # --------------------------------------------------------------------------
+    repeat_last_n: int = st.slider(
+        "Repeat Window",
+        min_value=0,
+        max_value=1024,
+        value=64,
+        step=16,
+        help="Number of recent tokens considered for repetition penalties; 0 disables the window.",
+    )
+
+    presence_penalty: float = st.slider(
+        "Presence Penalty",
+        min_value=0.0,
+        max_value=2.0,
+        value=0.0,
+        step=0.05,
+        help="Encourages introducing new topics by penalizing tokens already present in the context.",
+    )
+
+    frequency_penalty: float = st.slider(
+        "Frequency Penalty",
+        min_value=0.0,
+        max_value=2.0,
+        value=0.0,
+        step=0.05,
+        help="Reduces repeated phrasing by penalizing tokens based on how often they appear.",
+    )
+
+    seed: int = st.number_input(
+        "Random Seed",
+        value=-1,
+        step=1,
+        help="Set to a fixed value for reproducible outputs; use -1 for a random seed each run.",
+    )
+
 
 # ==============================================================================
 # Init
@@ -254,61 +483,107 @@ def build_prompt(user_input: str) -> str:
 with tab_system:
     st.subheader("System Instructions")
 
-    # --- Load available prompt names (no side effects) ---
+    # ------------------------------------------------------------------
+    # Prompt selector
+    # ------------------------------------------------------------------
     df_prompts = fetch_prompts_df()
     prompt_names = [""] + df_prompts["Name"].tolist()
 
-    # --- Selection widget (selection ONLY sets intent) ---
-    selected_name = st.selectbox(
+    selected_name: str = st.selectbox(
         "Load System Prompt",
         prompt_names,
         key="system_prompt_selector"
     )
 
-    # Persist selection intent (no branching, no mutation elsewhere)
     st.session_state.pending_system_prompt_name = (
         selected_name if selected_name else None
     )
 
-    # --- CRUD controls (ALWAYS RENDERED — never conditional) ---
-    col_load, col_clear, col_edit = st.columns(3)
+    # ------------------------------------------------------------------
+    # Action buttons (single row, audited)
+    # ------------------------------------------------------------------
+    col_load, col_clear, col_edit, col_spacer, col_xml_md, col_md_xml = st.columns(
+        [1, 1, 1, 0.5, 1.5, 1.5]
+    )
 
     with col_load:
-        load_clicked = st.button(
+        load_clicked: bool = st.button(
             "Load",
             disabled=st.session_state.pending_system_prompt_name is None
         )
 
     with col_clear:
-        clear_clicked = st.button("Clear")
+        clear_clicked: bool = st.button("Clear")
 
     with col_edit:
-        edit_clicked = st.button(
+        edit_clicked: bool = st.button(
             "Edit",
             disabled=st.session_state.pending_system_prompt_name is None
         )
 
-    # --- Button actions (single source of mutation) ---
+    with col_spacer:
+        st.write("")
+
+    with col_xml_md:
+        to_markdown_clicked: bool = st.button(
+            "XML → Markdown",
+            help="Replace XML-like delimiters with Markdown headings (##)."
+        )
+
+    with col_md_xml:
+        to_xml_clicked: bool = st.button(
+            "Markdown → XML",
+            help="Replace Markdown headings (##) with XML-like delimiters."
+        )
+
+    # ------------------------------------------------------------------
+    # Button behaviors (audited: no missing logic)
+    # ------------------------------------------------------------------
     if load_clicked:
-        rec = fetch_prompt_by_name(st.session_state.pending_system_prompt_name)
-        if rec:
-            st.session_state.system_prompt = rec["Text"]
-            st.session_state.selected_prompt_id = rec["PromptsId"]
+        record = fetch_prompt_by_name(st.session_state.pending_system_prompt_name)
+        if record:
+            st.session_state.system_prompt = record["Text"]
+            st.session_state.selected_prompt_id = record["PromptsId"]
 
     if clear_clicked:
         st.session_state.system_prompt = ""
         st.session_state.selected_prompt_id = None
 
     if edit_clicked:
-        rec = fetch_prompt_by_name(st.session_state.pending_system_prompt_name)
-        if rec:
-            st.session_state.selected_prompt_id = rec["PromptsId"]
+        record = fetch_prompt_by_name(st.session_state.pending_system_prompt_name)
+        if record:
+            st.session_state.selected_prompt_id = record["PromptsId"]
 
-    # --- System Prompt editor (KEY-BOUND, not value-controlled) ---
+    if to_markdown_clicked:
+        try:
+            st.session_state.system_prompt = xml_converter(
+                st.session_state.system_prompt
+            )
+            st.success("Converted to Markdown.")
+        except Exception as exc:
+            st.error(f"Conversion failed: {exc}")
+
+    if to_xml_clicked:
+        try:
+            st.session_state.system_prompt = markdown_converter(
+                st.session_state.system_prompt
+            )
+            st.success("Converted to XML-delimited format.")
+        except Exception as exc:
+            st.error(f"Conversion failed: {exc}")
+
+    # ------------------------------------------------------------------
+    # System prompt editor
+    # ------------------------------------------------------------------
     st.text_area(
         "System Prompt",
         key="system_prompt",
-        height=260
+        height=260,
+        help=(
+            "Edit system instructions here. "
+            "Use XML-like tags or Markdown headings (##). "
+            "Conversion tools are provided above."
+        )
     )
 
 
@@ -419,18 +694,77 @@ with tab_prompt:
 # Export Tab
 # ==============================================================================
 with tab_export:
+    st.subheader("Export")
+
+    # ------------------------------------------------------------
+    # Prompt export (System Instructions)
+    # ------------------------------------------------------------
+    st.markdown("### System Instructions")
+
+    export_format = st.radio(
+        "Export format",
+        options=["XML-delimited", "Markdown"],
+        horizontal=True,
+        help="Choose how system instructions should be exported."
+    )
+
+    prompt_text: str = st.session_state.get("system_prompt", "")
+
+    if export_format == "Markdown":
+        try:
+            export_text: str = xml_converter(prompt_text)
+            export_filename: str = "leeroy_system_instructions.md"
+        except Exception as exc:
+            st.error(f"Markdown conversion failed: {exc}")
+            export_text = ""
+            export_filename = ""
+    else:
+        export_text = prompt_text
+        export_filename = "leeroy_system_instructions.xml"
+
+    st.download_button(
+        label="Download System Instructions",
+        data=export_text,
+        file_name=export_filename,
+        mime="text/plain",
+        disabled=not bool(export_text.strip())
+    )
+
+    # ------------------------------------------------------------
+    # Existing chat history export (UNCHANGED)
+    # ------------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### Chat History")
+
     hist = load_history()
-    md = "\n\n".join([f"**{r.upper()}**\n{c}" for r, c in hist])
-    st.download_button("Download Markdown", md, "leeroy_chat.md")
+    md_history = "\n\n".join(
+        [f"**{role.upper()}**\n{content}" for role, content in hist]
+    )
+
+    st.download_button(
+        "Download Chat History (Markdown)",
+        md_history,
+        "leeroy_chat.md",
+        mime="text/markdown"
+    )
 
     buf = io.BytesIO()
     pdf = canvas.Canvas(buf, pagesize=LETTER)
     y = 750
-    for r, c in hist:
-        pdf.drawString(40, y, f"{r.upper()}: {c[:90]}")
+
+    for role, content in hist:
+        pdf.drawString(40, y, f"{role.upper()}: {content[:90]}")
         y -= 14
         if y < 50:
             pdf.showPage()
             y = 750
+
     pdf.save()
-    st.download_button("Download PDF", buf.getvalue(), "leeroy_chat.pdf")
+
+    st.download_button(
+        "Download Chat History (PDF)",
+        buf.getvalue(),
+        "leeroy_chat.pdf",
+        mime="application/pdf"
+    )
+
