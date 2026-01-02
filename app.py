@@ -298,13 +298,12 @@ def load_embedder() -> SentenceTransformer:
 # Returns:
 #     None
 # ==============================================================================
-
 with st.sidebar:
     try:
-        logo = image_to_base64("resources/images/bro_logo.png")
+        logo = image_to_base64("resources/images/leeroy_logo.png")
         st.markdown(
             f"<img src='data:image/png;base64,{logo}' "
-            f"style='max-height:80px; display:block; margin:auto;'>",
+            f"style='max-height:55px; display:block; margin:auto;'>",
             unsafe_allow_html=True
         )
     except Exception:
@@ -316,6 +315,7 @@ with st.sidebar:
     # Model initialization parameters
     # --------------------------------------------------------------------------
     ctx: int = st.slider(
+	    
         "Context Window",
         min_value=2048,
         max_value=8192,
