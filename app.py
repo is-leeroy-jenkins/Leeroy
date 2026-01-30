@@ -329,12 +329,6 @@ def load_embedder() -> SentenceTransformer:
 
 # ==============================================================================
 # Sidebar (Model Parameters)
-# Purpose:
-#     Collect runtime model parameters used to configure llama.cpp initialization and inference.
-# Parameters:
-#     None
-# Returns:
-#     None
 # ==============================================================================
 with st.sidebar:
     try:
