@@ -95,7 +95,7 @@ MARKDOWN_HEADING_PATTERN: re.Pattern[str] = re.compile(
 st.set_page_config(
     page_title="Leeroy",
     layout="wide",
-    page_icon="resources/images/favicon.ico"
+    page_icon=FAVICON
 )
 
 # ==============================================================================
