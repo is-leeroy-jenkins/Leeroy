@@ -43,7 +43,8 @@ if not MODEL_PATH_OBJ.exists():
 DB_PATH = "stores/sqlite/leeroy.db"
 DEFAULT_CTX = 4096
 CPU_CORES = multiprocessing.cpu_count()
-
+FAVICON = r"resources/images/favicon.ico"
+LOGO = r"resources/images/leeroy_logo.ico"
 XML_BLOCK_PATTERN: re.Pattern[str] = re.compile(
     r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>",
     re.DOTALL )
