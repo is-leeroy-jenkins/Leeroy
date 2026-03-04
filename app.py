@@ -406,72 +406,9 @@ def load_embedder() -> SentenceTransformer:
     return SentenceTransformer("all-MiniLM-L6-v2")
 
 # ==============================================================================
-# Streamlit Config
-# ==============================================================================
-st.set_page_config( page_title='Leeroy', layout='wide', page_icon=FAVICON )
-
-# ==============================================================================
-# Sidebar (Model Parameters)
-# ==============================================================================
-with st.sidebar:
-    try:
-        logo = image_to_base64( cfg.LOGO )
-        st.markdown( f"<img src='data:image/png;base64,{logo}' "
-            f"style='max-height:55px; display:block; margin:auto;'>", unsafe_allow_html=True )
-    except Exception:
-        st.write( 'Bro' )
-
-    st.header( '⚙️ Mind Controls' )
-
-    # --------------------------------------------------------------------------
-    # Model initialization parameters
-    # --------------------------------------------------------------------------
-    ctx = st.slider( label='Context Window', min_value=2048, max_value=8192, value=DEFAULT_CTX,
-        step=512, help=cfg.CONTEXT_WINDOW )
-
-    threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
-        value=CPU_CORES, step=1, help=cfg.CPU_CORES, )
-
-    # --------------------------------------------------------------------------
-    # Inference parameters (already present + recommended additions)
-    # --------------------------------------------------------------------------
-    max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096,
-        value=1024,  step=128,  help=cfg.MAX_TOKENS,  )
-
-    temperature = st.slider( label='Temperature',  min_value=0.1,  max_value=1.5,
-        value=0.7, step=0.1, help=cfg.TEMPERATURE )
-
-    top_p = st.slider( label='Top-P',  min_value=0.1, max_value=1.0,
-        value=0.9, step=0.05,  help=cfg.TOP_P  )
-
-    top_k = st.slider( label='Top-K', min_value=1, max_value=50, value=5,
-        step=1, help=cfg.TOP_K  )
-
-    repeat_penalty: float = st.slider( label='Repeat Penalty', min_value=1.0,  max_value=2.0,
-        value=1.1, step=0.05,  help=cfg.REPEAT_PENALTY )
-
-    # --------------------------------------------------------------------------
-    # Recommended additions
-    # --------------------------------------------------------------------------
-    repeat_last_n = st.slider( label='Repeat Window', min_value=0,
-        max_value=1024,  value=64, step=16, help=cfg.REPEAT_WINDOW )
-
-    presence_penalty = st.slider( label='Presence Penalty',  min_value=0.0, max_value=2.0,
-        value=0.0, step=0.05, help=cfg.PRESENCE_PENALTY  )
-
-    frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
-        value=0.0, step=0.05, help=cfg.FREQUENCY_PENALTY )
-
-    seed = st.number_input( label="Random Seed",  value=-1, step=1,
-        
-        help="Set to a fixed value for reproducible outputs; use -1 for a random seed each run.",
-    )
-
-# ==============================================================================
 # SESSION STATE INITIALIZATION
 # ==============================================================================
 ensure_db( )
-llm = load_llm( ctx, threads )
 embedder = load_embedder( )
 st.session_state.setdefault( 'messages', load_history( ) )
 st.session_state.setdefault( 'system_prompt', "" )
@@ -479,12 +416,58 @@ st.session_state.setdefault( 'basic_docs', [ ] )
 st.session_state.setdefault( 'use_semantic', False )
 st.session_state.setdefault( 'selected_prompt_id', None )
 st.session_state.setdefault( 'pending_system_prompt_name', None )
+st.set_page_config( page_title='Leeroy', layout='wide', page_icon=cfg.FAVICON )
 
 # ==============================================================================
 # TABS
 # ==============================================================================
 system_tab, chat_tab, basic_tab, semantic_tab, prompt_tab, export_tab = st.tabs( TABS )
 
+
+# ==============================================================================
+# Sidebar (Model Parameters)
+# ==============================================================================
+with st.sidebar:
+	style_subheaders( )
+	logo = image_to_base64( cfg.LOGO )
+	st.markdown( f"<img src='data:image/png;base64,{logo}' "
+	    f"style='max-height:55px; display:block; margin:auto;'>", unsafe_allow_html=True )
+	
+	with st.expander( label='⚙️ Mind Controls', expanded=False )
+		
+		ctx = st.slider( label='Context Window', min_value=2048, max_value=8192, value=cfg.DEFAULT_CTX,
+			step=512, help=cfg.CONTEXT_WINDOW )
+		
+		threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
+			value=CPU_CORES, step=1, help=cfg.CPU_CORES, )
+		
+		max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096,
+			value=1024, step=128, help=cfg.MAX_TOKENS, )
+		
+		temperature = st.slider( label='Temperature', min_value=0.1, max_value=1.5,
+			value=0.7, step=0.1, help=cfg.TEMPERATURE )
+		
+		top_p = st.slider( label='Top-P', min_value=0.1, max_value=1.0,
+			value=0.9, step=0.05, help=cfg.TOP_P )
+		
+		top_k = st.slider( label='Top-K', min_value=1, max_value=50, value=5,
+			step=1, help=cfg.TOP_K )
+		
+		repeat_penalty: float = st.slider( label='Repeat Penalty', min_value=1.0, max_value=2.0,
+			value=1.1, step=0.05, help=cfg.REPEAT_PENALTY )
+		
+		repeat_last_n = st.slider( label='Repeat Window', min_value=0,
+			max_value=1024, value=64, step=16, help=cfg.REPEAT_WINDOW )
+		
+		presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
+			value=0.0, step=0.05, help=cfg.PRESENCE_PENALTY )
+		
+		frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+			value=0.0, step=0.05, help=cfg.FREQUENCY_PENALTY )
+		
+		seed = st.number_input( label="Random Seed", value=-1, step=1, help=cfg.SEED )
+
+llm = load_llm( ctx, threads )
 
 # ==============================================================================
 # SYSTEM INSTRUCTIONS TAB 
@@ -500,8 +483,7 @@ with system_tab:
     sys_c1, sys_c2, sys_c3, sys_c4, sys_c5, sys_c6 = st.columns( [ 1, 1, 1, 0.5, 1.5, 1.5 ] )
 
     with sys_c1:
-        load_clicked: bool = st.button( 'Load',
-            disabled=st.session_state.pending_system_prompt_name is None )
+        load_clicked: bool = st.button( 'Load', disabled=st.session_state.pending_system_prompt_name is None )
 
     with sys_c2:
         clear_clicked = st.button( 'Clear' )
@@ -555,8 +537,7 @@ with system_tab:
     # ------------------------------------------------------------------
     # System prompt editor
     # ------------------------------------------------------------------
-    st.text_area( 'System Prompt', key='system_prompt',
-        height=260,
+    st.text_area( label='System Prompt', key='system_prompt', height=260,
         help=(  'Edit system instructions here. ' 'Use XML-like tags or Markdown headings (##). '
             'Conversion tools are provided above.' ) )
 

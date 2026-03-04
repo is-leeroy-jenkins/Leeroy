@@ -43,6 +43,7 @@
 '''
 import os
 import re
+import multiprocessing
 
 LEEROY_LLM_PATH = os.getenv( 'LEEROY_LLM_PATH' )
 BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
@@ -52,6 +53,7 @@ BASE_DIR = os.path.dirname( os.path.abspath( __file__ ) )
 DB_PATH = 'stores/sqlite/leeroy.db'
 MODEL_PATH = 'models/Leeroy-3B-Instruct.Q4_K_M.gguf'
 DEFAULT_CTX = 4096
+CPU_CORES = multiprocessing.cpu_count( )
 FAVICON = r'resources/images/favicon.ico'
 LOGO = r'resources/images/leeroy_logo.ico'
 XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
