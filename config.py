@@ -55,7 +55,7 @@ MODEL_PATH = 'models/Leeroy-3B-Instruct.Q4_K_M.gguf'
 DEFAULT_CTX = 4096
 CPU_CORES = multiprocessing.cpu_count( )
 FAVICON = r'resources/images/favicon.ico'
-LOGO = r'resources/images/leeroy_logo.ico'
+LOGO = r'resources/images/leeroy_logo.png'
 XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
 MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
 

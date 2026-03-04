@@ -423,6 +423,7 @@ st.set_page_config( page_title='Leeroy', layout='wide', page_icon=cfg.FAVICON )
 # ==============================================================================
 system_tab, chat_tab, basic_tab, semantic_tab, prompt_tab, export_tab = st.tabs( TABS )
 
+llm = load_llm( ctx, threads )
 
 # ==============================================================================
 # Sidebar (Model Parameters)
@@ -430,13 +431,11 @@ system_tab, chat_tab, basic_tab, semantic_tab, prompt_tab, export_tab = st.tabs(
 with st.sidebar:
 	style_subheaders( )
 	logo = image_to_base64( cfg.LOGO )
-	st.markdown( f"<img src='data:image/png;base64,{logo}' "
-	    f"style='max-height:55px; display:block; margin:auto;'>", unsafe_allow_html=True )
+	st.logo( logo )
 	
-	with st.expander( label='⚙️ Mind Controls', expanded=False )
-		
-		ctx = st.slider( label='Context Window', min_value=2048, max_value=8192, value=cfg.DEFAULT_CTX,
-			step=512, help=cfg.CONTEXT_WINDOW )
+	with st.expander( label='⚙️ Mind Controls', expanded=False ):
+		ctx = st.slider( label='Context Window', min_value=2048, max_value=8192,
+			value=cfg.DEFAULT_CTX, step=512, help=cfg.CONTEXT_WINDOW )
 		
 		threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
 			value=CPU_CORES, step=1, help=cfg.CPU_CORES, )
@@ -467,7 +466,7 @@ with st.sidebar:
 		
 		seed = st.number_input( label="Random Seed", value=-1, step=1, help=cfg.SEED )
 
-llm = load_llm( ctx, threads )
+
 
 # ==============================================================================
 # SYSTEM INSTRUCTIONS TAB 
