@@ -45,6 +45,7 @@
 from __future__ import annotations
 
 import base64
+import config as cfg
 import io
 import multiprocessing
 import os
@@ -80,21 +81,57 @@ DEFAULT_CTX = 4096
 CPU_CORES = multiprocessing.cpu_count()
 FAVICON = r'resources/images/favicon.ico'
 LOGO = r'resources/images/leeroy_logo.ico'
-XML_BLOCK_PATTERN: re.Pattern[str] = re.compile(
-    r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>",
-    re.DOTALL )
+XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
+MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
 
 BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
-MARKDOWN_HEADING_PATTERN: re.Pattern[str] = re.compile(
-    r"^##\s+(?P<title>.+?)\s*$")
 
+TABS = [ 'System Instructions', 'Text Generation', 'Retrieval Augmentation',
+         'Semantic Search', 'Prompt Engineering', 'Export' ]
 
 # ==============================================================================
 # UTILITIES
 # ==============================================================================
-def image_to_base64(path: str) -> str:
+def image_to_base64( path: str ) -> str:
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
+
+def normalize_text( text: str ) -> str:
+	"""
+		
+		Purpose
+		-------
+		Normalize text by:
+			• Converting to lowercase
+			• Removing punctuation except sentence delimiters (. ! ?)
+			• Ensuring clean sentence boundary spacing
+			• Collapsing whitespace
+	
+		Parameters
+		----------
+		text: str
+	
+		Returns
+		-------
+		str
+		
+	"""
+	if not text:
+		return ""
+	
+	# Lowercase
+	text = text.lower( )
+	
+	# Remove punctuation except . ! ?
+	text = re.sub( r"[^\w\s\.\!\?]", "", text )
+	
+	# Ensure single space after sentence delimiters
+	text = re.sub( r"([.!?])\s*", r"\1 ", text )
+	
+	# Normalize whitespace
+	text = re.sub( r"\s+", " ", text ).strip( )
+	
+	return text
 
 def chunk_text( text: str, size: int=1200, overlap: int=200 ) -> List[str]:
     chunks, i = [], 0
@@ -106,109 +143,6 @@ def chunk_text( text: str, size: int=1200, overlap: int=200 ) -> List[str]:
 def cosine_sim( a: np.ndarray, b: np.ndarray ) -> float:
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     return float( np.dot(a, b) / denom ) if denom else 0.0
-
-def build_prompt( user_input: str ) -> str:
-	prompt = f"<|system|>\n{st.session_state.system_prompt}\n</s>\n"
-	if st.session_state.use_semantic:
-		with sqlite3.connect( DB_PATH ) as conn:
-			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
-		if rows:
-			q = embedder.encode( [ user_input ] )[ 0 ]
-			scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
-			for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :top_k ]:
-				prompt += f"<|system|>\n{c}\n</s>\n"
-	
-	for d in st.session_state.basic_docs[ :6 ]:
-		prompt += f"<|system|>\n{d}\n</s>\n"
-	
-	for r, c in st.session_state.messages:
-		prompt += f"<|{r}|>\n{c}\n</s>\n"
-	
-	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
-	return prompt
-
-def xml_converter(text: str) -> str:
-    """
-	    Purpose:
-	        Convert XML-delimited prompt text into Markdown by treating XML-like
-	        tags as section delimiters, not as strict XML.
-	
-	    Parameters:
-	        text (str):
-	            Prompt text containing XML-like opening and closing tags.
-	
-	    Returns:
-	        str:
-	            Markdown-formatted text using level-2 headings (##).
-    """
-    markdown_blocks: List[str] = []
-    for match in XML_BLOCK_PATTERN.finditer(text):
-        raw_tag: str = match.group( 'tag ')
-        body: str = match.group( 'body' ).strip( )
-        heading = raw_tag.replace( '_', ' ').replace( '-', ' ' ).title( )
-        markdown_blocks.append( f'## {heading}' )
-        if body:
-            markdown_blocks.append( body )
-
-    return '\n\n'.join( markdown_blocks )
-
-def markdown_converter( markdown: str ) -> str:
-    """
-    
-	    Purpose:
-	        Convert Markdown-formatted system instructions back into
-	        XML-delimited prompt text by treating level-2 headings (##)
-	        as section delimiters.
-	
-	    Parameters:
-	        markdown (str):
-	            Markdown text using '##' headings to indicate sections.
-	
-	    Returns:
-	        str:
-	            XML-delimited text suitable for storage in the prompt database.
-	            
-    """
-    lines  = markdown.splitlines( )
-    output  = []
-    current_tag = None
-    buffer = []
-
-    def flush() -> None:
-        """
-        Emit the currently buffered section as an XML-delimited block.
-        """
-        nonlocal current_tag, buffer
-
-        if current_tag is None:
-            return
-
-        body: str = "\n".join(buffer).strip()
-
-        output.append(f"<{current_tag}>")
-        if body:
-            output.append(body)
-        output.append(f"</{current_tag}>")
-        output.append("")
-
-        buffer.clear()
-    for line in lines:
-        match = MARKDOWN_HEADING_PATTERN.match(line)
-        if match:
-            flush( )
-            title = match.group( 'title' )
-            current_tag = ( title.strip( ) .lower( )
-                .replace( ' ', '_' )
-                .replace( '-', '_' ) )
-        else:
-            if current_tag is not None:
-                buffer.append( line )
-
-    flush( )
-    while output and not output[ -1 ].strip( ):
-        output.pop( )
-
-    return '\n'.join(output)
 
 def ensure_db( ) -> None:
     Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True)
@@ -231,17 +165,190 @@ def ensure_db( ) -> None:
                 ID TEXT(80),
                 PRIMARY KEY(PromptsId AUTOINCREMENT) ) """)
 
+# -------- Chat & Text --------------------
+def inject_response_css( ) -> None:
+	"""
+	
+		Purpose:
+		_________
+		Set the the format via css.
+		
+	"""
+	st.markdown(
+		"""
+		<style>
+		/* Chat message text */
+		.stChatMessage p {
+			color: rgb(220, 220, 220);
+			font-size: 1rem;
+			line-height: 1.6;
+		}
+
+		/* Headings inside chat responses */
+		.stChatMessage h1 {
+			color: rgb(0, 120, 252); /* DoD Blue */
+			font-size: 1.6rem;
+		}
+
+		.stChatMessage h2 {
+			color: rgb(0, 120, 252);
+			font-size: 1.35rem;
+		}
+
+		.stChatMessage h3 {
+			color: rgb(0, 120, 252);
+			font-size: 1.15rem;
+		}
+		
+		.stChatMessage a {
+			color: rgb(0, 120, 252); /* DoD Blue */
+			text-decoration: underline;
+		}
+		
+		.stChatMessage a:hover {
+			color: rgb(80, 160, 255);
+		}
+
+		</style>
+		""", unsafe_allow_html=True )
+
+def style_subheaders( ) -> None:
+	"""
+	
+		Purpose:
+		_________
+		Sets the style of subheaders in the main UI
+		
+	"""
+	st.markdown(
+		"""
+		<style>
+		div[data-testid="stMarkdownContainer"] h2,
+		div[data-testid="stMarkdownContainer"] h3,
+		div[data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] h2,
+		div[data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] h3 {
+			color: rgb(0, 120, 252) !important;
+		}
+		</style>
+		""",
+		unsafe_allow_html=True, )
+
 def save_message( role: str, content: str ) -> None:
-    with sqlite3.connect( DB_PATH ) as conn:
-        conn.execute( 'INSERT INTO chat_history (role, content) VALUES (?, ?)',  ( role, content ) )
+	with sqlite3.connect( DB_PATH ) as conn:
+		conn.execute( 'INSERT INTO chat_history (role, content) VALUES (?, ?)', (role, content) )
 
 def load_history( ) -> List[ Tuple[ str, str ] ]:
-    with sqlite3.connect(DB_PATH) as conn:
-        return conn.execute( 'SELECT role, content FROM chat_history ORDER BY id'  ).fetchall()
+	with sqlite3.connect( DB_PATH ) as conn:
+		return conn.execute( 'SELECT role, content FROM chat_history ORDER BY id' ).fetchall( )
 
 def clear_history( ) -> None:
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("DELETE FROM chat_history")
+	with sqlite3.connect( DB_PATH ) as conn:
+		conn.execute( "DELETE FROM chat_history" )
+
+#-------- Prompt Engineering ----------------
+def build_prompt( user_input: str ) -> str:
+	prompt = f"<|system|>\n{st.session_state.system_prompt}\n</s>\n"
+	if st.session_state.use_semantic:
+		with sqlite3.connect( DB_PATH ) as conn:
+			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
+		if rows:
+			q = embedder.encode( [ user_input ] )[ 0 ]
+			scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
+			for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :top_k ]:
+				prompt += f"<|system|>\n{c}\n</s>\n"
+	
+	for d in st.session_state.basic_docs[ :6 ]:
+		prompt += f"<|system|>\n{d}\n</s>\n"
+	
+	for r, c in st.session_state.messages:
+		prompt += f"<|{r}|>\n{c}\n</s>\n"
+	
+	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
+	return prompt
+
+def xml_converter( text: str ) -> str:
+	"""
+		Purpose:
+			Convert XML-delimited prompt text into Markdown by treating XML-like
+			tags as section delimiters, not as strict XML.
+	
+		Parameters:
+			text (str):
+				Prompt text containing XML-like opening and closing tags.
+	
+		Returns:
+			str:
+				Markdown-formatted text using level-2 headings (##).
+	"""
+	markdown_blocks: List[ str ] = [ ]
+	for match in XML_BLOCK_PATTERN.finditer( text ):
+		raw_tag: str = match.group( 'tag ' )
+		body: str = match.group( 'body' ).strip( )
+		heading = raw_tag.replace( '_', ' ' ).replace( '-', ' ' ).title( )
+		markdown_blocks.append( f'## {heading}' )
+		if body:
+			markdown_blocks.append( body )
+	
+	return '\n\n'.join( markdown_blocks )
+
+def markdown_converter( markdown: str ) -> str:
+	"""
+	
+		Purpose:
+			Convert Markdown-formatted system instructions back into
+			XML-delimited prompt text by treating level-2 headings (##)
+			as section delimiters.
+	
+		Parameters:
+			markdown (str):
+				Markdown text using '##' headings to indicate sections.
+	
+		Returns:
+			str:
+				XML-delimited text suitable for storage in the prompt database.
+				
+	"""
+	lines = markdown.splitlines( )
+	output = [ ]
+	current_tag = None
+	buffer = [ ]
+	
+	def flush( ) -> None:
+		"""
+		Emit the currently buffered section as an XML-delimited block.
+		"""
+		nonlocal current_tag, buffer
+		
+		if current_tag is None:
+			return
+		
+		body: str = "\n".join( buffer ).strip( )
+		
+		output.append( f"<{current_tag}>" )
+		if body:
+			output.append( body )
+		output.append( f"</{current_tag}>" )
+		output.append( "" )
+		
+		buffer.clear( )
+	
+	for line in lines:
+		match = MARKDOWN_HEADING_PATTERN.match( line )
+		if match:
+			flush( )
+			title = match.group( 'title' )
+			current_tag = (title.strip( ).lower( )
+			               .replace( ' ', '_' )
+			               .replace( '-', '_' ))
+		else:
+			if current_tag is not None:
+				buffer.append( line )
+	
+	flush( )
+	while output and not output[ -1 ].strip( ):
+		output.pop( )
+	
+	return '\n'.join( output )
 
 def fetch_prompts_df() -> pd.DataFrame:
     with sqlite3.connect(DB_PATH) as conn:
@@ -288,15 +395,11 @@ def delete_prompt(pid: int) -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM Prompts WHERE PromptsId=?", (pid,))
 
+# -------------- LLM -------------------
 @st.cache_resource
 def load_llm(ctx: int, threads: int) -> Llama:
-    return Llama(
-        model_path=str(MODEL_PATH_OBJ),
-        n_ctx=ctx,
-        n_threads=threads,
-        n_batch=512,
-        verbose=False
-    )
+    return Llama(  model_path=str( MODEL_PATH_OBJ ),  n_ctx=ctx,  n_threads=threads,
+        n_batch=512,  verbose=False )
 
 @st.cache_resource
 def load_embedder() -> SentenceTransformer:
@@ -312,7 +415,7 @@ st.set_page_config( page_title='Leeroy', layout='wide', page_icon=FAVICON )
 # ==============================================================================
 with st.sidebar:
     try:
-        logo = image_to_base64( 'resources/images/leeroy_logo.png' )
+        logo = image_to_base64( cfg.LOGO )
         st.markdown( f"<img src='data:image/png;base64,{logo}' "
             f"style='max-height:55px; display:block; margin:auto;'>", unsafe_allow_html=True )
     except Exception:
@@ -323,95 +426,53 @@ with st.sidebar:
     # --------------------------------------------------------------------------
     # Model initialization parameters
     # --------------------------------------------------------------------------
-    ctx: int = st.slider( "Context Window", min_value=2048, max_value=8192, value=DEFAULT_CTX,
-        step=512,
-        help=( "Maximum number of tokens the model can consider at once, including system instructions, "
-            "history, and context."  ), )
+    ctx = st.slider( label='Context Window', min_value=2048, max_value=8192, value=DEFAULT_CTX,
+        step=512, help=cfg.CONTEXT_WINDOW )
 
-    threads = st.slider( "CPU Threads", min_value=1, max_value=CPU_CORES,
-        value=CPU_CORES, step=1,
-        help=( "Number of CPU threads used for inference; higher values improve speed but increase CPU "
-            "usage." ), )
+    threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
+        value=CPU_CORES, step=1, help=cfg.CPU_CORES, )
 
     # --------------------------------------------------------------------------
     # Inference parameters (already present + recommended additions)
     # --------------------------------------------------------------------------
-    max_tokens = st.slider( "Max Tokens", min_value=128, max_value=4096,
-        value=1024,  step=128,  help="Maximum number of tokens generated per response.",  )
+    max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096,
+        value=1024,  step=128,  help=cfg.MAX_TOKENS,  )
 
-    temperature = st.slider( "Temperature",  min_value=0.1,  max_value=1.5,
-        value=0.7, step=0.1,
-        help=(
-            "Controls randomness in generation; lower values are more deterministic, higher values "
-            "increase creativity." ), )
+    temperature = st.slider( label='Temperature',  min_value=0.1,  max_value=1.5,
+        value=0.7, step=0.1, help=cfg.TEMPERATURE )
 
-    top_p = st.slider( "Top-p",  min_value=0.1, max_value=1.0,
-        value=0.9, step=0.05,
-        help=(
-            "Nucleus sampling threshold; limits token selection to the smallest set whose cumulative "
-            "probability exceeds this value." ), )
+    top_p = st.slider( label='Top-P',  min_value=0.1, max_value=1.0,
+        value=0.9, step=0.05,  help=cfg.TOP_P  )
 
-    top_k: int = st.slider(
-        "Top-k",
-        min_value=1,
-        max_value=50,
-        value=5,
-        step=1,
-        help="Limits token selection to the top K most probable tokens at each step.",
-    )
+    top_k = st.slider( label='Top-K', min_value=1, max_value=50, value=5,
+        step=1, help=cfg.TOP_K  )
 
-    repeat_penalty: float = st.slider(
-        "Repeat Penalty",
-        min_value=1.0,
-        max_value=2.0,
-        value=1.1,
-        step=0.05,
-        help="Penalizes repeated tokens to reduce looping and redundant responses.",
-    )
+    repeat_penalty: float = st.slider( label='Repeat Penalty', min_value=1.0,  max_value=2.0,
+        value=1.1, step=0.05,  help=cfg.REPEAT_PENALTY )
 
     # --------------------------------------------------------------------------
     # Recommended additions
     # --------------------------------------------------------------------------
-    repeat_last_n: int = st.slider(
-        "Repeat Window",
-        min_value=0,
-        max_value=1024,
-        value=64,
-        step=16,
-        help="Number of recent tokens considered for repetition penalties; 0 disables the window.",
-    )
+    repeat_last_n = st.slider( label='Repeat Window', min_value=0,
+        max_value=1024,  value=64, step=16, help=cfg.REPEAT_WINDOW )
 
-    presence_penalty: float = st.slider(
-        "Presence Penalty",
-        min_value=0.0,
-        max_value=2.0,
-        value=0.0,
-        step=0.05,
-        help="Encourages introducing new topics by penalizing tokens already present in the context.",
-    )
+    presence_penalty = st.slider( label='Presence Penalty',  min_value=0.0, max_value=2.0,
+        value=0.0, step=0.05, help=cfg.PRESENCE_PENALTY  )
 
-    frequency_penalty: float = st.slider(
-        "Frequency Penalty",
-        min_value=0.0,
-        max_value=2.0,
-        value=0.0,
-        step=0.05,
-        help="Reduces repeated phrasing by penalizing tokens based on how often they appear.",
-    )
+    frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+        value=0.0, step=0.05, help=cfg.FREQUENCY_PENALTY )
 
-    seed: int = st.number_input(
-        "Random Seed",
-        value=-1,
-        step=1,
+    seed = st.number_input( label="Random Seed",  value=-1, step=1,
+        
         help="Set to a fixed value for reproducible outputs; use -1 for a random seed each run.",
     )
 
 # ==============================================================================
 # SESSION STATE INITIALIZATION
 # ==============================================================================
-ensure_db()
-llm = load_llm(ctx, threads)
-embedder = load_embedder()
+ensure_db( )
+llm = load_llm( ctx, threads )
+embedder = load_embedder( )
 st.session_state.setdefault( 'messages', load_history( ) )
 st.session_state.setdefault( 'system_prompt', "" )
 st.session_state.setdefault( 'basic_docs', [ ] )
@@ -422,59 +483,44 @@ st.session_state.setdefault( 'pending_system_prompt_name', None )
 # ==============================================================================
 # TABS
 # ==============================================================================
-tab_system, tab_chat, tab_basic, tab_semantic, tab_prompt, tab_export = st.tabs(
-    [ 'System Instructions', 'Text Generation', 'Retrieval Augmentation',
-     'Semantic Search', 'Prompt Engineering', 'Export' ] )
+system_tab, chat_tab, basic_tab, semantic_tab, prompt_tab, export_tab = st.tabs( TABS )
 
 
 # ==============================================================================
 # SYSTEM INSTRUCTIONS TAB 
 # ==============================================================================
-with tab_system:
+with system_tab:
     st.subheader( 'System Instructions' )
-
-    # ------------------------------------------------------------------
-    # Prompt selector
-    # ------------------------------------------------------------------
     df_prompts = fetch_prompts_df()
     prompt_names = [ '' ] + df_prompts[ 'Name' ].tolist( )
     selected_name: str = st.selectbox( 'Load System Prompt', prompt_names, 
 	    key='system_prompt_selector' )
 
-    st.session_state.pending_system_prompt_name = (
-        selected_name if selected_name else None )
+    st.session_state.pending_system_prompt_name = ( selected_name if selected_name else None )
+    sys_c1, sys_c2, sys_c3, sys_c4, sys_c5, sys_c6 = st.columns( [ 1, 1, 1, 0.5, 1.5, 1.5 ] )
 
-    # ------------------------------------------------------------------
-    # Action buttons (single row, audited)
-    # ------------------------------------------------------------------
-    col_load, col_clear, col_edit, col_spacer, col_xml_md, col_md_xml = st.columns(
-        [ 1, 1, 1, 0.5, 1.5, 1.5 ] )
-
-    with col_load:
+    with sys_c1:
         load_clicked: bool = st.button( 'Load',
             disabled=st.session_state.pending_system_prompt_name is None )
 
-    with col_clear:
+    with sys_c2:
         clear_clicked = st.button( 'Clear' )
 
-    with col_edit:
-        edit_clicked = st.button( 'Edit',
-            disabled=st.session_state.pending_system_prompt_name is None  )
+    with sys_c3:
+        edit_clicked = st.button( 'Edit', disabled=st.session_state.pending_system_prompt_name is None  )
 
-    with col_spacer:
-        st.write('')
+    with sys_c4:
+        st.write( '' )
 
-    with col_xml_md:
+    with sys_c5:
         to_markdown_clicked = st.button( 'XML → Markdown',
             help='Replace XML-like delimiters with Markdown headings (##).'  )
 
-    with col_md_xml:
-        to_xml_clicked = st.button( 'Markdown → XML',
-            help='Replace Markdown headings (##) with XML-like delimiters.' )
+    with sys_c6:
+	    conv_text = 'Replace Markdown headings with XML-like delimiters'
+	    to_xml_clicked = st.button( 'Markdown → XML', help=conv_text )
 
-    # ------------------------------------------------------------------
-    # Button behaviors (audited: no missing logic)
-    # ------------------------------------------------------------------
+
     if load_clicked:
         record = fetch_prompt_by_name( st.session_state.pending_system_prompt_name )
         if record:
@@ -517,7 +563,7 @@ with tab_system:
 # ==============================================================================
 # Text Generation Tab
 # ==============================================================================
-with tab_chat:
+with chat_tab:
     if st.button( '🧹 Clear Chat' ):
         clear_history( )
         st.session_state.messages = [ ]
@@ -548,7 +594,7 @@ with tab_chat:
 # ==============================================================================
 # Retrieval Augmentation Tab
 # ==============================================================================
-with tab_basic:
+with basic_tab:
 	files = st.file_uploader( 'Upload documents', accept_multiple_files=True )
 	if files:
 		st.session_state.basic_docs.clear( )
@@ -559,7 +605,7 @@ with tab_basic:
 # ==============================================================================
 # Semantic Search Tab
 # ==============================================================================
-with tab_semantic:
+with semantic_tab:
 	st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
 		st.session_state.use_semantic )
 	files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
@@ -580,7 +626,7 @@ with tab_semantic:
 # ==============================================================================
 # Prompt Engineering Tab
 # ==============================================================================
-with tab_prompt:
+with prompt_tab:
     df = fetch_prompts_df()
     if st.session_state.selected_prompt_id:
         df['Selected'] = df['PromptsId'] == st.session_state.selected_prompt_id
@@ -619,7 +665,7 @@ with tab_prompt:
 # ==============================================================================
 # EXPORT TAB
 # ==============================================================================
-with tab_export:
+with export_tab:
     st.subheader( 'Export' )
     st.markdown( '### System Instructions' )
     export_format = st.radio( 'Export format',options=[ 'XML-delimited', 'Markdown' ], 
