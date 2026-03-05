@@ -169,7 +169,7 @@ def convert_xml( text: str ) -> str:
 			Markdown-formatted text using level-2 headings (##).
 	"""
 	markdown_blocks: List[ str ] = [ ]
-	for match in XML_BLOCK_PATTERN.finditer( text ):
+	for match in cfg.XML_BLOCK_PATTERN.finditer( text ):
 		raw_tag: str = match.group( "tag" )
 		body: str = match.group( "body" ).strip( )
 		
@@ -318,11 +318,11 @@ def save_message( role: str, content: str ) -> None:
 		conn.execute( 'INSERT INTO chat_history (role, content) VALUES (?, ?)', (role, content) )
 
 def load_history( ) -> List[ Tuple[ str, str ] ]:
-	with sqlite3.connect( DB_PATH ) as conn:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		return conn.execute( 'SELECT role, content FROM chat_history ORDER BY id' ).fetchall( )
 
 def clear_history( ) -> None:
-	with sqlite3.connect( DB_PATH ) as conn:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( "DELETE FROM chat_history" )
 
 #-------- PROMPT ENGINEERING UTILITIES ----------------
