@@ -45,6 +45,7 @@ import os
 import re
 import multiprocessing
 
+# ---------- DEFINITIONS -------------------
 LEEROY_LLM_PATH = os.getenv( 'LEEROY_LLM_PATH' )
 BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
 APP_TITLE = 'Leeroy'
@@ -58,6 +59,11 @@ FAVICON = r'resources/images/favicon.ico'
 LOGO = r'resources/images/leeroy_logo.png'
 XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
 MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
+
+MODES = [ 'Text Generation', 'Retrieval Augmentation',
+          'Semantic Search', 'Prompt Engineering', 'Data Management' ]
+
+
 
 # ---------- DEFINITIONS -------------------
 SYSTEM_INSTRUCTIONS = r'''Optional. Gives the model high-level instructions on how it should behave while
@@ -98,11 +104,10 @@ CONTEXT_WINDOW = '''The context window is the maximum length of input a large la
 		context window has been a major goal. The length of a context window is
 		measured in tokens. '''
 
-REPEAT_WINDOW = '''"Prompt repetition" is a recently identified technique (late 2025/early 2026)
-		where repeating the entire input prompt (e.g., <prompt><prompt>) improves LLM performance
-		on non-reasoning tasks by 21-97%. This method allows models to better focus their attention,
-		particularly when references at the end of a prompt need to connect back to
-		information at the beginning'''
+REPEAT_WINDOW = '''"Prompt repetition" is a technique where repeating the entire input prompt
+		(e.g., <prompt><prompt>) improves LLM performance on non-reasoning tasks by 21-97%.
+		This method allows models to better focus their attention, particularly when references
+		at the end of a prompt need to connect back to information at the beginning'''
 
 CPU_CORES = '''Number of CPU threads used for inference; higher values improve speed but increase CPU
             "usage." '''
@@ -110,3 +115,12 @@ CPU_CORES = '''Number of CPU threads used for inference; higher values improve s
 MAX_TOKENS = '''Maximum number of tokens generated per response.'''
 
 SEED = '''Set to a fixed value for reproducible outputs; use -1 for a random seed each run.'''
+
+CHAT_COMPLETIONS = r'''A unified interface for interacting with advanced generative models through
+		a single request–response workflow. It allows a client to send structured inputs—such as text,
+		images, audio, or tool instructions—and receive model-generated outputs that may include
+		natural language responses, structured data, reasoning traces, or tool call instructions.
+		It supports multi-modal inputs, iterative conversations, function/tool invocation,
+		streaming outputs, and configurable generation parameters (e.g., temperature, max tokens),
+		making it suitable for building chat systems, automation agents, data extraction pipelines,
+		and decision-support applications. '''

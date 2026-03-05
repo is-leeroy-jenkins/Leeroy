@@ -73,19 +73,17 @@ if not MODEL_PATH_OBJ.exists():
     st.stop( )
 
 # ==============================================================================
-# CONSTANS
+# CONSTANTS
 # ==============================================================================
 BASE_DIR = os.path.dirname( os.path.abspath( __file__ ) )
 DB_PATH = 'stores/sqlite/leeroy.db'
 DEFAULT_CTX = 4096
-CPU_CORES = multiprocessing.cpu_count()
+CPU_CORES = multiprocessing.cpu_count( )
 FAVICON = r'resources/images/favicon.ico'
 LOGO = r'resources/images/leeroy_logo.ico'
 XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
 MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
-
 BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
-
 TABS = [ 'System Instructions', 'Text Generation', 'Retrieval Augmentation',
          'Semantic Search', 'Prompt Engineering', 'Export' ]
 
@@ -166,6 +164,101 @@ def ensure_db( ) -> None:
                 PRIMARY KEY(PromptsId AUTOINCREMENT) ) """)
 
 # -------- Chat & Text --------------------
+
+def convert_xml( text: str ) -> str:
+	"""
+		
+			Purpose:
+			_________
+			Convert XML-delimited prompt text into Markdown by treating XML-like
+			tags as section delimiters, not as strict XML.
+	
+			Parameters:
+			-----------
+			text (str) - Prompt text containing XML-like opening and closing tags.
+	
+			Returns:
+			---------
+			Markdown-formatted text using level-2 headings (##).
+	"""
+	markdown_blocks: List[ str ] = [ ]
+	for match in XML_BLOCK_PATTERN.finditer( text ):
+		raw_tag: str = match.group( "tag" )
+		body: str = match.group( "body" ).strip( )
+		
+		# Humanize tag name for Markdown heading
+		heading: str = raw_tag.replace( "_", " " ).replace( "-", " " ).title( )
+		markdown_blocks.append( f"## {heading}" )
+		if body:
+			markdown_blocks.append( body )
+	return "\n\n".join( markdown_blocks )
+
+def markdown_converter( text: Any ) -> str:
+	"""
+		Purpose:
+		--------
+		Convert between Markdown headings and simple XML-like heading tags.
+	
+		Behavior:
+		---------
+		Auto-detects direction:
+		  - If <h1>...</h1> / <h2>...</h2> ... exist, converts to Markdown (# / ## / ###).
+		  - Otherwise converts Markdown headings (# / ## / ###) to <hN>...</hN> tags.
+	
+		Parameters:
+		-----------
+		text : Any
+			Source text. Non-string values return "".
+	
+		Returns:
+		--------
+		str
+			Converted text.
+	"""
+	if not isinstance( text, str ) or not text.strip( ):
+		return ""
+	
+	# Normalize newlines
+	src = text.replace( "\r\n", "\n" ).replace( "\r", "\n" )
+	
+	htag_pattern = re.compile( r"<h([1-6])>(.*?)</h\1>", flags=re.IGNORECASE | re.DOTALL )
+	md_heading_pattern = re.compile( r"^(#{1,6})[ \t]+(.+?)[ \t]*$", flags=re.MULTILINE )
+	
+	# ------------------------------------------------------------------
+	# Direction detection
+	# ------------------------------------------------------------------
+	contains_htags = bool( htag_pattern.search( src ) )
+	
+	# ------------------------------------------------------------------
+	# XML-like heading tags -> Markdown headings
+	# ------------------------------------------------------------------
+	if contains_htags:
+		def _htag_to_md( match: re.Match ) -> str:
+			level = int( match.group( 1 ) )
+			content = match.group( 2 ).strip( )
+			
+			# Preserve inner newlines safely by collapsing interior whitespace
+			# while keeping content readable.
+			content = re.sub( r"[ \t]+\n", "\n", content )
+			content = re.sub( r"\n[ \t]+", "\n", content )
+			
+			return f"{'#' * level} {content}"
+		
+		out = htag_pattern.sub( _htag_to_md, src )
+		return out.strip( )
+	
+	# ------------------------------------------------------------------
+	# Markdown headings -> XML-like heading tags
+	# ------------------------------------------------------------------
+	def _md_to_htag( match: re.Match ) -> str:
+		hashes = match.group( 1 )
+		content = match.group( 2 ).strip( )
+		level = len( hashes )
+		return f"<h{level}>{content}</h{level}>"
+	
+	out = md_heading_pattern.sub( _md_to_htag, src )
+	return out.strip( )
+
 def inject_response_css( ) -> None:
 	"""
 	
@@ -246,8 +339,106 @@ def clear_history( ) -> None:
 		conn.execute( "DELETE FROM chat_history" )
 
 #-------- Prompt Engineering ----------------
+def fetch_prompt_names( db_path: str ) -> list[ str ]:
+	"""
+		Purpose:
+		--------
+		Retrieve template names from Prompts table.
+	
+		Parameters:
+		-----------
+		db_path : str
+			SQLite database path.
+	
+		Returns:
+		--------
+		list[str]
+			Sorted prompt names.
+	"""
+	try:
+		conn = sqlite3.connect( db_path )
+		cur = conn.cursor( )
+		cur.execute( "SELECT Caption FROM Prompts ORDER BY PromptsId;" )
+		rows = cur.fetchall( )
+		conn.close( )
+		return [ r[ 0 ] for r in rows if r and r[ 0 ] is not None ]
+	except Exception:
+		return [ ]
+
+def fetch_prompt_text( db_path: str, name: str ) -> str | None:
+	"""
+		Purpose:
+		--------
+		Retrieve template text by name.
+	
+		Parameters:
+		-----------
+		db_path : str
+			SQLite database path.
+		name : str
+			Template name.
+	
+		Returns:
+		--------
+		str | None
+			Prompt text if found.
+	"""
+	try:
+		conn = sqlite3.connect( db_path )
+		cur = conn.cursor( )
+		cur.execute( "SELECT Text FROM Prompts WHERE Caption = ?;", (name,) )
+		row = cur.fetchone( )
+		conn.close( )
+		return str( row[ 0 ] ) if row and row[ 0 ] is not None else None
+	except Exception:
+		return None
+
+def fetch_prompts_df( ) -> pd.DataFrame:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		df = pd.read_sql_query(
+			"SELECT PromptsId, Caption,  Name, Version, ID FROM Prompts ORDER BY PromptsId DESC",
+			conn )
+	df.insert( 0, "Selected", False )
+	return df
+
+def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		cur = conn.execute(
+			"SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE PromptsId=?",
+			(pid,)
+		)
+		row = cur.fetchone( )
+		return dict( zip( [ c[ 0 ] for c in cur.description ], row ) ) if row else None
+
+def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		cur = conn.execute(
+			"SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE Caption=?",
+			(name,)
+		)
+		row = cur.fetchone( )
+		return dict( zip( [ c[ 0 ] for c in cur.description ], row ) ) if row else None
+
+def insert_prompt( data: Dict[ str, Any ] ) -> None:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		conn.execute( 'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?)',
+			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ]) )
+
+def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		conn.execute(
+			"UPDATE Prompts SET Caption=?, Name=?, Text=?, Version=?, ID=? WHERE PromptsId=?",
+			(data[ "Caption" ], data[ "Name" ], data[ "Text" ], data[ "Version" ], data[ "ID" ],
+			 pid)
+		)
+
+def delete_prompt( pid: int ) -> None:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		conn.execute( "DELETE FROM Prompts WHERE PromptsId=?", (pid,) )
+
 def build_prompt( user_input: str ) -> str:
 	prompt = f"<|system|>\n{st.session_state.system_prompt}\n</s>\n"
+	
 	if st.session_state.use_semantic:
 		with sqlite3.connect( DB_PATH ) as conn:
 			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
@@ -266,135 +457,6 @@ def build_prompt( user_input: str ) -> str:
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
 
-def xml_converter( text: str ) -> str:
-	"""
-		Purpose:
-			Convert XML-delimited prompt text into Markdown by treating XML-like
-			tags as section delimiters, not as strict XML.
-	
-		Parameters:
-			text (str):
-				Prompt text containing XML-like opening and closing tags.
-	
-		Returns:
-			str:
-				Markdown-formatted text using level-2 headings (##).
-	"""
-	markdown_blocks: List[ str ] = [ ]
-	for match in XML_BLOCK_PATTERN.finditer( text ):
-		raw_tag: str = match.group( 'tag ' )
-		body: str = match.group( 'body' ).strip( )
-		heading = raw_tag.replace( '_', ' ' ).replace( '-', ' ' ).title( )
-		markdown_blocks.append( f'## {heading}' )
-		if body:
-			markdown_blocks.append( body )
-	
-	return '\n\n'.join( markdown_blocks )
-
-def markdown_converter( markdown: str ) -> str:
-	"""
-	
-		Purpose:
-			Convert Markdown-formatted system instructions back into
-			XML-delimited prompt text by treating level-2 headings (##)
-			as section delimiters.
-	
-		Parameters:
-			markdown (str):
-				Markdown text using '##' headings to indicate sections.
-	
-		Returns:
-			str:
-				XML-delimited text suitable for storage in the prompt database.
-				
-	"""
-	lines = markdown.splitlines( )
-	output = [ ]
-	current_tag = None
-	buffer = [ ]
-	
-	def flush( ) -> None:
-		"""
-		Emit the currently buffered section as an XML-delimited block.
-		"""
-		nonlocal current_tag, buffer
-		
-		if current_tag is None:
-			return
-		
-		body: str = "\n".join( buffer ).strip( )
-		
-		output.append( f"<{current_tag}>" )
-		if body:
-			output.append( body )
-		output.append( f"</{current_tag}>" )
-		output.append( "" )
-		
-		buffer.clear( )
-	
-	for line in lines:
-		match = MARKDOWN_HEADING_PATTERN.match( line )
-		if match:
-			flush( )
-			title = match.group( 'title' )
-			current_tag = (title.strip( ).lower( )
-			               .replace( ' ', '_' )
-			               .replace( '-', '_' ))
-		else:
-			if current_tag is not None:
-				buffer.append( line )
-	
-	flush( )
-	while output and not output[ -1 ].strip( ):
-		output.pop( )
-	
-	return '\n'.join( output )
-
-def fetch_prompts_df() -> pd.DataFrame:
-    with sqlite3.connect(DB_PATH) as conn:
-        df = pd.read_sql_query(
-            "SELECT PromptsId, Name, Version, ID FROM Prompts ORDER BY PromptsId DESC",
-            conn
-        )
-    df.insert(0, "Selected", False)
-    return df
-
-def fetch_prompt_by_id(pid: int) -> Dict[str, Any] | None:
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.execute(
-            "SELECT PromptsId, Name, Text, Version, ID FROM Prompts WHERE PromptsId=?",
-            (pid,)
-        )
-        row = cur.fetchone()
-        return dict(zip([c[0] for c in cur.description], row)) if row else None
-
-def fetch_prompt_by_name(name: str) -> Dict[str, Any] | None:
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.execute(
-            "SELECT PromptsId, Name, Text, Version, ID FROM Prompts WHERE Name=?",
-            (name,)
-        )
-        row = cur.fetchone()
-        return dict(zip([c[0] for c in cur.description], row)) if row else None
-
-def insert_prompt(data: Dict[str, Any]) -> None:
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            "INSERT INTO Prompts (Name, Text, Version, ID) VALUES (?, ?, ?, ?)",
-            (data["Name"], data["Text"], data["Version"], data["ID"])
-        )
-
-def update_prompt(pid: int, data: Dict[str, Any]) -> None:
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            "UPDATE Prompts SET Name=?, Text=?, Version=?, ID=? WHERE PromptsId=?",
-            (data["Name"], data["Text"], data["Version"], data["ID"], pid)
-        )
-
-def delete_prompt(pid: int) -> None:
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("DELETE FROM Prompts WHERE PromptsId=?", (pid,))
-
 # -------------- LLM -------------------
 @st.cache_resource
 def load_llm(ctx: int, threads: int) -> Llama:
@@ -408,173 +470,235 @@ def load_embedder() -> SentenceTransformer:
 # ==============================================================================
 # SESSION STATE INITIALIZATION
 # ==============================================================================
+if 'mode' not in st.session_state:
+	st.session_state[ 'mode' ] = ''
+
+if 'messages' not in st.session_state:
+	st.session_state[ 'messages' ] = ''
+
+if 'system_prompt' not in st.session_state:
+	st.session_state[ 'system_prompt' ] = ''
+
+if 'context_window' not in st.session_state:
+	st.session_state[ 'context_window' ] = 0
+
+if 'cpu_threads' not in st.session_state:
+	st.session_state[ 'cpu_threads' ] = 0
+
+if 'max_tokens' not in st.session_state:
+	st.session_state[ 'max_tokens' ] = 0
+
+if 'temperature' not in st.session_state:
+	st.session_state[ 'temperature' ] = 0.0
+
+if 'top_percent' not in st.session_state:
+	st.session_state[ 'top_percent' ] = 0.0
+
+if 'top_k' not in st.session_state:
+	st.session_state[ 'top_k' ] = 0
+
+if 'frequency_penalty' not in st.session_state:
+	st.session_state[ 'frequency_penalty' ] = 0.0
+
+if 'presense_penalty' not in st.session_state:
+	st.session_state[ 'presence_penalty' ] = 0.0
+
+if 'repeat_penalty' not in st.session_state:
+	st.session_state[ 'repeat_penalty' ] = ''
+
+if 'repeat_window' not in st.session_state:
+	st.session_state[ 'repeat_window' ] = 0
+
+if 'random_seed' not in st.session_state:
+	st.session_state[ 'random_seed' ] = 0
+
+if 'basic_docs' not in st.session_state:
+	st.session_state[ 'basic_docs' ] = [ ]
+
+if 'use_semantic' not in st.session_state:
+	st.session_state[ 'use_semantic' ] = False
+
+if 'selected_prompt_id' not in st.session_state:
+	st.session_state[ 'selected_prompt_id' ] = ''
+
+if 'pending_system_prompt_name' not in st.session_state:
+	st.session_state[ 'pending_system_prompt_name' ] = ''
+
 ensure_db( )
 embedder = load_embedder( )
 st.session_state.setdefault( 'messages', load_history( ) )
 st.session_state.setdefault( 'system_prompt', "" )
-st.session_state.setdefault( 'basic_docs', [ ] )
-st.session_state.setdefault( 'use_semantic', False )
-st.session_state.setdefault( 'selected_prompt_id', None )
-st.session_state.setdefault( 'pending_system_prompt_name', None )
 st.set_page_config( page_title='Leeroy', layout='wide', page_icon=cfg.FAVICON )
 
 # ==============================================================================
 # TABS
 # ==============================================================================
-system_tab, chat_tab, basic_tab, semantic_tab, prompt_tab, export_tab = st.tabs( TABS )
-
-llm = load_llm( ctx, threads )
-
+instruction_tab, chat_tab, retrieval_tab, semantic_tab, prompt_tab, export_tab = st.tabs( TABS )
+MODES = [ 'Text', 'Retrieval',
+          'Semantic', 'Prompt', 'Data' ]
 # ==============================================================================
 # Sidebar (Model Parameters)
 # ==============================================================================
 with st.sidebar:
 	style_subheaders( )
-	logo = image_to_base64( cfg.LOGO )
-	st.logo( logo )
+	st.logo( cfg.LOGO, size='large' )
 	
-	with st.expander( label='⚙️ Mind Controls', expanded=False ):
-		ctx = st.slider( label='Context Window', min_value=2048, max_value=8192,
-			value=cfg.DEFAULT_CTX, step=512, help=cfg.CONTEXT_WINDOW )
-		
-		threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
-			value=CPU_CORES, step=1, help=cfg.CPU_CORES, )
-		
-		max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096,
-			value=1024, step=128, help=cfg.MAX_TOKENS, )
-		
-		temperature = st.slider( label='Temperature', min_value=0.1, max_value=1.5,
-			value=0.7, step=0.1, help=cfg.TEMPERATURE )
-		
-		top_p = st.slider( label='Top-P', min_value=0.1, max_value=1.0,
-			value=0.9, step=0.05, help=cfg.TOP_P )
-		
-		top_k = st.slider( label='Top-K', min_value=1, max_value=50, value=5,
-			step=1, help=cfg.TOP_K )
-		
-		repeat_penalty: float = st.slider( label='Repeat Penalty', min_value=1.0, max_value=2.0,
-			value=1.1, step=0.05, help=cfg.REPEAT_PENALTY )
-		
-		repeat_last_n = st.slider( label='Repeat Window', min_value=0,
-			max_value=1024, value=64, step=16, help=cfg.REPEAT_WINDOW )
-		
-		presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
-			value=0.0, step=0.05, help=cfg.PRESENCE_PENALTY )
-		
-		frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
-			value=0.0, step=0.05, help=cfg.FREQUENCY_PENALTY )
-		
-		seed = st.number_input( label="Random Seed", value=-1, step=1, help=cfg.SEED )
-
-
+	c1, c2 = st.columns( [ 0.1, 0.9] )
+	with c2:
+		st.subheader( '⚙️ Application Mode' )
+		mode = st.radio( label='', options=cfg.MODES, index=0 )
+	
+	st.divider( )
+	
 
 # ==============================================================================
-# SYSTEM INSTRUCTIONS TAB 
+# Text Generation Mode
 # ==============================================================================
-with system_tab:
-    st.subheader( 'System Instructions' )
-    df_prompts = fetch_prompts_df()
-    prompt_names = [ '' ] + df_prompts[ 'Name' ].tolist( )
-    selected_name: str = st.selectbox( 'Load System Prompt', prompt_names, 
-	    key='system_prompt_selector' )
-
-    st.session_state.pending_system_prompt_name = ( selected_name if selected_name else None )
-    sys_c1, sys_c2, sys_c3, sys_c4, sys_c5, sys_c6 = st.columns( [ 1, 1, 1, 0.5, 1.5, 1.5 ] )
-
-    with sys_c1:
-        load_clicked: bool = st.button( 'Load', disabled=st.session_state.pending_system_prompt_name is None )
-
-    with sys_c2:
-        clear_clicked = st.button( 'Clear' )
-
-    with sys_c3:
-        edit_clicked = st.button( 'Edit', disabled=st.session_state.pending_system_prompt_name is None  )
-
-    with sys_c4:
-        st.write( '' )
-
-    with sys_c5:
-        to_markdown_clicked = st.button( 'XML → Markdown',
-            help='Replace XML-like delimiters with Markdown headings (##).'  )
-
-    with sys_c6:
-	    conv_text = 'Replace Markdown headings with XML-like delimiters'
-	    to_xml_clicked = st.button( 'Markdown → XML', help=conv_text )
-
-
-    if load_clicked:
-        record = fetch_prompt_by_name( st.session_state.pending_system_prompt_name )
-        if record:
-            st.session_state.system_prompt = record[ 'Text' ]
-            st.session_state.selected_prompt_id = record[ 'PromptsId' ]
-
-    if clear_clicked:
-        st.session_state.system_prompt = ""
-        st.session_state.selected_prompt_id = None
-
-    if edit_clicked:
-        record = fetch_prompt_by_name(st.session_state.pending_system_prompt_name)
-        if record:
-            st.session_state.selected_prompt_id = record[ 'PromptsId' ]
-
-    if to_markdown_clicked:
-        try:
-            st.session_state.system_prompt = xml_converter(
-                st.session_state.system_prompt )
-            st.success( 'Converted to Markdown.' )
-        except Exception as exc:
-            st.error( f'Conversion failed: {exc}' )
-
-    if to_xml_clicked:
-        try:
-            st.session_state.system_prompt = markdown_converter(
-                st.session_state.system_prompt  )
-            st.success( 'Converted to XML-delimited format.' )
-        except Exception as exc:
-            st.error( f'Conversion failed: {exc}' )
-
-    # ------------------------------------------------------------------
-    # System prompt editor
-    # ------------------------------------------------------------------
-    st.text_area( label='System Prompt', key='system_prompt', height=260,
-        help=(  'Edit system instructions here. ' 'Use XML-like tags or Markdown headings (##). '
-            'Conversion tools are provided above.' ) )
-
+if mode == 'Text Generation':
+	st.subheader( "💬 Chat Completions", help=cfg.CHAT_COMPLETIONS )
+	st.divider( )
+	max_tokens = st.session_state.get( 'max_tokens', 0 )
+	top_percent = st.session_state.get( 'top_percent', 0.0 )
+	top_k = st.session_state.get( 'top_k', 0 )
+	frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
+	presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
+	temperature = st.session_state.get( 'temperature', 0.0 )
+	repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
+	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	with center:
+		# ------------------------------------------------------------------
+		# Expander — Mind Controls
+		# ------------------------------------------------------------------
+		with st.expander( label='🧠 Mind Controls', expanded=False ):
+			mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
+			
+			with mind_c1:
+				set_temperature = st.slider( label='Temperature', min_value=0.1, max_value=1.5,
+					value=0.7, step=0.1, help=cfg.TEMPERATURE )
+			
+			with mind_c2:
+				set_top_p = st.slider( label='Top-P', min_value=0.1, max_value=1.0,
+					value=0.9, step=0.05, help=cfg.TOP_P )
+			
+			with mind_c3:
+				set_top_k = st.slider( label='Top-K', min_value=1, max_value=50, step=1,
+					key='top_k', help=cfg.TOP_K )
+		
+		# ------------------------------------------------------------------
+		# Expander — Probability Controls
+		# ------------------------------------------------------------------
+		with st.expander( label='🧠 Probability Options', expanded=False ):
+			prob_c1, prob_c2, prob_c3, prob_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+				border=True, gap='medium' )
+			
+			with prob_c1:
+				set_repeat_last_n = st.slider( label='Repeat Window', min_value=0,
+					max_value=1024, key='repeat_window', step=16, help=cfg.REPEAT_WINDOW )
+			
+			with prob_c2:
+				set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=1.0, max_value=2.0,
+					key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
+			
+			with prob_c3:
+				set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
+					key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
+			
+			with prob_c4:
+				set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+					key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
+		
+		# ------------------------------------------------------------------
+		# Expander — Context Controls
+		# ------------------------------------------------------------------
+		with st.expander( label=' Context Controls', expanded=False ):
+			ctx_c1, ctx_c2, ctx_c3, ctx_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+				border=True, gap='medium' )
+			
+			with ctx_c1:
+				set_ctx = st.slider( label='Context Window', min_value=2048, max_value=8192,
+					key='context_window', step=512, help=cfg.CONTEXT_WINDOW )
+				
+				ctx = st.session_state[ 'context_window' ]
+			
+			with ctx_c2:
+				set_threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
+					key='cpu_threads', step=1, help=cfg.CPU_CORES, )
+				
+				threads = st.session_state[ 'cpu_threads' ]
+			
+			with ctx_c3:
+				set_max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096, step=128,
+					key='max_tokens', help=cfg.MAX_TOKENS, )
+			
+			with ctx_c4:
+				set_seed = st.slider( label="Random Seed", min_value=0, max_value=4096, step=1,
+					key='random_seed', help=cfg.SEED )
+		
+		# ------------------------------------------------------------------
+		# Expander — System Instructions
+		# ------------------------------------------------------------------
+		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+			ins_left, ins_right = st.columns( [ 0.8, 0.2 ] )
+			prompt_names = fetch_prompt_names( cfg.DB_PATH )
+			if not prompt_names:
+				prompt_names = [ '' ]
+			
+			with ins_left:
+				st.text_area( label='Enter Text', height=50, width='stretch',
+					help=cfg.SYSTEM_INSTRUCTIONS, key='system_instructions' )
+			
+			def _on_template_change( ) -> None:
+				name = st.session_state.get( 'instructions' )
+				if name and name != 'No Templates Found':
+					text = fetch_prompt_text( cfg.DB_PATH, name )
+					if text is not None:
+						st.session_state[ 'system_instructions' ] = text
+			
+			with ins_right:
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
+			
+			def _on_clear( ) -> None:
+				st.session_state[ 'system_instructions' ] = ''
+				st.session_state[ 'instructions' ] = ''
+			
+			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+		
+		llm = load_llm( ctx, threads )
+		
+		for r, c in st.session_state.messages:
+			with st.chat_message( r ):
+				st.markdown( c )
+			user_input = st.chat_input( 'Ask Leeroy…' )
+			if user_input:
+				save_message( 'user', user_input )
+				st.session_state.messages.append( ('user', user_input) )
+				prompt = build_prompt( user_input )
+				with st.chat_message( 'assistant' ):
+					out, buf = st.empty( ), ''
+					for chunk in llm( prompt, stream=True, max_tokens=1024,
+							temperature=temperature, top_p=top_percent,
+							repeat_penalty=repeat_penalty, stop=[ '</s>' ] ):
+						buf += chunk[ 'choices' ][ 0 ][ 'text' ]
+						out.markdown( buf + '▌' )
+					out.markdown( buf )
+				
+				save_message( 'assistant', buf )
+				st.session_state.messages.append( ('assistant', buf) )
+			
+		if st.button( '🧹 Clear Chat' ):
+			clear_history( )
+			st.session_state.messages = [ ]
+			st.rerun( )
+		
 # ==============================================================================
-# Text Generation Tab
+# RETRIEVAL AUGMENTATION
 # ==============================================================================
-with chat_tab:
-    if st.button( '🧹 Clear Chat' ):
-        clear_history( )
-        st.session_state.messages = [ ]
-        st.rerun( )
-
-    for r, c in st.session_state.messages:
-        with st.chat_message(r):
-            st.markdown(c)
-
-    user_input = st.chat_input( 'Ask Leeroy…' )
-    if user_input:
-        save_message( 'user', user_input )
-        st.session_state.messages.append( ( 'user', user_input))
-
-        prompt = build_prompt( user_input )
-        with st.chat_message( 'assistant' ):
-            out, buf = st.empty( ), ''
-            for chunk in llm( prompt, stream=True, max_tokens=1024,
-                              temperature=temperature, top_p=top_p,
-                              repeat_penalty=repeat_penalty, stop=[ '</s>' ] ):
-                buf += chunk[ 'choices' ][0][ 'text' ]
-                out.markdown(buf + '▌' )
-            out.markdown(buf)
-
-        save_message( 'assistant', buf )
-        st.session_state.messages.append( ( 'assistant', buf)  )
-
-# ==============================================================================
-# Retrieval Augmentation Tab
-# ==============================================================================
-with basic_tab:
+elif mode == 'Retrieval Augmentation':
 	files = st.file_uploader( 'Upload documents', accept_multiple_files=True )
 	if files:
 		st.session_state.basic_docs.clear( )
@@ -583,9 +707,9 @@ with basic_tab:
 		st.success( f'{len( st.session_state.basic_docs )} chunks loaded' )
 
 # ==============================================================================
-# Semantic Search Tab
+# SEMANTIC SEARCH
 # ==============================================================================
-with semantic_tab:
+elif mode == 'Semantic Search':
 	st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
 		st.session_state.use_semantic )
 	files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
@@ -604,9 +728,9 @@ with semantic_tab:
 		st.success( 'Semantic index built' )
 
 # ==============================================================================
-# Prompt Engineering Tab
+# PROMPT ENGINEERING MODE
 # ==============================================================================
-with prompt_tab:
+elif mode == 'Prompt Engineering':
     df = fetch_prompts_df()
     if st.session_state.selected_prompt_id:
         df['Selected'] = df['PromptsId'] == st.session_state.selected_prompt_id
@@ -643,19 +767,18 @@ with prompt_tab:
 	    st.rerun( )
 
 # ==============================================================================
-# EXPORT TAB
+# DATA MANAGEMENT MODE
 # ==============================================================================
-with export_tab:
+elif mode == 'Data Management':
     st.subheader( 'Export' )
     st.markdown( '### System Instructions' )
     export_format = st.radio( 'Export format',options=[ 'XML-delimited', 'Markdown' ], 
-	    horizontal=True,
-        help='Choose how system instructions should be exported.' )
+	    horizontal=True, help='Choose how system instructions should be exported.' )
 
     prompt_text: str = st.session_state.get( 'system_prompt', '' )
     if export_format == 'Markdown':
         try:
-            export_text: str = xml_converter(prompt_text)
+            export_text = convert_xml(prompt_text)
             export_filename: str = 'leeroy_system_instructions.md'
         except Exception as exc:
             st.error( f'Markdown conversion failed: {exc}' )
@@ -695,3 +818,124 @@ with export_tab:
     st.download_button( 'Download Chat History (PDF)',  buf.getvalue(), ''"leeroy_chat.pdf",
         mime='application/pdf' )
 
+# ======================================================================================
+# FOOTER — SECTION
+# ======================================================================================
+st.markdown(
+	"""
+	<style>
+	.block-container {
+		padding-bottom: 3rem;
+	}
+	</style>
+	""",
+	unsafe_allow_html=True,
+)
+
+# ---- Fixed Container
+st.markdown(
+	"""
+	<style>
+	.boo-status-bar {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		background-color: rgba(17, 17, 17, 0.95);
+		border-top: 1px solid #2a2a2a;
+		padding: 10px 16px;
+		font-size: 0.80rem;
+		color: #35618c;
+		z-index: 1000;
+	}
+	.boo-status-inner {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		max-width: 100%;
+	}
+	</style>
+	""",
+	unsafe_allow_html=True,
+)
+
+# ======================================================================================
+# FOOTER RENDERING
+# ======================================================================================
+
+mode_val = mode or '—'
+active_mode = st.session_state.get( 'mode', None )
+right_parts = [ ]
+if active_mode is not None:
+	right_parts.append( f'Model: {active_mode}' )
+right_text = ' ◽ '.join( right_parts ) if right_parts else '—'
+
+# ---- Rendered Variables
+if mode == 'Text':
+	temperature = st.session_state.get( 'text_temperature' )
+	top_p = st.session_state.get( 'text_top_percent' )
+	freq = st.session_state.get( 'text_frequency_penalty' )
+	presence = st.session_state.get( 'text_presense_penalty' )
+	number = st.session_state.get( 'text_number' )
+	stream = st.session_state.get( 'text_stream' )
+	parallel_tools = st.session_state.get( 'text_parallel_tools' )
+	max_calls = st.session_state.get( 'text_max_tools' )
+	store = st.session_state.get( 'text_store' )
+	tools = st.session_state.get( 'text_tools' )
+	include = st.session_state.get( 'text_include' )
+	domains = st.session_state.get( 'text_domains' )
+	input_mode = st.session_state.get( 'text_input' )
+	tool_choice = st.session_state.get( 'text_tool_choice' )
+	background = st.session_state.get( 'text_background' )
+	messages = st.session_state.get( 'text_messages' )
+	max_tokens = st.session_state.get( 'text_max_tokens' )
+	
+	if temperature is not None:
+		right_parts.append( f'Temp: {temperature:.1%}' )
+	if top_p is not None:
+		right_parts.append( f'Top-P: {top_p:.1%}' )
+	if freq is not None:
+		right_parts.append( f'Freq: {freq:.2f}' )
+	if presence is not None:
+		right_parts.append( f'Presence: {presence:.2f}' )
+	if number is not None:
+		right_parts.append( f'N: {number}' )
+	if max_tokens is not None:
+		right_parts.append( f'Max Tokens: {max_tokens}' )
+	
+	if stream:
+		right_parts.append( 'Stream: On' )
+	if parallel_tools:
+		right_parts.append( 'Parallel Tools: On' )
+	if max_calls is not None:
+		right_parts.append( f'Max Calls: {max_calls}' )
+	if store:
+		right_parts.append( 'Store: On' )
+	if tools:
+		right_parts.append( f'Tools: {len( tools )}' )
+	if include:
+		right_parts.append( 'Include: On' )
+	if domains:
+		right_parts.append( 'Domains: Set' )
+	if input_mode:
+		right_parts.append( 'Input: Set' )
+	if tool_choice:
+		right_parts.append( f'Tool Choice: On' )
+	if background:
+		right_parts.append( 'Background: On' )
+	if messages:
+		right_parts.append( 'Messages: Set' )
+
+
+# ---- Rendering Method
+st.markdown(
+	f"""
+    <div class="boo-status-bar">
+        <div class="boo-status-inner">
+            <span>{active_mode} — {mode_val}</span>
+            <span>{right_text}</span>
+        </div>
+    </div>
+    """,
+	unsafe_allow_html=True,
+)
