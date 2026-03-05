@@ -113,11 +113,40 @@ MAX_TOKENS = '''Maximum number of tokens generated per response.'''
 
 SEED = '''Set to a fixed value for reproducible outputs; use -1 for a random seed each run.'''
 
-CHAT_COMPLETIONS = r'''A unified interface for interacting with advanced generative models through
-		a single request–response workflow. It allows a client to send structured inputs—such as text,
-		images, audio, or tool instructions—and receive model-generated outputs that may include
-		natural language responses, structured data, reasoning traces, or tool call instructions.
-		It supports multi-modal inputs, iterative conversations, function/tool invocation,
-		streaming outputs, and configurable generation parameters (e.g., temperature, max tokens),
-		making it suitable for building chat systems, automation agents, data extraction pipelines,
-		and decision-support applications. '''
+PROMPT_ENGINEERING = r'''Prompt engineering is the process of writing effective instructions
+		for a model, such that it consistently generates content that meets your requirements.
+		Because the content generated from a model is non-deterministic, prompting to get your
+		desired output is a mix of art and science. However, you can apply techniques and
+		best practices to get good results consistently.
+		'''
+
+TEXT_GENERATION = r'''Use a large language model to produce coherent, context-aware natural language
+		output in response to user prompts, system instructions, or retrieved document context.
+		When a user submits a request—whether it is a general inquiry, a structured analytical task,
+		or a document-grounded question—Buddy constructs a prompt that may include system directives,
+		conversation history, and optionally retrieved content from its vector store. The underlying
+		model then generates text according to configurable parameters such as temperature,
+		maximum tokens, and response format. This capability enables Buddy to function as
+		a conversational assistant, analytical explainer, summarizer, drafting tool, and reasoning engine,
+		producing structured or narrative outputs tailored to the user’s workflow. '''
+
+DATA_MANAGEMENT = r'''Structured handling, organization, processing of
+		user-provided data in a self-contained SQLite Database. It allows uploading of files, extracting and
+		normalizing their content, chunking text for semantic processing, generating embeddings,
+		storing metadata, and enabling controlled retrieval for downstream features such as Document Q&A
+		and Data Analysis. Beyond ingestion, it includes version awareness, indexing, schema inspection
+		(where applicable), and the ability to manage or remove stored assets safely. Document
+		Management provides the foundational infrastructure that transforms raw files into structured,
+		searchable, and model-ready assets, ensuring that Buddy’s intelligence features operate
+		on reliable, well-governed data rather than unmanaged documents.  '''
+
+RETRIEVAL_AUGMENTATION = '''Retrieval-Augmented Generation (RAG) improves LLM accuracy and relevance
+		by fetching up-to-date, external data—such as documents, databases, or web results—and feeding
+		it into the prompt before generating a response. It reduces hallucinations and eliminates the
+		need to retrain models for new information.'''
+
+SEMANTIC_SEARCH = '''LLM semantic search uses Large Language Models and embedding vectors to retrieve
+		information based on conceptual meaning and user intent, rather than strict keyword matching.
+		By converting documents and queries into numerical vector embeddings stored in a database,
+		systems can find contextually relevant information, enabling more accurate, conversational,
+		and nuanced search experiences, often used in RAG (Retrieval-Augmented Generation) systems.'''

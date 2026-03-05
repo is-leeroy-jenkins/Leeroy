@@ -423,23 +423,94 @@ def delete_prompt( pid: int ) -> None:
 		conn.execute( "DELETE FROM Prompts WHERE PromptsId=?", (pid,) )
 
 def build_prompt( user_input: str ) -> str:
-	prompt = f"<|system|>\n{st.session_state.system_prompt}\n</s>\n"
+	"""
+		Purpose:
+		--------
+		Build a Llama.cpp-compatible chat prompt using the application session state, including:
+		(1) System instructions
+		(2) Optional semantic retrieval context
+		(3) Optional document injection context
+		(4) Prior chat turns
+		(5) The current user turn, terminating with an assistant header
+
+		Parameters:
+		-----------
+		user_input : str
+			The latest user message to be appended to the prompt.
+
+		Returns:
+		--------
+		str
+	"""
+	# ------------------------------------------------------------------
+	# System Instructions
+	# ------------------------------------------------------------------
+	system_instructions = st.session_state.get( 'system_instructions' )
+	if system_instructions is None:
+		system_instructions = ''
 	
-	if st.session_state.use_semantic:
-		with sqlite3.connect( cfg.DB_PATH ) as conn:
-			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
-		if rows:
-			q = embedder.encode( [ user_input ] )[ 0 ]
-			scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
-			for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :top_k ]:
-				prompt += f"<|system|>\n{c}\n</s>\n"
+	prompt = f"<|system|>\n{system_instructions}\n</s>\n"
 	
-	for d in st.session_state.basic_docs[ :6 ]:
-		prompt += f"<|system|>\n{d}\n</s>\n"
+	# ------------------------------------------------------------------
+	# Semantic Context (optional)
+	# ------------------------------------------------------------------
+	use_semantic = st.session_state.get( 'use_semantic' )
+	if use_semantic:
+		_k = st.session_state.get( 'top_k' )
+		try:
+			k = int( _k ) if _k is not None else 0
+		except Exception:
+			k = 0
+		
+		if k > 0:
+			rows: List[ Tuple[ str, bytes ] ] = [ ]
+			try:
+				with sqlite3.connect( cfg.DB_PATH ) as conn:
+					rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
+			except Exception:
+				rows = [ ]
+			
+			if rows:
+				try:
+					q = embedder.encode( [ user_input ] )[ 0 ]
+					scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
+					for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :k ]:
+						prompt += f"<|system|>\n{c}\n</s>\n"
+				except Exception:
+					pass
 	
-	for r, c in st.session_state.messages:
-		prompt += f"<|{r}|>\n{c}\n</s>\n"
+	# ------------------------------------------------------------------
+	# Basic Document Injection (optional)
+	# ------------------------------------------------------------------
+	basic_docs = st.session_state.get( 'basic_docs' )
+	if isinstance( basic_docs, list ) and len( basic_docs ) > 0:
+		for d in basic_docs[ :6 ]:
+			prompt += f"<|system|>\n{d}\n</s>\n"
 	
+	# ------------------------------------------------------------------
+	# Prior Conversation Turns
+	# ------------------------------------------------------------------
+	messages = st.session_state.get( 'messages' )
+	if isinstance( messages, list ) and len( messages ) > 0:
+		for item in messages:
+			if not isinstance( item, tuple ) or len( item ) != 2:
+				continue
+			
+			r, c = item
+			if r is None or c is None:
+				continue
+			
+			role = str( r ).strip( )
+			content = str( c )
+			
+			if not role:
+				continue
+			
+			prompt += f"<|{role}|>\n{content}\n</s>\n"
+	
+	# ------------------------------------------------------------------
+	# Current User Turn (assistant header terminator)
+	# ------------------------------------------------------------------
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
 
@@ -545,11 +616,58 @@ def drop_table( table: str ) -> None:
 		conn.commit( )
 
 def rename_table( old_name: str, new_name: str ) -> None:
-	pass
+	"""
+		Purpose:
+		--------
+		Rename an existing SQLite table.
+
+		Parameters:
+		-----------
+		old_name : str
+			Existing table name.
+
+		new_name : str
+			New table name.
+
+		Returns:
+		--------
+		None
+	"""
+	if not old_name or not new_name:
+		return
+	
+	with create_connection( ) as conn:
+		conn.execute( f'ALTER TABLE "{old_name}" RENAME TO "{new_name}";' )
+		conn.commit( )
 
 def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
-	pass
+	"""
+		Purpose:
+		--------
+		Rename a column within an existing SQLite table.
 
+		Parameters:
+		-----------
+		table_name : str
+			Table containing the column.
+
+		old_name : str
+			Existing column name.
+
+		new_name : str
+			New column name.
+
+		Returns:
+		--------
+		None
+	"""
+	if not table_name or not old_name or not new_name:
+		return
+	
+	with create_connection( ) as conn:
+		conn.execute( f'ALTER TABLE "{table_name}" RENAME COLUMN "{old_name}" TO "{new_name}";' )
+		conn.commit( )
+		
 def create_index( table: str, column: str ) -> None:
 	"""
 		Purpose:
@@ -1020,7 +1138,7 @@ if 'mode' not in st.session_state:
 	st.session_state[ 'mode' ] = ''
 
 if 'messages' not in st.session_state:
-	st.session_state[ 'messages' ] = ''
+	st.session_state[ 'messages' ] = [ ]
 
 if 'system_instructions' not in st.session_state:
 	st.session_state[ 'system_instructions' ] = ''
@@ -1047,10 +1165,10 @@ if 'frequency_penalty' not in st.session_state:
 	st.session_state[ 'frequency_penalty' ] = 0.0
 
 if 'presense_penalty' not in st.session_state:
-	st.session_state[ 'presence_penalty' ] = 0.0
+	st.session_state[ 'presense_penalty' ] = 0.0
 
 if 'repeat_penalty' not in st.session_state:
-	st.session_state[ 'repeat_penalty' ] = ''
+	st.session_state[ 'repeat_penalty' ] = 0.0
 
 if 'repeat_window' not in st.session_state:
 	st.session_state[ 'repeat_window' ] = 0
@@ -1073,8 +1191,8 @@ if 'pending_system_prompt_name' not in st.session_state:
 # -------------- LLM  UTILITIES -------------------
 @st.cache_resource
 def load_llm( ctx: int, threads: int ) -> Llama:
-	return Llama( model_path=str( MODEL_PATH_OBJ ), n_ctx=ctx, n_threads=threads,
-		n_batch=512, verbose=False )
+	return Llama( model_path=str( MODEL_PATH_OBJ ), n_ctx=ctx, n_threads=threads, n_batch=512,
+		verbose=False )
 
 @st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
@@ -1086,8 +1204,16 @@ def load_embedder( ) -> SentenceTransformer:
 ensure_db( )
 llm = load_llm( cfg.DEFAULT_CTX, cfg.CORES )
 embedder = load_embedder( )
-st.session_state.setdefault( 'messages', load_history( ) )
-st.session_state.setdefault( 'system_instructions', "" )
+
+if not isinstance( st.session_state.get( 'messages' ), list ):
+	st.session_state[ 'messages' ] = [ ]
+
+if len( st.session_state[ 'messages' ] ) == 0:
+	st.session_state[ 'messages' ] = load_history( )
+
+if 'system_instructions' not in st.session_state:
+	st.session_state[ 'system_instructions' ] = ""
+
 st.set_page_config( page_title='Leeroy', layout='wide', page_icon=cfg.FAVICON )
 
 # ==============================================================================
@@ -1097,9 +1223,10 @@ with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO, size='large' )
 	
-	c1, c2 = st.columns( [ 0.1, 0.9] )
+	c1, c2 = st.columns( [ 0.05, 0.95] )
 	with c2:
 		st.subheader( '⚙️ Application Mode' )
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		mode = st.radio( label='', options=cfg.MODES, index=0 )
 	
 	st.divider( )
@@ -1108,15 +1235,19 @@ with st.sidebar:
 # TEXT GENERATION MODE
 # ==============================================================================
 if mode == 'Text Generation':
-	st.subheader( "💬 Chat Completions", help=cfg.CHAT_COMPLETIONS )
+	st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
 	st.divider( )
+	messages = st.session_state.get( 'messages', [ ] )
 	max_tokens = st.session_state.get( 'max_tokens', 0 )
 	top_percent = st.session_state.get( 'top_percent', 0.0 )
 	top_k = st.session_state.get( 'top_k', 0 )
+	temperature = st.session_state.get( 'temperature', 0.0 )
 	frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
 	presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
-	temperature = st.session_state.get( 'temperature', 0.0 )
 	repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
+	repeat_window = st.session_state.get( 'repeat_window', 0.0 )
+	cpu_threads = st.session_state.get( 'cpu_threads', cfg.CORES )
+	context_window = st.session_state.get( 'context_window', cfg.DEFAULT_CTX )
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
@@ -1126,120 +1257,122 @@ if mode == 'Text Generation':
 		# ------------------------------------------------------------------
 		# Expander — Mind Controls
 		# ------------------------------------------------------------------
-		with st.expander( label='🧠 Mind Controls', expanded=False ):
-			mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
-			
-			# ------------- Temperature ----------
-			with mind_c1:
-				set_temperature = st.slider( label='Temperature', min_value=0.1, max_value=1.5,
-					value=0.7, step=0.1, help=cfg.TEMPERATURE )
-			
-				temperature = st.session_state[ 'temperature' ]
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False ):
+			with st.expander( label='⚙️ Response Controls', expanded=False ):
+				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
 				
-			# ------------- Top-P ----------
-			with mind_c2:
-				set_top_p = st.slider( label='Top-P', min_value=0.1, max_value=1.0,
-					value=0.9, step=0.05, help=cfg.TOP_P )
+				# ------------- Temperature ----------
+				with mind_c1:
+					set_temperature = st.slider( label='Temperature', min_value=0.0, max_value=1.0,
+						value=float( st.session_state.get( 'temperature' ) ),
+						help=cfg.TEMPERATURE, key='temperature' )
 				
-				top_percent = st.session_state[ 'top_percent' ]
+					temperature = st.session_state[ 'temperature' ]
+					
+				# ------------- Top-P ----------
+				with mind_c2:
+					set_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
+						step=0.01, key='top_percent', help=cfg.TOP_P )
+					
+					top_percent = st.session_state[ 'top_percent' ]
+				
+				# ------------- Top-K ----------
+				with mind_c3:
+					set_top_k = st.slider( label='Top-K', min_value=0, max_value=50, step=1,
+						key='top_k', help=cfg.TOP_K )
+					
+					top_k = st.session_state[ 'top_k' ]
+					
+				# ------------- Reset Settings ----------
+				if st.button( label='Reset', key='response_controls_reset', width='stretch' ):
+					for key in [ 'top_k', 'top_percent', 'temperature' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
+					st.rerun( )
 			
-			# ------------- Top-K ----------
-			with mind_c3:
-				set_top_k = st.slider( label='Top-K', min_value=1, max_value=50, step=1,
-					key='top_k', help=cfg.TOP_K )
+			# ------------------------------------------------------------------
+			# Expander — Probability Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='🎚️ Probability Controls', expanded=False ):
+				prob_c1, prob_c2, prob_c3, prob_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+					border=True, gap='medium' )
 				
-				top_k = st.session_state[ 'top_k' ]
+				# ------------- Repeat Window ----------
+				with prob_c1:
+					set_repeat_last_n = st.slider( label='Repeat Window', min_value=0, max_value=1024,
+						step=16, key='repeat_window', help=cfg.REPEAT_WINDOW )
+					
+					repeat_window = st.session_state[ 'repeat_window' ]
 				
-			# ------------- Reset Settings ----------
-			if st.button( label='Reset', key='mind_controls_reset', width='stretch' ):
-				for key in [ 'top_k', 'top_p', 'temperature' ]:
-					if key in st.session_state:
-						del st.session_state[ key ]
+				# ------------- Repeat Penalty ----------
+				with prob_c2:
+					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0, max_value=2.0,
+						key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
+					
+					repeat_penalty = st.session_state[ 'repeat_penalty' ]
 				
-				st.rerun( )
-		
-		# ------------------------------------------------------------------
-		# Expander — Probability Controls
-		# ------------------------------------------------------------------
-		with st.expander( label='🧠 Probability Controls', expanded=False ):
-			prob_c1, prob_c2, prob_c3, prob_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
-				border=True, gap='medium' )
+				# ------------- Presense Penalty ----------
+				with prob_c3:
+					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
+						key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
+					
+					presense_penalty = st.session_state[ 'presense_penalty' ]
+				
+				# ------------- Frequency Penalty ----------
+				with prob_c4:
+					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+						key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
+					
+					frequency_penalty = st.session_state[ 'frequency_penalty' ]
+				
+				# ------------- Reset Settings ----------
+				if st.button( label='Reset', key='probability_controls_reset', width='stretch' ):
+					for key in [ 'frequency_penalty', 'presense_penalty',
+					             'temperature', 'repeat_penalty', 'repeat_window' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
+					st.rerun( )
 			
-			# ------------- Repeat Window ----------
-			with prob_c1:
-				set_repeat_last_n = st.slider( label='Repeat Window', min_value=0,
-					max_value=1024, key='repeat_window', step=16, help=cfg.REPEAT_WINDOW )
+			# ------------------------------------------------------------------
+			# Expander — Context Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='🎛️ Context Controls', expanded=False ):
+				ctx_c1, ctx_c2, ctx_c3, ctx_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+					border=True, gap='medium' )
 				
-				repeat_window = st.session_state[ 'repeat_window' ]
-			
-			# ------------- Repeat Penalty ----------
-			with prob_c2:
-				set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=1.0, max_value=2.0,
-					key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
+				# ------------- Context Window ----------
+				with ctx_c1:
+					set_ctx = st.slider( label='Context Window', min_value=0, max_value=8192,
+						key='context_window', step=512, help=cfg.CONTEXT_WINDOW )
+					
+					context_window = st.session_state[ 'context_window' ]
 				
-				repeat_penalty = st.session_state[ 'repeat_penalty' ]
-			
-			# ------------- Presense Penalty ----------
-			with prob_c3:
-				set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
-					key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
+				# ------------- CPU Threads ----------
+				with ctx_c2:
+					set_threads = st.slider( label='CPU Threads', min_value=0, max_value=cfg.CORES,
+						key='cpu_threads', step=1, help=cfg.CPU_CORES, )
+					
+					threads = st.session_state[ 'cpu_threads' ]
 				
-				presense_penalty = st.session_state[ 'presense_penalty' ]
-			
-			# ------------- Frequency Penalty ----------
-			with prob_c4:
-				set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
-					key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
+				# ------------- Max Tokens ----------
+				with ctx_c3:
+					set_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=4096, step=128,
+						key='max_tokens', help=cfg.MAX_TOKENS, )
 				
-				frequency_penalty = st.session_state[ 'frequency_penalty' ]
-			
-			# ------------- Reset Settings ----------
-			if st.button( label='Reset', key='probability_controls_reset', width='stretch' ):
-				for key in [ 'frequency_penalty', 'presense_penalty',
-				             'temperature', 'repeat_penalty', 'repeat_window' ]:
-					if key in st.session_state:
-						del st.session_state[ key ]
+				# ------------- Random Seed ----------
+				with ctx_c4:
+					set_seed = st.slider( label="Random Seed", min_value=0, max_value=4096, step=1,
+						key='random_seed', help=cfg.SEED )
 				
-				st.rerun( )
-		
-		# ------------------------------------------------------------------
-		# Expander — Context Controls
-		# ------------------------------------------------------------------
-		with st.expander( label=' Context Controls', expanded=False ):
-			ctx_c1, ctx_c2, ctx_c3, ctx_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
-				border=True, gap='medium' )
-			
-			# ------------- Context Window ----------
-			with ctx_c1:
-				set_ctx = st.slider( label='Context Window', min_value=2048, max_value=8192,
-					key='context_window', step=512, help=cfg.CONTEXT_WINDOW )
-				
-				ctx = st.session_state[ 'context_window' ]
-			
-			# ------------- CPU Threads ----------
-			with ctx_c2:
-				set_threads = st.slider( label='CPU Threads', min_value=1, max_value=cfg.CPU_CORES,
-					key='cpu_threads', step=1, help=cfg.CPU_CORES, )
-				
-				threads = st.session_state[ 'cpu_threads' ]
-			
-			# ------------- Max Tokens ----------
-			with ctx_c3:
-				set_max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096, step=128,
-					key='max_tokens', help=cfg.MAX_TOKENS, )
-			
-			# ------------- Random Seed ----------
-			with ctx_c4:
-				set_seed = st.slider( label="Random Seed", min_value=0, max_value=4096, step=1,
-					key='random_seed', help=cfg.SEED )
-			
-			# ------------- Reset Settings ----------
-			if st.button( label='Reset', key='context_controls_reset', width='stretch' ):
-				for key in [ 'random_seed', 'max_tokens', 'cpu_threads', 'context_window' ]:
-					if key in st.session_state:
-						del st.session_state[ key ]
-				
-				st.rerun( )
+				# ------------- Reset Settings ----------
+				if st.button( label='Reset', key='context_controls_reset', width='stretch' ):
+					for key in [ 'random_seed', 'max_tokens', 'cpu_threads', 'context_window' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
+					st.rerun( )
 		
 		# ------------------------------------------------------------------
 		# Expander — System Instructions
@@ -1271,27 +1404,41 @@ if mode == 'Text Generation':
 			
 			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
 		
-		llm = load_llm( ctx, threads )
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
 		for r, c in st.session_state.messages:
 			with st.chat_message( r ):
 				st.markdown( c )
-			user_input = st.chat_input( 'Ask Leeroy…' )
-			if user_input:
-				save_message( 'user', user_input )
-				st.session_state.messages.append( ('user', user_input) )
-				prompt = build_prompt( user_input )
-				with st.chat_message( 'assistant' ):
-					out, buf = st.empty( ), ''
-					for chunk in llm( prompt, stream=True, max_tokens=1024,
-							temperature=temperature, top_p=top_percent,
-							repeat_penalty=repeat_penalty, stop=[ '</s>' ] ):
-						buf += chunk[ 'choices' ][ 0 ][ 'text' ]
-						out.markdown( buf + '▌' )
-					out.markdown( buf )
-				
-				save_message( 'assistant', buf )
-				st.session_state.messages.append( ('assistant', buf) )
+		
+		user_input = st.chat_input( 'Ask Leeroy…' )
+		if user_input:
+			save_message( 'user', user_input )
+			st.session_state.messages.append( ('user', user_input) )
 			
+			with st.chat_message( 'user' ):
+				st.markdown( user_input )
+			
+			prompt = build_prompt( user_input )
+			
+			with st.chat_message( 'assistant' ):
+				out, buf = st.empty( ), ''
+				for chunk in llm(
+						prompt,
+						stream=True,
+						max_tokens=1024,
+						temperature=temperature,
+						top_p=top_percent,
+						repeat_penalty=repeat_penalty,
+						stop=[ '</s>' ]
+				):
+					buf += chunk[ 'choices' ][ 0 ][ 'text' ]
+					out.markdown( buf + '▌' )
+				
+				out.markdown( buf )
+			
+			save_message( 'assistant', buf )
+			st.session_state.messages.append( ('assistant', buf) )
+		
 		if st.button( '🧹 Clear Chat' ):
 			clear_history( )
 			st.session_state.messages = [ ]
@@ -1301,6 +1448,8 @@ if mode == 'Text Generation':
 # RETRIEVAL AUGMENTATION
 # ==============================================================================
 elif mode == 'Retrieval Augmentation':
+	st.subheader( "🌐 Retrieval Augmented Generration", help=cfg.RETRIEVAL_AUGMENTATION )
+	st.divider( )
 	files = st.file_uploader( 'Upload documents', accept_multiple_files=True )
 	if files:
 		st.session_state.basic_docs.clear( )
@@ -1312,6 +1461,8 @@ elif mode == 'Retrieval Augmentation':
 # SEMANTIC SEARCH
 # ==============================================================================
 elif mode == 'Semantic Search':
+	st.subheader( "🔍 Semantic Search", help=cfg.SEMANTIC_SEARCH )
+	st.divider( )
 	st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
 		st.session_state.use_semantic )
 	files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
@@ -1328,9 +1479,9 @@ elif mode == 'Semantic Search':
 					( c, v.tobytes( ) ) )
 		st.success( 'Semantic index built' )
 
-# ======================================================================================
+# ==============================================================================
 # PROMPT ENGINEERING MODE
-# ======================================================================================
+# ==============================================================================
 elif mode == 'Prompt Engineering':
 	st.subheader( '📝 Prompt Engineering', help=cfg.PROMPT_ENGINEERING )
 	st.divider( )
@@ -1795,7 +1946,7 @@ elif mode == 'Data Management':
 				df = read_table( table )
 				numeric_cols = df.select_dtypes( include=[ 'number' ] ).columns.tolist( )
 				if numeric_cols:
-					col = st.selectbox( 'Column', numeric_cols )
+					col = st.selectbox( 'Column', numeric_cols, key='viz_column' )
 					fig = px.histogram( df, x=col )
 					st.plotly_chart( fig, use_container_width=True )
 		
@@ -2022,9 +2173,9 @@ elif mode == 'Data Management':
 					except Exception as e:
 						st.error( f'Execution failed: {e}' )
 
-# ======================================================================================
+# ==============================================================================
 # FOOTER — SECTION
-# ======================================================================================
+# ==============================================================================
 st.markdown(
 	"""
 	<style>
@@ -2059,50 +2210,82 @@ st.markdown(
 		max-width: 100%;
 	}
 	</style>
-	""",
-	unsafe_allow_html=True,
-)
+	""", unsafe_allow_html=True,)
 
 # ======================================================================================
 # FOOTER RENDERING
 # ======================================================================================
 
-mode_val = mode or '—'
-active_mode = st.session_state.get( 'mode', None )
-right_parts = [ ]
-if active_mode is not None:
-	right_parts.append( f'Model: {active_mode}' )
-right_text = ' ◽ '.join( right_parts ) if right_parts else '—'
+right_parts: List[ str ] = [ ]
+model = 'Leeroy'
 
-# ---- Rendered Variables
-if mode == 'Text Generation':
-	temperature = st.session_state.get( 'text_temperature' )
-	top_p = st.session_state.get( 'text_top_percent' )
-	freq = st.session_state.get( 'text_frequency_penalty' )
-	presence = st.session_state.get( 'text_presense_penalty' )
-	number = st.session_state.get( 'text_number' )
-	stream = st.session_state.get( 'text_stream' )
-	store = st.session_state.get( 'text_store' )
-	messages = st.session_state.get( 'text_messages' )
-	max_tokens = st.session_state.get( 'text_max_tokens' )
-	
-	if temperature is not None:
-		right_parts.append( f'Temp: {temperature:.1%}' )
-	if top_p is not None:
-		right_parts.append( f'Top-P: {top_p:.1%}' )
-	if freq is not None:
-		right_parts.append( f'Freq: {freq:.2f}' )
-	if presence is not None:
-		right_parts.append( f'Presence: {presence:.2f}' )
-	if max_tokens is not None:
-		right_parts.append( f'Max Tokens: {max_tokens}' )
+mode_value = mode if mode is not None else st.session_state.get( 'mode' )
+if mode_value:
+	right_parts.append( f'Mode: {mode_value}' )
+
+temperature = st.session_state.get( 'temperature' )
+top_p = st.session_state.get( 'top_percent' )
+top_k = st.session_state.get( 'top_k' )
+frequency = st.session_state.get( 'frequency_penalty' )
+presense = st.session_state.get( 'presense_penalty' )
+repeat_penalty = st.session_state.get( 'repeat_penalty' )
+max_tokens = st.session_state.get( 'max_tokens' )
+context_window = st.session_state.get( 'context_window' )
+cpu_threads = st.session_state.get( 'cpu_threads' )
+repeat_window = st.session_state.get( 'repeat_window' )
+use_semantic = st.session_state.get( 'use_semantic' )
+basic_docs = st.session_state.get( 'basic_docs' )
+
+# ------------------------------------------------------------------
+# Parameter summary (show 0 values; suppress only when None)
+# ------------------------------------------------------------------
+if temperature is not None:
+	right_parts.append( f'Temp: {float( temperature ):0.2f}' )
+
+if top_p is not None:
+	right_parts.append( f'Top-P: {float( top_p ):0.2f}' )
+
+if top_k is not None:
+	right_parts.append( f'Top-K: {int( top_k )}' )
+
+if frequency is not None:
+	right_parts.append( f'Freq: {float( frequency ):0.2f}' )
+
+if presense is not None:
+	right_parts.append( f'Presence: {float( presense ):0.2f}' )
+
+if repeat_penalty is not None:
+	right_parts.append( f'Repeat: {float( repeat_penalty ):0.2f}' )
+
+if repeat_window is not None:
+	right_parts.append( f'Repeat Window: {int( repeat_window )}' )
+
+if max_tokens is not None:
+	right_parts.append( f'Max Tokens: {int( max_tokens )}' )
+
+if context_window is not None:
+	right_parts.append( f'Context: {int( context_window )}' )
+
+if cpu_threads is not None:
+	right_parts.append( f'Threads: {int( cpu_threads )}' )
+
+# ------------------------------------------------------------------
+# Context flags (optional but useful)
+# ------------------------------------------------------------------
+if use_semantic is not None:
+	right_parts.append( f'Semantic: {"On" if use_semantic else "Off"}' )
+
+if isinstance( basic_docs, list ):
+	right_parts.append( f'Docs: {len( basic_docs )}' )
+
+right_text = ' ◽ '.join( right_parts ) if right_parts else '—'
 
 # ---- Rendering Method
 st.markdown(
 	f"""
     <div class="boo-status-bar">
         <div class="boo-status-inner">
-            <span>{active_mode} — {mode_val}</span>
+            <span>{model}</span>
             <span>{right_text}</span>
         </div>
     </div>

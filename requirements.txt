@@ -1,5 +1,8 @@
 llama-cpp-python
 sentence-transformers
 numpy>=1.26.0
+pandas
 reportlab>=4.0.8
 plotly-express
+pydantic
+typing_extensions
