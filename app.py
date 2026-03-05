@@ -131,18 +131,17 @@ if 'pending_system_prompt_name' not in st.session_state:
 	
 #-------- DOCQNA ---------------------
 
-if 'doc_source' not in st.session_state:
-	st.session_state[ 'doc_source' ] = ''
-
 if 'uploaded' not in st.session_state:
-	st.session_state[ 'uploaded' ] = List[ st.UploadedFile ] | st.UploadedFile
+	st.session_state[ 'uploaded' ] = [ ]
 
 if 'active_docs' not in st.session_state:
 	st.session_state[ 'active_docs' ] = [ ]
 
 if 'doc_bytes' not in st.session_state:
 	st.session_state[ 'doc_bytes' ] = { }
-
+	
+if 'doc_source' not in st.session_state:
+	st.session_state[ 'doc_source' ] = 'uploadlocal'
 # ==============================================================================
 # UTILITIES
 # ==============================================================================
@@ -539,6 +538,159 @@ def build_prompt( user_input: str ) -> str:
 	
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
+
+def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_penalty: float,
+		max_tokens: int, stream: bool, output: Any | None = None ) -> str:
+	"""
+		Purpose:
+		--------
+		Run a single LLM turn using the application's shared prompt builder and either stream or
+		return the full response text.
+
+		Parameters:
+		-----------
+		user_input : str
+			The user turn (already constructed, including any document/RAG context if applicable).
+		temperature : float
+			Sampling temperature.
+		top_p : float
+			Nucleus sampling probability.
+		repeat_penalty : float
+			Repeat penalty.
+		max_tokens : int
+			Maximum tokens to generate.
+		stream : bool
+			When True, stream tokens to the provided Streamlit placeholder.
+		output : Any | None
+			A Streamlit placeholder (e.g., st.empty()) used for streaming output.
+
+		Returns:
+		--------
+		str
+			The assistant response text.
+	"""
+	if user_input is None:
+		return ''
+	
+	prompt = build_prompt( user_input )
+	if not stream:
+		resp = llm(
+			prompt,
+			stream=False,
+			max_tokens=max_tokens,
+			temperature=temperature,
+			top_p=top_p,
+			repeat_penalty=repeat_penalty,
+			stop=[ '</s>' ]
+		)
+		text = (resp.get( 'choices', [ { 'text': '' } ] )[ 0 ].get( 'text', '' ) or '')
+		return text.strip( )
+	
+	buf = ''
+	if output is None:
+		output = st.empty( )
+	
+	for chunk in llm(
+			prompt,
+			stream=True,
+			max_tokens=max_tokens,
+			temperature=temperature,
+			top_p=top_p,
+			repeat_penalty=repeat_penalty,
+			stop=[ '</s>' ]
+	):
+		buf += chunk[ 'choices' ][ 0 ][ 'text' ]
+		output.markdown( buf + '▌' )
+	
+	output.markdown( buf )
+	return buf.strip( )
+
+def build_document_user_input( question: str ) -> str:
+	"""
+		Purpose:
+		--------
+		Build the unified user_input string for Document Q&A. This is the single place where
+		document-context is injected for Phase 1, so Phase 2 can replace this with sqlite-vec
+		retrieval without touching any UI chat loop.
+
+		Parameters:
+		-----------
+		question : str
+			The user's question about the active document set.
+
+		Returns:
+		--------
+		str
+			A user_input string suitable to be passed into build_prompt().
+	"""
+	source = st.session_state.get( 'doc_source', '' )
+	active_docs = st.session_state.get( 'active_docs', [ ] )
+	doc_bytes = st.session_state.get( 'doc_bytes', { } )
+	
+	user_question = (question or '').strip( )
+	if not user_question:
+		return ''
+	
+	if not source:
+		return user_question
+	
+	if source != 'uploadlocal':
+		return user_question
+	
+	if not active_docs:
+		return user_question
+	
+	if len( active_docs ) == 1:
+		name = active_docs[ 0 ]
+		file_bytes = doc_bytes.get( name )
+		if not file_bytes:
+			return user_question
+		
+		text = extract_text_from_bytes( file_bytes )
+		text = (text or '').strip( )
+		if not text:
+			return user_question
+		
+		return f"""
+Use the following document to answer the question.
+Be precise and cite relevant portions when possible.
+
+DOCUMENT ({name}):
+{text}
+
+QUESTION:
+{user_question}
+""".strip( )
+	
+	combined_text = ""
+	for name in active_docs:
+		file_bytes = doc_bytes.get( name )
+		if not file_bytes:
+			continue
+		
+		text = extract_text_from_bytes( file_bytes )
+		text = (text or '').strip( )
+		if not text:
+			continue
+		
+		combined_text += f"\n\n===== DOCUMENT: {name} =====\n\n{text}\n"
+	
+	if not combined_text.strip( ):
+		return user_question
+	
+	return f"""
+You are analyzing multiple documents.
+
+Use the content below to answer the question.
+If multiple documents are relevant, compare them.
+Cite document names when possible.
+
+DOCUMENT SET:
+{combined_text}
+
+QUESTION:
+{user_question}
+""".strip( )
 
 # ----------- DATABASE UTILITIES -------------------------
 
@@ -1313,80 +1465,34 @@ def extract_text_from_bytes( file_bytes: bytes ) -> str:
 			return ""
 
 def route_document_query( prompt: str ) -> str:
-	source = st.session_state.get( 'doc_source', '' )
-	active_docs = st.session_state.get( 'active_docs', [ ] )
-	doc_bytes = st.session_state.get( 'doc_bytes', { } )
-	system_instructions = st.session_state.get( 'system_instructions', '' )
+	"""
+		Purpose:
+		--------
+		Route a document question through the unified chat pipeline and return a model-generated answer.
+
+		Parameters:
+		-----------
+		prompt : str
+			The user question to answer about active documents.
+
+		Returns:
+		--------
+		str
+			The assistant answer text.
+	"""
+	user_input = build_document_user_input( prompt )
+	if not user_input:
+		user_input = (prompt or '').strip( )
 	
-	if not source:
-		return 'No document source selected.'
-	
-	if not active_docs:
-		return 'No document selected.'
-	
-	# --------------------------------------------------
-	# LOCAL DOCUMENT → Chat (single or multi)
-	# --------------------------------------------------
-	if source == 'uploadlocal':
-		
-		# Single document
-		if len( active_docs ) == 1:
-			name = active_docs[ 0 ]
-			file_bytes = doc_bytes.get( name )
-			
-			if not file_bytes:
-				return 'Document content not available.'
-			
-			text = extract_text_from_bytes( file_bytes )
-			
-			full_prompt = f"""
-				{system_instructions}
-				
-				Use the following document to answer the question.
-				Be precise and cite relevant portions when possible.
-				
-				DOCUMENT:
-				{text}
-				
-				QUESTION:
-				{prompt}
-				"""
-			return build_prompt( user_input=full_prompt )
-		
-		# Multi-document injection
-		combined_text = ""
-		
-		for name in active_docs:
-			file_bytes = doc_bytes.get( name )
-			if not file_bytes:
-				continue
-			
-			text = extract_text_from_bytes( file_bytes )
-			
-			combined_text += f"\n\n===== DOCUMENT: {name} =====\n\n{text}\n"
-		
-		if not combined_text.strip( ):
-			return 'No readable document content available.'
-		
-		full_prompt = f"""
-			{system_instructions}
-			
-			You are analyzing multiple documents.
-			
-			Use the content below to answer the question.
-			If multiple documents are relevant, compare them.
-			Cite document names when possible.
-			
-			DOCUMENT SET:
-			{combined_text}
-			
-			QUESTION:
-			{prompt}
-			"""
-		
-		return build_prompt( user_input=full_prompt )
-	else:
-		return 'Unsupported document source.'
+	return run_llm_turn(
+		user_input=user_input,
+		temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
+		top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
+		repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
+		max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
+		stream=False,
+		output=None
+	)
 
 def summarize_active_document( ) -> str:
 	"""
@@ -1434,7 +1540,7 @@ if len( st.session_state[ 'messages' ] ) == 0:
 	st.session_state[ 'messages' ] = load_history( )
 
 if 'system_instructions' not in st.session_state:
-	st.session_state[ 'system_instructions' ] = ""
+	st.session_state[ 'system_instructions' ] = ''
 
 st.set_page_config( page_title='Leeroy', layout='wide', page_icon=cfg.FAVICON )
 
@@ -1641,22 +1747,18 @@ if mode == 'Text Generation':
 				st.markdown( user_input )
 			
 			prompt = build_prompt( user_input )
-			
+
 			with st.chat_message( 'assistant' ):
-				out, buf = st.empty( ), ''
-				for chunk in llm(
-						prompt,
-						stream=True,
-						max_tokens=1024,
-						temperature=temperature,
-						top_p=top_percent,
-						repeat_penalty=repeat_penalty,
-						stop=[ '</s>' ]
-				):
-					buf += chunk[ 'choices' ][ 0 ][ 'text' ]
-					out.markdown( buf + '▌' )
-				
-				out.markdown( buf )
+				out = st.empty( )
+				buf = run_llm_turn(
+					user_input=user_input,
+					temperature=float( temperature ),
+					top_p=float( top_percent ),
+					repeat_penalty=float( repeat_penalty ),
+					max_tokens=1024,
+					stream=True,
+					output=out
+				)
 			
 			save_message( 'assistant', buf )
 			st.session_state.messages.append( ('assistant', buf) )
@@ -1669,8 +1771,8 @@ if mode == 'Text Generation':
 # ==============================================================================
 # RETRIEVAL AUGMENTATION
 # ==============================================================================
-elif mode == 'Retrieval Augmentation':
-	st.subheader( "📚 Retrieval Augmented Generration", help=cfg.RETRIEVAL_AUGMENTATION )
+elif mode == 'Document Q&A':
+	st.subheader( "📚 Retrieval Augementation", help=cfg.RETRIEVAL_AUGMENTATION )
 	st.divider( )
 	messages = st.session_state.get( 'messages', [ ] )
 	uploaded = st.session_state.get( 'uploaded', [ ] )
@@ -1697,7 +1799,8 @@ elif mode == 'Retrieval Augmentation':
 		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False ):
 			with st.expander( label='⚙️ Response Controls', expanded=False ):
-				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
+				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33,
+				                                          .33 ], border=True, gap='medium' )
 				
 				# ------------- Temperature ----------
 				with mind_c1:
@@ -1842,41 +1945,112 @@ elif mode == 'Retrieval Augmentation':
 			
 			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
 		
+		# ------------------------------------------------------------------
+		# Document Selection UI
+		# ------------------------------------------------------------------
+		with st.expander( label='Document Loader', icon='📥', expanded=True, width='stretch' ):
+			doc_left, doc_right = st.columns( [ 0.5, 0.5 ], gap='medium', border=True )
+			with doc_left:
+				doc_source = st.radio(
+					label='Document Source',
+					options=[ 'uploadlocal' ],
+					index=0,
+					horizontal=True,
+					key='doc_source'
+				)
+				
+				uploaded = st.file_uploader(
+					label='Upload a document (PDF, TXT, DOCX)',
+					type=[ 'pdf', 'txt', 'docx' ],
+					accept_multiple_files=True,
+					label_visibility='visible'
+				)
+				
+				if uploaded is not None and type( uploaded ) == list and len( uploaded ) > 0:
+					st.session_state.uploaded = uploaded
+					
+					names: List[ str ] = [ f.name for f in uploaded if getattr( f, 'name', None ) ]
+					st.session_state.active_docs = names
+					
+					if 'doc_bytes' not in st.session_state or not isinstance( st.session_state.doc_bytes, dict ):
+						st.session_state.doc_bytes = { }
+					
+					for f in uploaded:
+						try:
+							if getattr( f, 'name', None ):
+								st.session_state.doc_bytes[ f.name ] = f.getvalue( )
+						except Exception:
+							continue
+				else:
+					st.info( 'Load a document.' )
+				
+				unload = st.button( label='Unload Document', width='stretch' )
+				if unload:
+					st.session_state.uploaded = [ ]
+					st.session_state.active_docs = [ ]
+					st.session_state.doc_bytes = { }
+			
+			with doc_right:
+				if st.session_state.get( 'active_docs' ):
+					name = st.session_state.active_docs[ 0 ]
+					file_bytes = st.session_state.doc_bytes.get( name )
+					
+					if file_bytes:
+						st.pdf( file_bytes, height=420 )
+					else:
+						st.info( "Document loaded but preview unavailable." )
+				
+				else:
+					st.info( "No document loaded." )
+			
+			# ------------------------------------------------------------------
+			# Chat History Render
+			# ------------------------------------------------------------------
+			for msg in st.session_state.messages:
+				if isinstance( msg, dict ):
+					role = msg.get( 'role', '' )
+					content = msg.get( 'content', '' )
+				else:
+					try:
+						role, content = msg
+					except Exception:
+						role, content = '', ''
+				
+				if role:
+					with st.chat_message( role ):
+						st.markdown( content )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
-		doc_left, doc_right = st.columns( [ 0.2, 0.8 ], border=True )
-		with doc_left:
-			uploaded = st.file_uploader( 'Upload', type=[ 'pdf', 'txt', 'md', 'docx' ],
-				accept_multiple_files=True, label_visibility='visible' )
+		# ------------------------------------------------------------------
+		# Chat Input
+		# ------------------------------------------------------------------
+		user_input = st.chat_input( 'Ask a question about the document' )
+		if user_input:
+			save_message( 'user', user_input )
+			st.session_state.messages.append( ('user', user_input) )
 			
-			if uploaded is not None:
-				st.session_state.active_docs = uploaded
-				st.session_state.doc_bytes = { uploaded[ 0 ].name: uploaded.getvalue( ) }
-				st.success( f'{ uploaded.name} has been loaded!' )
-			else:
-				st.info( 'Load a document.' )
+			with st.chat_message( 'user' ):
+				st.markdown( user_input )
 			
-			unload = st.button( label='Unload Document', width='stretch' )
-			if unload:
-				uploaded = None
-				st.session_state.active_docs = None
-		
-		with doc_right:
-			if st.session_state.get( 'active_docs' ):
-				name = st.session_state.active_docs[ 0 ]
-				file_bytes = st.session_state.doc_bytes.get( name )
-				if file_bytes:
-					st.pdf( file_bytes, height=420 )
-		
-		for msg in st.session_state.messages:
-			with st.chat_message( msg[ 'role' ] ):
-				st.markdown( msg[ 'content' ] )
-		
-		if prompt := st.chat_input( 'Ask a question about the document' ):
-			st.session_state.messages.append( { 'role': 'user', 'content': prompt } )
-			response = route_document_query( prompt )
-			st.session_state.messages.append( { 'role': 'assistant', 'content': response } )
-			st.rerun( )
+			doc_user_input = build_document_user_input( user_input )
+			if not doc_user_input:
+				doc_user_input = user_input
+			
+			with st.chat_message( 'assistant' ):
+				out = st.empty( )
+				response = run_llm_turn(
+					user_input=doc_user_input,
+					temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
+					top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
+					repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
+					max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
+					stream=True,
+					output=out
+				)
+			
+			save_message( 'assistant', response )
+			st.session_state.messages.append( ('assistant', response) )
 			
 # ==============================================================================
 # SEMANTIC SEARCH

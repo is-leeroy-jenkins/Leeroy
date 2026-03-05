@@ -7,3 +7,4 @@ plotly-express
 pydantic
 typing_extensions
 pymupdf
+sqlite-vec
