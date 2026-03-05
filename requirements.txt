@@ -6,3 +6,4 @@ reportlab>=4.0.8
 plotly-express
 pydantic
 typing_extensions
+pymupdf

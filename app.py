@@ -73,6 +73,77 @@ if not MODEL_PATH_OBJ.exists( ):
     st.stop( )
     
 # ==============================================================================
+# SESSION STATE INITIALIZATION
+# ==============================================================================
+if 'mode' not in st.session_state:
+	st.session_state[ 'mode' ] = ''
+
+if 'messages' not in st.session_state:
+	st.session_state[ 'messages' ] = [ ]
+
+if 'system_instructions' not in st.session_state:
+	st.session_state[ 'system_instructions' ] = ''
+
+if 'context_window' not in st.session_state:
+	st.session_state[ 'context_window' ] = 0
+
+if 'cpu_threads' not in st.session_state:
+	st.session_state[ 'cpu_threads' ] = 0
+
+if 'max_tokens' not in st.session_state:
+	st.session_state[ 'max_tokens' ] = 0
+
+if 'temperature' not in st.session_state:
+	st.session_state[ 'temperature' ] = 0.0
+
+if 'top_percent' not in st.session_state:
+	st.session_state[ 'top_percent' ] = 0.0
+
+if 'top_k' not in st.session_state:
+	st.session_state[ 'top_k' ] = 0
+
+if 'frequency_penalty' not in st.session_state:
+	st.session_state[ 'frequency_penalty' ] = 0.0
+
+if 'presense_penalty' not in st.session_state:
+	st.session_state[ 'presense_penalty' ] = 0.0
+
+if 'repeat_penalty' not in st.session_state:
+	st.session_state[ 'repeat_penalty' ] = 0.0
+
+if 'repeat_window' not in st.session_state:
+	st.session_state[ 'repeat_window' ] = 0
+
+if 'random_seed' not in st.session_state:
+	st.session_state[ 'random_seed' ] = 0
+
+if 'basic_docs' not in st.session_state:
+	st.session_state[ 'basic_docs' ] = [ ]
+
+if 'use_semantic' not in st.session_state:
+	st.session_state[ 'use_semantic' ] = False
+
+if 'selected_prompt_id' not in st.session_state:
+	st.session_state[ 'selected_prompt_id' ] = ''
+
+if 'pending_system_prompt_name' not in st.session_state:
+	st.session_state[ 'pending_system_prompt_name' ] = ''
+	
+#-------- DOCQNA ---------------------
+
+if 'doc_source' not in st.session_state:
+	st.session_state[ 'doc_source' ] = ''
+
+if 'uploaded' not in st.session_state:
+	st.session_state[ 'uploaded' ] = List[ st.UploadedFile ] | st.UploadedFile
+
+if 'active_docs' not in st.session_state:
+	st.session_state[ 'active_docs' ] = [ ]
+
+if 'doc_bytes' not in st.session_state:
+	st.session_state[ 'doc_bytes' ] = { }
+
+# ==============================================================================
 # UTILITIES
 # ==============================================================================
 def image_to_base64( path: str ) -> str:
@@ -1220,64 +1291,126 @@ def drop_column( table: str, column: str ):
 		
 		conn.commit( )
 
-# ==============================================================================
-# SESSION STATE INITIALIZATION
-# ==============================================================================
-if 'mode' not in st.session_state:
-	st.session_state[ 'mode' ] = ''
+# ------------- DOC Q&A UTILITIES ----------------------
 
-if 'messages' not in st.session_state:
-	st.session_state[ 'messages' ] = [ ]
+def extract_text_from_bytes( file_bytes: bytes ) -> str:
+	"""
+		Extracts text from PDF or text-based documents.
+	"""
+	try:
+		import fitz  # PyMuPDF
+		
+		doc = fitz.open( stream=file_bytes, filetype="pdf" )
+		text = ""
+		for page in doc:
+			text += page.get_text( )
+		return text.strip( )
+	
+	except Exception:
+		try:
+			return file_bytes.decode( errors="ignore" )
+		except Exception:
+			return ""
 
-if 'system_instructions' not in st.session_state:
-	st.session_state[ 'system_instructions' ] = ''
+def route_document_query( prompt: str ) -> str:
+	source = st.session_state.get( 'doc_source', '' )
+	active_docs = st.session_state.get( 'active_docs', [ ] )
+	doc_bytes = st.session_state.get( 'doc_bytes', { } )
+	system_instructions = st.session_state.get( 'system_instructions', '' )
+	
+	if not source:
+		return 'No document source selected.'
+	
+	if not active_docs:
+		return 'No document selected.'
+	
+	# --------------------------------------------------
+	# LOCAL DOCUMENT → Chat (single or multi)
+	# --------------------------------------------------
+	if source == 'uploadlocal':
+		
+		# Single document
+		if len( active_docs ) == 1:
+			name = active_docs[ 0 ]
+			file_bytes = doc_bytes.get( name )
+			
+			if not file_bytes:
+				return 'Document content not available.'
+			
+			text = extract_text_from_bytes( file_bytes )
+			
+			full_prompt = f"""
+				{system_instructions}
+				
+				Use the following document to answer the question.
+				Be precise and cite relevant portions when possible.
+				
+				DOCUMENT:
+				{text}
+				
+				QUESTION:
+				{prompt}
+				"""
+			return build_prompt( user_input=full_prompt )
+		
+		# Multi-document injection
+		combined_text = ""
+		
+		for name in active_docs:
+			file_bytes = doc_bytes.get( name )
+			if not file_bytes:
+				continue
+			
+			text = extract_text_from_bytes( file_bytes )
+			
+			combined_text += f"\n\n===== DOCUMENT: {name} =====\n\n{text}\n"
+		
+		if not combined_text.strip( ):
+			return 'No readable document content available.'
+		
+		full_prompt = f"""
+			{system_instructions}
+			
+			You are analyzing multiple documents.
+			
+			Use the content below to answer the question.
+			If multiple documents are relevant, compare them.
+			Cite document names when possible.
+			
+			DOCUMENT SET:
+			{combined_text}
+			
+			QUESTION:
+			{prompt}
+			"""
+		
+		return build_prompt( user_input=full_prompt )
+	else:
+		return 'Unsupported document source.'
 
-if 'context_window' not in st.session_state:
-	st.session_state[ 'context_window' ] = 0
-
-if 'cpu_threads' not in st.session_state:
-	st.session_state[ 'cpu_threads' ] = 0
-
-if 'max_tokens' not in st.session_state:
-	st.session_state[ 'max_tokens' ] = 0
-
-if 'temperature' not in st.session_state:
-	st.session_state[ 'temperature' ] = 0.0
-
-if 'top_percent' not in st.session_state:
-	st.session_state[ 'top_percent' ] = 0.0
-
-if 'top_k' not in st.session_state:
-	st.session_state[ 'top_k' ] = 0
-
-if 'frequency_penalty' not in st.session_state:
-	st.session_state[ 'frequency_penalty' ] = 0.0
-
-if 'presense_penalty' not in st.session_state:
-	st.session_state[ 'presense_penalty' ] = 0.0
-
-if 'repeat_penalty' not in st.session_state:
-	st.session_state[ 'repeat_penalty' ] = 0.0
-
-if 'repeat_window' not in st.session_state:
-	st.session_state[ 'repeat_window' ] = 0
-
-if 'random_seed' not in st.session_state:
-	st.session_state[ 'random_seed' ] = 0
-
-if 'basic_docs' not in st.session_state:
-	st.session_state[ 'basic_docs' ] = [ ]
-
-if 'use_semantic' not in st.session_state:
-	st.session_state[ 'use_semantic' ] = False
-
-if 'selected_prompt_id' not in st.session_state:
-	st.session_state[ 'selected_prompt_id' ] = ''
-
-if 'pending_system_prompt_name' not in st.session_state:
-	st.session_state[ 'pending_system_prompt_name' ] = ''
+def summarize_active_document( ) -> str:
+	"""
+		Uses the routing layer to summarize the currently active document.
+	"""
+	system_instructions = st.session_state.get( "system_instructions", "" )
+	summary_prompt = """
+		Provide a clear, structured summary of this document.
+		Include:
+		- Purpose
+		- Key themes
+		- Major conclusions
+		- Important data points (if any)
+		- Policy implications (if applicable)
+		
+		Be precise and concise.
+		"""
+	if system_instructions:
+		summary_prompt = f"{system_instructions}\n\n{summary_prompt}"
+	
+	return route_document_query( summary_prompt.strip( ) )
 
 # -------------- LLM  UTILITIES -------------------
+
 @st.cache_resource
 def load_llm( ctx: int, threads: int ) -> Llama:
 	return Llama( model_path=str( MODEL_PATH_OBJ ), n_ctx=ctx, n_threads=threads, n_batch=512,
@@ -1537,15 +1670,214 @@ if mode == 'Text Generation':
 # RETRIEVAL AUGMENTATION
 # ==============================================================================
 elif mode == 'Retrieval Augmentation':
-	st.subheader( "🌐 Retrieval Augmented Generration", help=cfg.RETRIEVAL_AUGMENTATION )
+	st.subheader( "📚 Retrieval Augmented Generration", help=cfg.RETRIEVAL_AUGMENTATION )
 	st.divider( )
-	files = st.file_uploader( 'Upload documents', accept_multiple_files=True )
-	if files:
-		st.session_state.basic_docs.clear( )
-		for f in files:
-			st.session_state.basic_docs.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
-		st.success( f'{len( st.session_state.basic_docs )} chunks loaded' )
-
+	messages = st.session_state.get( 'messages', [ ] )
+	uploaded = st.session_state.get( 'uploaded', [ ] )
+	active_docs = st.session_state.get( 'active_docs', [ ] )
+	doc_bytes = st.session_state.get( 'doc_bytes', { } )
+	max_tokens = st.session_state.get( 'max_tokens', 0 )
+	top_percent = st.session_state.get( 'top_percent', 0.0 )
+	top_k = st.session_state.get( 'top_k', 0 )
+	temperature = st.session_state.get( 'temperature', 0.0 )
+	frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
+	presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
+	repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
+	repeat_window = st.session_state.get( 'repeat_window', 0.0 )
+	cpu_threads = st.session_state.get( 'cpu_threads', cfg.CORES )
+	context_window = st.session_state.get( 'context_window', cfg.DEFAULT_CTX )
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
+	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	with center:
+		# ------------------------------------------------------------------
+		# Expander — Mind Controls
+		# ------------------------------------------------------------------
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False ):
+			with st.expander( label='⚙️ Response Controls', expanded=False ):
+				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
+				
+				# ------------- Temperature ----------
+				with mind_c1:
+					set_temperature = st.slider( label='Temperature', min_value=0.0, max_value=1.0,
+						value=float( st.session_state.get( 'temperature' ) ),
+						help=cfg.TEMPERATURE, key='temperature' )
+					
+					temperature = st.session_state[ 'temperature' ]
+				
+				# ------------- Top-P ----------
+				with mind_c2:
+					set_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
+						step=0.01, key='top_percent', help=cfg.TOP_P )
+					
+					top_percent = st.session_state[ 'top_percent' ]
+				
+				# ------------- Top-K ----------
+				with mind_c3:
+					set_top_k = st.slider( label='Top-K', min_value=0, max_value=50, step=1,
+						key='top_k', help=cfg.TOP_K )
+					
+					top_k = st.session_state[ 'top_k' ]
+				
+				# ------------- Reset Settings ----------
+				if st.button( label='Reset', key='response_controls_reset', width='stretch' ):
+					for key in [ 'top_k', 'top_percent', 'temperature' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
+					st.rerun( )
+			
+			# ------------------------------------------------------------------
+			# Expander — Probability Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='🎚️ Probability Controls', expanded=False ):
+				prob_c1, prob_c2, prob_c3, prob_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+					border=True, gap='medium' )
+				
+				# ------------- Repeat Window ----------
+				with prob_c1:
+					set_repeat_last_n = st.slider( label='Repeat Window', min_value=0, max_value=1024,
+						step=16, key='repeat_window', help=cfg.REPEAT_WINDOW )
+					
+					repeat_window = st.session_state[ 'repeat_window' ]
+				
+				# ------------- Repeat Penalty ----------
+				with prob_c2:
+					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0, max_value=2.0,
+						key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
+					
+					repeat_penalty = st.session_state[ 'repeat_penalty' ]
+				
+				# ------------- Presense Penalty ----------
+				with prob_c3:
+					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
+						key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
+					
+					presense_penalty = st.session_state[ 'presense_penalty' ]
+				
+				# ------------- Frequency Penalty ----------
+				with prob_c4:
+					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+						key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
+					
+					frequency_penalty = st.session_state[ 'frequency_penalty' ]
+				
+				# ------------- Reset Settings ----------
+				if st.button( label='Reset', key='probability_controls_reset', width='stretch' ):
+					for key in [ 'frequency_penalty', 'presense_penalty',
+					             'temperature', 'repeat_penalty', 'repeat_window' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
+					st.rerun( )
+			
+			# ------------------------------------------------------------------
+			# Expander — Context Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='🎛️ Context Controls', expanded=False ):
+				ctx_c1, ctx_c2, ctx_c3, ctx_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+					border=True, gap='medium' )
+				
+				# ------------- Context Window ----------
+				with ctx_c1:
+					set_ctx = st.slider( label='Context Window', min_value=0, max_value=8192,
+						key='context_window', step=512, help=cfg.CONTEXT_WINDOW )
+					
+					context_window = st.session_state[ 'context_window' ]
+				
+				# ------------- CPU Threads ----------
+				with ctx_c2:
+					set_threads = st.slider( label='CPU Threads', min_value=0, max_value=cfg.CORES,
+						key='cpu_threads', step=1, help=cfg.CPU_CORES, )
+					
+					threads = st.session_state[ 'cpu_threads' ]
+				
+				# ------------- Max Tokens ----------
+				with ctx_c3:
+					set_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=4096, step=128,
+						key='max_tokens', help=cfg.MAX_TOKENS, )
+				
+				# ------------- Random Seed ----------
+				with ctx_c4:
+					set_seed = st.slider( label="Random Seed", min_value=0, max_value=4096, step=1,
+						key='random_seed', help=cfg.SEED )
+				
+				# ------------- Reset Settings ----------
+				if st.button( label='Reset', key='context_controls_reset', width='stretch' ):
+					for key in [ 'random_seed', 'max_tokens', 'cpu_threads', 'context_window' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
+					st.rerun( )
+		
+		# ------------------------------------------------------------------
+		# Expander — System Instructions
+		# ------------------------------------------------------------------
+		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+			ins_left, ins_right = st.columns( [ 0.8, 0.2 ] )
+			prompt_names = fetch_prompt_names( cfg.DB_PATH )
+			if not prompt_names:
+				prompt_names = [ '' ]
+			
+			with ins_left:
+				st.text_area( label='Enter Text', height=50, width='stretch',
+					help=cfg.SYSTEM_INSTRUCTIONS, key='system_instructions' )
+			
+			def _on_template_change( ) -> None:
+				name = st.session_state.get( 'instructions' )
+				if name and name != 'No Templates Found':
+					text = fetch_prompt_text( cfg.DB_PATH, name )
+					if text is not None:
+						st.session_state[ 'system_instructions' ] = text
+			
+			with ins_right:
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
+			
+			def _on_clear( ) -> None:
+				st.session_state[ 'system_instructions' ] = ''
+				st.session_state[ 'instructions' ] = ''
+			
+			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		doc_left, doc_right = st.columns( [ 0.2, 0.8 ], border=True )
+		with doc_left:
+			uploaded = st.file_uploader( 'Upload', type=[ 'pdf', 'txt', 'md', 'docx' ],
+				accept_multiple_files=True, label_visibility='visible' )
+			
+			if uploaded is not None:
+				st.session_state.active_docs = uploaded
+				st.session_state.doc_bytes = { uploaded[ 0 ].name: uploaded.getvalue( ) }
+				st.success( f'{ uploaded.name} has been loaded!' )
+			else:
+				st.info( 'Load a document.' )
+			
+			unload = st.button( label='Unload Document', width='stretch' )
+			if unload:
+				uploaded = None
+				st.session_state.active_docs = None
+		
+		with doc_right:
+			if st.session_state.get( 'active_docs' ):
+				name = st.session_state.active_docs[ 0 ]
+				file_bytes = st.session_state.doc_bytes.get( name )
+				if file_bytes:
+					st.pdf( file_bytes, height=420 )
+		
+		for msg in st.session_state.messages:
+			with st.chat_message( msg[ 'role' ] ):
+				st.markdown( msg[ 'content' ] )
+		
+		if prompt := st.chat_input( 'Ask a question about the document' ):
+			st.session_state.messages.append( { 'role': 'user', 'content': prompt } )
+			response = route_document_query( prompt )
+			st.session_state.messages.append( { 'role': 'assistant', 'content': response } )
+			st.rerun( )
+			
 # ==============================================================================
 # SEMANTIC SEARCH
 # ==============================================================================
