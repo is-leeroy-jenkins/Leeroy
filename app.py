@@ -576,40 +576,78 @@ if mode == 'Text Generation':
 		with st.expander( label='🧠 Mind Controls', expanded=False ):
 			mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
 			
+			# ------------- Temperature ----------
 			with mind_c1:
 				set_temperature = st.slider( label='Temperature', min_value=0.1, max_value=1.5,
 					value=0.7, step=0.1, help=cfg.TEMPERATURE )
 			
+				temperature = st.session_state[ 'temperature' ]
+				
+			# ------------- Top-P ----------
 			with mind_c2:
 				set_top_p = st.slider( label='Top-P', min_value=0.1, max_value=1.0,
 					value=0.9, step=0.05, help=cfg.TOP_P )
+				
+				top_percent = st.session_state[ 'top_percent' ]
 			
+			# ------------- Top-K ----------
 			with mind_c3:
 				set_top_k = st.slider( label='Top-K', min_value=1, max_value=50, step=1,
 					key='top_k', help=cfg.TOP_K )
+				
+				top_k = st.session_state[ 'top_k' ]
+				
+			# ------------- Reset Settings ----------
+			if st.button( label='Reset', key='mind_controls_reset', width='stretch' ):
+				for key in [ 'top_k', 'top_p', 'temperature' ]:
+					if key in st.session_state:
+						del st.session_state[ key ]
+				
+				st.rerun( )
 		
 		# ------------------------------------------------------------------
 		# Expander — Probability Controls
 		# ------------------------------------------------------------------
-		with st.expander( label='🧠 Probability Options', expanded=False ):
+		with st.expander( label='🧠 Probability Controls', expanded=False ):
 			prob_c1, prob_c2, prob_c3, prob_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 				border=True, gap='medium' )
 			
+			# ------------- Repeat Window ----------
 			with prob_c1:
 				set_repeat_last_n = st.slider( label='Repeat Window', min_value=0,
 					max_value=1024, key='repeat_window', step=16, help=cfg.REPEAT_WINDOW )
+				
+				repeat_window = st.session_state[ 'repeat_window' ]
 			
+			# ------------- Repeat Penalty ----------
 			with prob_c2:
 				set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=1.0, max_value=2.0,
 					key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
+				
+				repeat_penalty = st.session_state[ 'repeat_penalty' ]
 			
+			# ------------- Presense Penalty ----------
 			with prob_c3:
 				set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
 					key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
+				
+				presense_penalty = st.session_state[ 'presense_penalty' ]
 			
+			# ------------- Frequency Penalty ----------
 			with prob_c4:
 				set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
 					key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
+				
+				frequency_penalty = st.session_state[ 'frequency_penalty' ]
+			
+			# ------------- Reset Settings ----------
+			if st.button( label='Reset', key='probability_controls_reset', width='stretch' ):
+				for key in [ 'frequency_penalty', 'presense_penalty',
+				             'temperature', 'repeat_penalty', 'repeat_window' ]:
+					if key in st.session_state:
+						del st.session_state[ key ]
+				
+				st.rerun( )
 		
 		# ------------------------------------------------------------------
 		# Expander — Context Controls
@@ -618,25 +656,37 @@ if mode == 'Text Generation':
 			ctx_c1, ctx_c2, ctx_c3, ctx_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 				border=True, gap='medium' )
 			
+			# ------------- Context Window ----------
 			with ctx_c1:
 				set_ctx = st.slider( label='Context Window', min_value=2048, max_value=8192,
 					key='context_window', step=512, help=cfg.CONTEXT_WINDOW )
 				
 				ctx = st.session_state[ 'context_window' ]
 			
+			# ------------- CPU Threads ----------
 			with ctx_c2:
 				set_threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
 					key='cpu_threads', step=1, help=cfg.CPU_CORES, )
 				
 				threads = st.session_state[ 'cpu_threads' ]
 			
+			# ------------- Max Tokens ----------
 			with ctx_c3:
 				set_max_tokens = st.slider( label='Max Tokens', min_value=128, max_value=4096, step=128,
 					key='max_tokens', help=cfg.MAX_TOKENS, )
 			
+			# ------------- Random Seed ----------
 			with ctx_c4:
 				set_seed = st.slider( label="Random Seed", min_value=0, max_value=4096, step=1,
 					key='random_seed', help=cfg.SEED )
+			
+			# ------------- Reset Settings ----------
+			if st.button( label='Reset', key='context_controls_reset', width='stretch' ):
+				for key in [ 'random_seed', 'max_tokens', 'cpu_threads', 'context_window' ]:
+					if key in st.session_state:
+						del st.session_state[ key ]
+				
+				st.rerun( )
 		
 		# ------------------------------------------------------------------
 		# Expander — System Instructions
@@ -669,7 +719,6 @@ if mode == 'Text Generation':
 			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
 		
 		llm = load_llm( ctx, threads )
-		
 		for r, c in st.session_state.messages:
 			with st.chat_message( r ):
 				st.markdown( c )
