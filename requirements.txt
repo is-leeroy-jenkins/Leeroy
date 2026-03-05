@@ -1,5 +1,5 @@
-llama-cpp-python>=0.2.90
-sentence-transformers>=2.6.1
+llama-cpp-python
+sentence-transformers
 numpy>=1.26.0
 reportlab>=4.0.8
 plotly-express

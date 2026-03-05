@@ -66,9 +66,9 @@ import time
 # ==============================================================================
 # Model Path Resolution
 # ==============================================================================
-MODEL_PATH_OBJ = Path(cfg.MODEL_PATH)
+MODEL_PATH_OBJ = Path( cfg.MODEL_PATH )
 
-if not MODEL_PATH_OBJ.exists():
+if not MODEL_PATH_OBJ.exists( ):
     st.error( f'Model not found at {cfg.MODEL_PATH}' )
     st.stop( )
     
@@ -442,16 +442,6 @@ def build_prompt( user_input: str ) -> str:
 	
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
-
-# -------------- LLM  UTILITIES -------------------
-@st.cache_resource
-def load_llm(ctx: int, threads: int) -> Llama:
-    return Llama(  model_path=str( MODEL_PATH_OBJ ),  n_ctx=ctx,  n_threads=threads,
-        n_batch=512,  verbose=False )
-
-@st.cache_resource
-def load_embedder() -> SentenceTransformer:
-    return SentenceTransformer("all-MiniLM-L6-v2")
 
 # ----------- DATABASE UTILITIES -------------------------
 
@@ -1022,7 +1012,7 @@ def drop_column( table: str, column: str ):
 				conn.execute( idx_sql )
 		
 		conn.commit( )
-		
+
 # ==============================================================================
 # SESSION STATE INITIALIZATION
 # ==============================================================================
@@ -1080,7 +1070,21 @@ if 'selected_prompt_id' not in st.session_state:
 if 'pending_system_prompt_name' not in st.session_state:
 	st.session_state[ 'pending_system_prompt_name' ] = ''
 
+# -------------- LLM  UTILITIES -------------------
+@st.cache_resource
+def load_llm( ctx: int, threads: int ) -> Llama:
+	return Llama( model_path=str( MODEL_PATH_OBJ ), n_ctx=ctx, n_threads=threads,
+		n_batch=512, verbose=False )
+
+@st.cache_resource
+def load_embedder( ) -> SentenceTransformer:
+	return SentenceTransformer( 'all-MiniLM-L6-v2' )
+
+# ==============================================================================
+# Init
+# ==============================================================================
 ensure_db( )
+llm = load_llm( cfg.DEFAULT_CTX, cfg.CORES )
 embedder = load_embedder( )
 st.session_state.setdefault( 'messages', load_history( ) )
 st.session_state.setdefault( 'system_instructions', "" )
