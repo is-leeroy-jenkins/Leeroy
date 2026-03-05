@@ -59,11 +59,8 @@ FAVICON = r'resources/images/favicon.ico'
 LOGO = r'resources/images/leeroy_logo.png'
 XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
 MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
-
-MODES = [ 'Text Generation', 'Retrieval Augmentation',
-          'Semantic Search', 'Prompt Engineering', 'Data Management' ]
-
-
+MODES = [ 'Text Generation', 'Retrieval Augmentation', 'Semantic Search',
+          'Prompt Engineering', 'Data Management' ]
 
 # ---------- DEFINITIONS -------------------
 SYSTEM_INSTRUCTIONS = r'''Optional. Gives the model high-level instructions on how it should behave while
