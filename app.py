@@ -51,6 +51,7 @@ import multiprocessing
 import os
 import sqlite3
 from pathlib import Path
+import plotly.express as px
 from typing import Any, Dict, List, Tuple, Optional
 import numpy as np
 import pandas as pd
@@ -60,6 +61,7 @@ import re
 from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 from sentence_transformers import SentenceTransformer
+import time
 
 # ==============================================================================
 # Model Path Resolution
@@ -71,22 +73,7 @@ MODEL_PATH_OBJ = Path(MODEL_PATH)
 if not MODEL_PATH_OBJ.exists():
     st.error( f'Model not found at {MODEL_PATH}' )
     st.stop( )
-
-# ==============================================================================
-# CONSTANTS
-# ==============================================================================
-BASE_DIR = os.path.dirname( os.path.abspath( __file__ ) )
-DB_PATH = 'stores/sqlite/leeroy.db'
-DEFAULT_CTX = 4096
-CPU_CORES = multiprocessing.cpu_count( )
-FAVICON = r'resources/images/favicon.ico'
-LOGO = r'resources/images/leeroy_logo.ico'
-XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>", re.DOTALL )
-MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
-BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
-TABS = [ 'Text Generation', 'Retrieval Augmentation',
-         'Semantic Search', 'Prompt Engineering', 'Data Management' ]
-
+    
 # ==============================================================================
 # UTILITIES
 # ==============================================================================
@@ -339,6 +326,7 @@ def clear_history( ) -> None:
 		conn.execute( "DELETE FROM chat_history" )
 
 #-------- PROMPT ENGINEERING UTILITIES ----------------
+
 def fetch_prompt_names( db_path: str ) -> list[ str ]:
 	"""
 		Purpose:
@@ -468,6 +456,7 @@ def load_embedder() -> SentenceTransformer:
     return SentenceTransformer("all-MiniLM-L6-v2")
 
 # ----------- DATABASE UTILITIES -------------------------
+
 def initialize_database( ) -> None:
 	Path( "stores/sqlite" ).mkdir( parents=True, exist_ok=True )
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
@@ -1039,8 +1028,8 @@ if 'mode' not in st.session_state:
 if 'messages' not in st.session_state:
 	st.session_state[ 'messages' ] = ''
 
-if 'system_prompt' not in st.session_state:
-	st.session_state[ 'system_prompt' ] = ''
+if 'system_instructions' not in st.session_state:
+	st.session_state[ 'system_instructions' ] = ''
 
 if 'context_window' not in st.session_state:
 	st.session_state[ 'context_window' ] = 0
@@ -1090,17 +1079,11 @@ if 'pending_system_prompt_name' not in st.session_state:
 ensure_db( )
 embedder = load_embedder( )
 st.session_state.setdefault( 'messages', load_history( ) )
-st.session_state.setdefault( 'system_prompt', "" )
+st.session_state.setdefault( 'system_instructions', "" )
 st.set_page_config( page_title='Leeroy', layout='wide', page_icon=cfg.FAVICON )
 
 # ==============================================================================
-# TABS
-# ==============================================================================
-instruction_tab, chat_tab, retrieval_tab, semantic_tab, prompt_tab, export_tab = st.tabs( TABS )
-MODES = [ 'Text', 'Retrieval',
-          'Semantic', 'Prompt', 'Data' ]
-# ==============================================================================
-# Sidebar (Model Parameters)
+# SIDEBAR
 # ==============================================================================
 with st.sidebar:
 	style_subheaders( )
@@ -1113,9 +1096,8 @@ with st.sidebar:
 	
 	st.divider( )
 	
-
 # ==============================================================================
-# Text Generation Mode
+# TEXT GENERATION MODE
 # ==============================================================================
 if mode == 'Text Generation':
 	st.subheader( "💬 Chat Completions", help=cfg.CHAT_COMPLETIONS )
@@ -1228,7 +1210,7 @@ if mode == 'Text Generation':
 			
 			# ------------- CPU Threads ----------
 			with ctx_c2:
-				set_threads = st.slider( label='CPU Threads', min_value=1, max_value=CPU_CORES,
+				set_threads = st.slider( label='CPU Threads', min_value=1, max_value=cfg.CPU_CORES,
 					key='cpu_threads', step=1, help=cfg.CPU_CORES, )
 				
 				threads = st.session_state[ 'cpu_threads' ]
@@ -1330,13 +1312,12 @@ elif mode == 'Semantic Search':
 		for f in files:
 			chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
 		vecs = embedder.encode( chunks )
-		with sqlite3.connect( DB_PATH ) as conn:
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
 			conn.execute( 'DELETE FROM embeddings' )
 			for c, v in zip( chunks, vecs ):
 				conn.execute(
 					'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
-					(c, v.tobytes( ))
-				)
+					( c, v.tobytes( ) ) )
 		st.success( 'Semantic index built' )
 
 # ======================================================================================
@@ -1400,7 +1381,6 @@ elif mode == 'Prompt Engineering':
 		# Filters
 		# ------------------------------------------------------------------
 		c1, c2, c3, c4 = st.columns( [ 4, 2, 2, 3 ] )
-		
 		with c1:
 			st.text_input( 'Search (Name/Text contains)', key='pe_search' )
 		
@@ -1417,7 +1397,6 @@ elif mode == 'Prompt Engineering':
 				unsafe_allow_html=True, )
 			
 			a1, a2, a3 = st.columns( [ 2, 1, 1 ] )
-			
 			with a1:
 				jump_id = st.number_input( 'Go to ID', min_value=1,
 					step=1, label_visibility='collapsed', )
@@ -2088,22 +2067,14 @@ if active_mode is not None:
 right_text = ' ◽ '.join( right_parts ) if right_parts else '—'
 
 # ---- Rendered Variables
-if mode == 'Text':
+if mode == 'Text Generation':
 	temperature = st.session_state.get( 'text_temperature' )
 	top_p = st.session_state.get( 'text_top_percent' )
 	freq = st.session_state.get( 'text_frequency_penalty' )
 	presence = st.session_state.get( 'text_presense_penalty' )
 	number = st.session_state.get( 'text_number' )
 	stream = st.session_state.get( 'text_stream' )
-	parallel_tools = st.session_state.get( 'text_parallel_tools' )
-	max_calls = st.session_state.get( 'text_max_tools' )
 	store = st.session_state.get( 'text_store' )
-	tools = st.session_state.get( 'text_tools' )
-	include = st.session_state.get( 'text_include' )
-	domains = st.session_state.get( 'text_domains' )
-	input_mode = st.session_state.get( 'text_input' )
-	tool_choice = st.session_state.get( 'text_tool_choice' )
-	background = st.session_state.get( 'text_background' )
 	messages = st.session_state.get( 'text_messages' )
 	max_tokens = st.session_state.get( 'text_max_tokens' )
 	
@@ -2115,34 +2086,8 @@ if mode == 'Text':
 		right_parts.append( f'Freq: {freq:.2f}' )
 	if presence is not None:
 		right_parts.append( f'Presence: {presence:.2f}' )
-	if number is not None:
-		right_parts.append( f'N: {number}' )
 	if max_tokens is not None:
 		right_parts.append( f'Max Tokens: {max_tokens}' )
-	
-	if stream:
-		right_parts.append( 'Stream: On' )
-	if parallel_tools:
-		right_parts.append( 'Parallel Tools: On' )
-	if max_calls is not None:
-		right_parts.append( f'Max Calls: {max_calls}' )
-	if store:
-		right_parts.append( 'Store: On' )
-	if tools:
-		right_parts.append( f'Tools: {len( tools )}' )
-	if include:
-		right_parts.append( 'Include: On' )
-	if domains:
-		right_parts.append( 'Domains: Set' )
-	if input_mode:
-		right_parts.append( 'Input: Set' )
-	if tool_choice:
-		right_parts.append( f'Tool Choice: On' )
-	if background:
-		right_parts.append( 'Background: On' )
-	if messages:
-		right_parts.append( 'Messages: Set' )
-
 
 # ---- Rendering Method
 st.markdown(
