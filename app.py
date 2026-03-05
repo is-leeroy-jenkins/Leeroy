@@ -426,91 +426,46 @@ def build_prompt( user_input: str ) -> str:
 	"""
 		Purpose:
 		--------
-		Build a Llama.cpp-compatible chat prompt using the application session state, including:
-		(1) System instructions
-		(2) Optional semantic retrieval context
-		(3) Optional document injection context
-		(4) Prior chat turns
-		(5) The current user turn, terminating with an assistant header
+		Build a llama.cpp-compatible prompt using the application's system instructions, optional
+		retrieval context (semantic + basic RAG), and the current in-memory chat history.
 
 		Parameters:
 		-----------
 		user_input : str
-			The latest user message to be appended to the prompt.
+			The current user turn to append to the prompt.
 
 		Returns:
 		--------
 		str
+			A fully constructed prompt in chat template format.
 	"""
-	# ------------------------------------------------------------------
-	# System Instructions
-	# ------------------------------------------------------------------
-	system_instructions = st.session_state.get( 'system_instructions' )
-	if system_instructions is None:
-		system_instructions = ''
+	system_instructions = st.session_state.get( 'system_instructions', '' )
+	use_semantic = bool( st.session_state.get( 'use_semantic', False ) )
+	basic_docs = st.session_state.get( 'basic_docs', [ ] )
+	messages = st.session_state.get( 'messages', [ ] )
+	
+	top_k_value = int( st.session_state.get( 'top_k', 0 ) )
+	if top_k_value <= 0:
+		top_k_value = 4
 	
 	prompt = f"<|system|>\n{system_instructions}\n</s>\n"
 	
-	# ------------------------------------------------------------------
-	# Semantic Context (optional)
-	# ------------------------------------------------------------------
-	use_semantic = st.session_state.get( 'use_semantic' )
 	if use_semantic:
-		_k = st.session_state.get( 'top_k' )
-		try:
-			k = int( _k ) if _k is not None else 0
-		except Exception:
-			k = 0
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
 		
-		if k > 0:
-			rows: List[ Tuple[ str, bytes ] ] = [ ]
-			try:
-				with sqlite3.connect( cfg.DB_PATH ) as conn:
-					rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
-			except Exception:
-				rows = [ ]
-			
-			if rows:
-				try:
-					q = embedder.encode( [ user_input ] )[ 0 ]
-					scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
-					for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :k ]:
-						prompt += f"<|system|>\n{c}\n</s>\n"
-				except Exception:
-					pass
+		if rows:
+			q = embedder.encode( [ user_input ] )[ 0 ]
+			scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
+			for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :top_k_value ]:
+				prompt += f"<|system|>\n{c}\n</s>\n"
 	
-	# ------------------------------------------------------------------
-	# Basic Document Injection (optional)
-	# ------------------------------------------------------------------
-	basic_docs = st.session_state.get( 'basic_docs' )
-	if isinstance( basic_docs, list ) and len( basic_docs ) > 0:
-		for d in basic_docs[ :6 ]:
-			prompt += f"<|system|>\n{d}\n</s>\n"
+	for d in basic_docs[ :6 ]:
+		prompt += f"<|system|>\n{d}\n</s>\n"
 	
-	# ------------------------------------------------------------------
-	# Prior Conversation Turns
-	# ------------------------------------------------------------------
-	messages = st.session_state.get( 'messages' )
-	if isinstance( messages, list ) and len( messages ) > 0:
-		for item in messages:
-			if not isinstance( item, tuple ) or len( item ) != 2:
-				continue
-			
-			r, c = item
-			if r is None or c is None:
-				continue
-			
-			role = str( r ).strip( )
-			content = str( c )
-			
-			if not role:
-				continue
-			
-			prompt += f"<|{role}|>\n{content}\n</s>\n"
+	for r, c in messages:
+		prompt += f"<|{r}|>\n{c}\n</s>\n"
 	
-	# ------------------------------------------------------------------
-	# Current User Turn (assistant header terminator)
-	# ------------------------------------------------------------------
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
 
@@ -619,7 +574,9 @@ def rename_table( old_name: str, new_name: str ) -> None:
 	"""
 		Purpose:
 		--------
-		Rename an existing SQLite table.
+		Rename an existing SQLite table. Attempts native ALTER TABLE rename first; if it fails,
+		falls back to a schema-safe rebuild using the original CREATE TABLE statement and
+		preserves indexes.
 
 		Parameters:
 		-----------
@@ -637,14 +594,71 @@ def rename_table( old_name: str, new_name: str ) -> None:
 		return
 	
 	with create_connection( ) as conn:
-		conn.execute( f'ALTER TABLE "{old_name}" RENAME TO "{new_name}";' )
+		try:
+			conn.execute( f'ALTER TABLE "{old_name}" RENAME TO "{new_name}";' )
+			conn.commit( )
+			return
+		except Exception:
+			pass
+		
+		row = conn.execute(
+			"""
+            SELECT sql
+            FROM sqlite_master
+            WHERE type ='table' AND name =?
+			""",
+			(old_name,)
+		).fetchone( )
+		
+		if not row or not row[ 0 ]:
+			raise ValueError( "Table definition not found." )
+		
+		create_sql = row[ 0 ]
+		
+		indexes = conn.execute(
+			"""
+            SELECT sql
+            FROM sqlite_master
+            WHERE type ='index' AND tbl_name=? AND sql IS NOT NULL
+			""",
+			(old_name,)
+		).fetchall( )
+		
+		open_paren = create_sql.find( "(" )
+		if open_paren == -1:
+			raise ValueError( "Malformed CREATE TABLE statement." )
+		
+		new_create_sql = f'CREATE TABLE "{new_name}" {create_sql[ open_paren: ]}'
+		temp_name = f"{new_name}__rebuild_temp"
+		
+		conn.execute( "BEGIN" )
+		conn.execute( f'CREATE TABLE "{temp_name}" {create_sql[ open_paren: ]}' )
+		
+		cols = [ r[ 1 ] for r in conn.execute( f'PRAGMA table_info("{old_name}");' ).fetchall( ) ]
+		col_list = ", ".join( [ f'"{c}"' for c in cols ] )
+		
+		conn.execute(
+			f'INSERT INTO "{temp_name}" ({col_list}) SELECT {col_list} FROM "{old_name}";'
+		)
+		
+		conn.execute( f'DROP TABLE "{old_name}";' )
+		conn.execute( f'ALTER TABLE "{temp_name}" RENAME TO "{new_name}";' )
+		
+		for idx in indexes:
+			idx_sql = idx[ 0 ]
+			if idx_sql:
+				idx_sql = idx_sql.replace( f'ON "{old_name}"', f'ON "{new_name}"' )
+				conn.execute( idx_sql )
+		
 		conn.commit( )
 
 def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
 	"""
 		Purpose:
 		--------
-		Rename a column within an existing SQLite table.
+		Rename a column within an existing SQLite table. Attempts native ALTER TABLE rename
+		first; if it fails, falls back to a schema-safe rebuild preserving column order, data,
+		and indexes.
 
 		Parameters:
 		-----------
@@ -665,7 +679,82 @@ def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
 		return
 	
 	with create_connection( ) as conn:
-		conn.execute( f'ALTER TABLE "{table_name}" RENAME COLUMN "{old_name}" TO "{new_name}";' )
+		try:
+			conn.execute(
+				f'ALTER TABLE "{table_name}" RENAME COLUMN "{old_name}" TO "{new_name}";'
+			)
+			conn.commit( )
+			return
+		except Exception:
+			pass
+		
+		row = conn.execute(
+			"""
+            SELECT sql
+            FROM sqlite_master
+            WHERE type ='table' AND name =?
+			""",
+			(table_name,)
+		).fetchone( )
+		
+		if not row or not row[ 0 ]:
+			raise ValueError( "Table definition not found." )
+		
+		create_sql = row[ 0 ]
+		
+		indexes = conn.execute(
+			"""
+            SELECT sql
+            FROM sqlite_master
+            WHERE type ='index' AND tbl_name=? AND sql IS NOT NULL
+			""",
+			(table_name,)
+		).fetchall( )
+		
+		schema = conn.execute( f'PRAGMA table_info("{table_name}");' ).fetchall( )
+		cols = [ r[ 1 ] for r in schema ]
+		if old_name not in cols:
+			raise ValueError( "Column not found." )
+		
+		mapped_cols = [ (new_name if c == old_name else c) for c in cols ]
+		
+		open_paren = create_sql.find( "(" )
+		close_paren = create_sql.rfind( ")" )
+		if open_paren == -1 or close_paren == -1:
+			raise ValueError( "Malformed CREATE TABLE statement." )
+		
+		inner = create_sql[ open_paren + 1: close_paren ]
+		col_defs = [ c.strip( ) for c in inner.split( "," ) ]
+		
+		new_defs = [ ]
+		for col_def in col_defs:
+			first = col_def.split( )[ 0 ].strip( '"' )
+			if first == old_name:
+				new_defs.append( col_def.replace( f'"{old_name}"', f'"{new_name}"', 1 ) )
+				continue
+			new_defs.append( col_def )
+		
+		temp_table = f"{table_name}__rebuild_temp"
+		new_create_sql = f'CREATE TABLE "{temp_table}" ({", ".join( new_defs )});'
+		
+		old_select = ", ".join( [ f'"{c}"' for c in cols ] )
+		new_insert = ", ".join( [ f'"{c}"' for c in mapped_cols ] )
+		
+		conn.execute( "BEGIN" )
+		conn.execute( new_create_sql )
+		conn.execute(
+			f'INSERT INTO "{temp_table}" ({new_insert}) SELECT {old_select} FROM "{table_name}";'
+		)
+		
+		conn.execute( f'DROP TABLE "{table_name}";' )
+		conn.execute( f'ALTER TABLE "{temp_table}" RENAME TO "{table_name}";' )
+		
+		for idx in indexes:
+			idx_sql = idx[ 0 ]
+			if idx_sql:
+				idx_sql = idx_sql.replace( f'"{old_name}"', f'"{new_name}"' )
+				conn.execute( idx_sql )
+		
 		conn.commit( )
 		
 def create_index( table: str, column: str ) -> None:
@@ -1409,7 +1498,7 @@ if mode == 'Text Generation':
 		for r, c in st.session_state.messages:
 			with st.chat_message( r ):
 				st.markdown( c )
-		
+			
 		user_input = st.chat_input( 'Ask Leeroy…' )
 		if user_input:
 			save_message( 'user', user_input )
@@ -2290,5 +2379,4 @@ st.markdown(
         </div>
     </div>
     """,
-	unsafe_allow_html=True,
-)
+	unsafe_allow_html=True, )
