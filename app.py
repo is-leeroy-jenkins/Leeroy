@@ -66,12 +66,10 @@ import time
 # ==============================================================================
 # Model Path Resolution
 # ==============================================================================
-DEFAULT_MODEL_PATH = 'models/Leeroy-3B-Instruct.Q4_K_M.gguf'
-MODEL_PATH = os.getenv( 'LEEROY_LLM_PATH', DEFAULT_MODEL_PATH)
-MODEL_PATH_OBJ = Path(MODEL_PATH)
+MODEL_PATH_OBJ = Path(cfg.MODEL_PATH)
 
 if not MODEL_PATH_OBJ.exists():
-    st.error( f'Model not found at {MODEL_PATH}' )
+    st.error( f'Model not found at {cfg.MODEL_PATH}' )
     st.stop( )
     
 # ==============================================================================
@@ -87,7 +85,7 @@ def cosine_sim( a: np.ndarray, b: np.ndarray ) -> float:
 
 def ensure_db( ) -> None:
     Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(cfg.DB_PATH) as conn:
         conn.execute("""
                      CREATE TABLE IF NOT EXISTS chat_history ( id INTEGER PRIMARY KEY AUTOINCREMENT,
                                                                role TEXT,
@@ -314,7 +312,7 @@ def style_subheaders( ) -> None:
 		unsafe_allow_html=True, )
 
 def save_message( role: str, content: str ) -> None:
-	with sqlite3.connect( DB_PATH ) as conn:
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( 'INSERT INTO chat_history (role, content) VALUES (?, ?)', (role, content) )
 
 def load_history( ) -> List[ Tuple[ str, str ] ]:
@@ -428,7 +426,7 @@ def build_prompt( user_input: str ) -> str:
 	prompt = f"<|system|>\n{st.session_state.system_prompt}\n</s>\n"
 	
 	if st.session_state.use_semantic:
-		with sqlite3.connect( DB_PATH ) as conn:
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
 			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
 		if rows:
 			q = embedder.encode( [ user_input ] )[ 0 ]
@@ -555,6 +553,12 @@ def drop_table( table: str ) -> None:
 	with create_connection( ) as conn:
 		conn.execute( f'DROP TABLE IF EXISTS "{table}";' )
 		conn.commit( )
+
+def rename_table( old_name: str, new_name: str ) -> None:
+	pass
+
+def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
+	pass
 
 def create_index( table: str, column: str ) -> None:
 	"""
@@ -1945,7 +1949,7 @@ elif mode == 'Data Management':
 					new_col = st.text_input( 'New Column Name' )
 					
 					if st.button( 'Rename Column' ):
-						dm_rename_column( table, old_col, new_col )
+						rename_column( table, old_col, new_col )
 						st.success( 'Column renamed.' )
 						st.rerun( )
 				
@@ -1953,7 +1957,7 @@ elif mode == 'Data Management':
 					new_name = st.text_input( 'New Table Name' )
 					
 					if st.button( 'Rename Table' ):
-						dm_rename_table( table, new_name )
+						rename_table( table, new_name )
 						st.success( 'Table renamed.' )
 						st.rerun( )
 				
