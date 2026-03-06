@@ -122,6 +122,9 @@ if 'basic_docs' not in st.session_state:
 if 'use_semantic' not in st.session_state:
 	st.session_state[ 'use_semantic' ] = False
 
+if 'is_grounded' not in st.session_state:
+	st.session_state[ 'is_grounded' ] = False
+
 if 'selected_prompt_id' not in st.session_state:
 	st.session_state[ 'selected_prompt_id' ] = ''
 
@@ -1834,6 +1837,7 @@ if mode == 'Text Generation':
 	top_percent = st.session_state.get( 'top_percent', 0.0 )
 	top_k = st.session_state.get( 'top_k', 0 )
 	temperature = st.session_state.get( 'temperature', 0.0 )
+	is_grounded = st.session_state.get( 'is_grounded', False )
 	frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
 	presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
 	repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
@@ -1851,7 +1855,8 @@ if mode == 'Text Generation':
 		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False ):
 			with st.expander( label='⚙️ Response Controls', expanded=False ):
-				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
+				mind_c1, mind_c2, mind_c3, mind_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+					border=True, gap='medium' )
 				
 				# ------------- Temperature ----------
 				with mind_c1:
@@ -1874,10 +1879,17 @@ if mode == 'Text Generation':
 						key='top_k', help=cfg.TOP_K )
 					
 					top_k = st.session_state[ 'top_k' ]
+				
+				# ------------ Grounding --------
+				with mind_c4:
+					set_grounding = st.toggle( label='Use Grounding', value=False,
+						key='is_grounded' )
+					
+					is_grounded = st.session_state[ 'is_grounded' ]
 					
 				# ------------- Reset Settings ----------
 				if st.button( label='Reset', key='response_controls_reset', width='stretch' ):
-					for key in [ 'top_k', 'top_percent', 'temperature' ]:
+					for key in [ 'top_k', 'top_percent', 'temperature', 'is_grounded' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -2210,7 +2222,7 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		# Document Selection UI
 		# ------------------------------------------------------------------
-		with st.expander( label='Document Loader', icon='📥', expanded=True, width='stretch' ):
+		with st.expander( label='Document Loader', icon='📥', expanded=False, width='stretch' ):
 			doc_left, doc_right = st.columns( [ 0.5, 0.5 ], gap='medium', border=True )
 			with doc_left:
 				doc_source = st.radio(
