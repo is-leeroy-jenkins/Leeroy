@@ -45,26 +45,22 @@
 from __future__ import annotations
 
 import base64
-import config as cfg
-import io
-import multiprocessing
-import os
 import hashlib
-from pathlib import Path
-import fitz  # pymupdf
+import re
 import sqlite3
-import plotly.express as px
-from typing import Any, Dict, List, Tuple, Optional
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import fitz  # pymupdf
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 from llama_cpp import Llama
-import re
-from reportlab.lib.pagesizes import LETTER
-from reportlab.pdfgen import canvas
 from sentence_transformers import SentenceTransformer
-import time
-from typing import Iterable
+
+import config as cfg
 
 # ==============================================================================
 # Model Path Resolution
