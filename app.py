@@ -49,8 +49,11 @@ import config as cfg
 import io
 import multiprocessing
 import os
-import sqlite3
+import hashlib
 from pathlib import Path
+
+import fitz  # pymupdf
+import sqlite3
 import plotly.express as px
 from typing import Any, Dict, List, Tuple, Optional
 import numpy as np
@@ -62,6 +65,7 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 from sentence_transformers import SentenceTransformer
 import time
+from typing import Iterable
 
 # ==============================================================================
 # Model Path Resolution
@@ -142,6 +146,16 @@ if 'doc_bytes' not in st.session_state:
 	
 if 'doc_source' not in st.session_state:
 	st.session_state[ 'doc_source' ] = 'uploadlocal'
+
+if 'docqna_vec_ready' not in st.session_state:
+	st.session_state[ 'docqna_vec_ready' ] = False
+
+if 'docqna_fingerprint' not in st.session_state:
+	st.session_state[ 'docqna_fingerprint' ] = ''
+
+if 'docqna_chunk_count' not in st.session_state:
+	st.session_state[ 'docqna_chunk_count' ] = 0
+	
 # ==============================================================================
 # UTILITIES
 # ==============================================================================
@@ -1515,6 +1529,323 @@ def summarize_active_document( ) -> str:
 	
 	return route_document_query( summary_prompt.strip( ) )
 
+def _docqna_compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
+	'''
+		
+		Purpose:
+		--------
+		Computes a stable fingerprint for the currently selected active documents and their byte contents.
+	
+		Parameters:
+		-----------
+		active_docs:
+			A List[ str ] of active document names.
+		doc_bytes:
+			A Dict[ str, bytes ] mapping document name to file bytes.
+	
+		Returns:
+		--------
+		A str fingerprint suitable for cache invalidation.
+	
+	'''
+	h = hashlib.sha256( )
+	for name in sorted( active_docs ):
+		b = doc_bytes.get( name, b'' )
+		h.update( name.encode( 'utf-8', errors='ignore' ) )
+		h.update( len( b ).to_bytes( 8, 'little', signed=False ) )
+		h.update( hashlib.sha256( b ).digest( ) )
+	return h.hexdigest( )
+
+def _docqna_extract_text_from_pdf_bytes( file_bytes: bytes ) -> str:
+	'''
+	
+		Purpose:
+		--------
+		Extracts text from a PDF byte stream using PyMuPDF.
+	
+		Parameters:
+		-----------
+		file_bytes:
+			The PDF bytes.
+	
+		Returns:
+		--------
+		A str containing extracted text.
+	
+	'''
+	if not file_bytes:
+		return ''
+	
+	try:
+		doc = fitz.open( stream=file_bytes, filetype='pdf' )
+		parts: List[ str ] = [ ]
+		for page in doc:
+			parts.append( page.get_text( 'text' ) or '' )
+		return '\n'.join( parts ).strip( )
+	except Exception:
+		return ''
+
+def _docqna_safe_load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
+	'''
+		
+		Purpose:
+		--------
+		Attempts to load sqlite-vec into the provided SQLite connection.
+	
+		Parameters:
+		-----------
+		conn:
+			The sqlite3.Connection.
+	
+		Returns:
+		--------
+		True if sqlite-vec loaded successfully; otherwise False.
+		
+	'''
+	try:
+		import sqlite_vec
+		
+		sqlite_vec.load( conn )
+		return True
+	except Exception:
+		return False
+
+def _docqna_ensure_vec_schema( dim: int ) -> bool:
+	'''
+	
+		Purpose:
+		--------
+		Creates the sqlite-vec virtual table used for Document Q&A embeddings if possible.
+	
+		Parameters:
+		-----------
+		dim:
+			The embedding dimension (e.g., 384 for all-MiniLM-L6-v2).
+	
+		Returns:
+		--------
+		True if the schema exists and is usable; otherwise False.
+	
+	'''
+	conn = create_connection( )
+	ok = _docqna_safe_load_sqlite_vec( conn )
+	if not ok:
+		return False
+	
+	try:
+		cur = conn.cursor( )
+		cur.execute(
+			f'''
+			CREATE VIRTUAL TABLE IF NOT EXISTS docqna_vec
+			USING vec0(
+				embedding float[{int( dim )}],
+				doc_name TEXT,
+				chunk TEXT
+			);
+			'''
+		)
+		conn.commit( )
+		return True
+	except Exception:
+		return False
+	finally:
+		conn.close( )
+
+def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
+	'''
+		
+		Purpose:
+		--------
+		Builds or refreshes the Document Q&A vector index when active documents change.
+	
+		Parameters:
+		-----------
+		embedder:
+			The SentenceTransformer used to generate embeddings.
+	
+		Returns:
+		--------
+		None
+		
+	'''
+	active_docs: List[ str ] = st.session_state.get( 'active_docs', [ ] )
+	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'doc_bytes', { } )
+	
+	fp = _docqna_compute_fingerprint( active_docs, doc_bytes )
+	if fp and fp == st.session_state.get( 'docqna_fingerprint', '' ):
+		return
+	
+	st.session_state[ 'docqna_fingerprint' ] = fp
+	st.session_state[ 'docqna_chunk_count' ] = 0
+	st.session_state[ 'docqna_fallback_rows' ] = [ ]
+	
+	dim_value = getattr( embedder, 'get_sentence_embedding_dimension', lambda: 384 )( )
+	dim = int( dim_value ) if dim_value else 384
+	
+	vec_ready = _docqna_ensure_vec_schema( dim )
+	st.session_state[ 'docqna_vec_ready' ] = bool( vec_ready )
+	
+	conn = create_connection( )
+	cur = conn.cursor( )
+	
+	if vec_ready:
+		try:
+			cur.execute( 'DELETE FROM docqna_vec;' )
+			conn.commit( )
+		except Exception:
+			st.session_state[ 'docqna_vec_ready' ] = False
+			vec_ready = False
+	
+	total_chunks = 0
+	fallback_rows: List[ Tuple[ str, str, bytes ] ] = [ ]
+	
+	for name in active_docs:
+		b = doc_bytes.get( name )
+		if not b:
+			continue
+		
+		text = _docqna_extract_text_from_pdf_bytes( b )
+		if not text:
+			continue
+		
+		chunks = chunk_text( text )
+		if not chunks:
+			continue
+		
+		vecs = embedder.encode( chunks, show_progress_bar=False )
+		vecs = np.asarray( vecs, dtype=np.float32 )
+		
+		if vec_ready:
+			for chunk_text_value, v in zip( chunks, vecs ):
+				cur.execute(
+					'INSERT INTO docqna_vec ( embedding, doc_name, chunk ) VALUES ( ?, ?, ? );',
+					(v.tobytes( ), name, chunk_text_value)
+				)
+		else:
+			for chunk_text_value, v in zip( chunks, vecs ):
+				fallback_rows.append( (name, chunk_text_value, v.tobytes( )) )
+		
+		total_chunks += int( len( chunks ) )
+	
+	conn.commit( )
+	conn.close( )
+	
+	if not vec_ready:
+		st.session_state[ 'docqna_fallback_rows' ] = fallback_rows
+	
+	st.session_state[ 'docqna_chunk_count' ] = total_chunks
+
+def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
+	'''
+	
+		Purpose:
+		--------
+		Retrieves top-k document chunks relevant to the query, using sqlite-vec when available, and falling
+		back to in-memory cosine similarity when not.
+	
+		Parameters:
+		-----------
+		query:
+			The user query string.
+		k:
+			The number of chunks to return.
+	
+		Returns:
+		--------
+		A List[ Tuple[ str, str, float ] ] of (doc_name, chunk, score_or_distance).
+	
+	'''
+	if not query or not query.strip( ):
+		return [ ]
+	
+	embedder: SentenceTransformer = load_embedder( )
+	_docqna_rebuild_index_if_needed( embedder )
+	
+	qv = embedder.encode( [ query ], show_progress_bar=False )
+	qv = np.asarray( qv, dtype=np.float32 )[ 0 ]
+	
+	if st.session_state.get( 'docqna_vec_ready', False ):
+		try:
+			conn = create_connection( )
+			_docqna_safe_load_sqlite_vec( conn )
+			cur = conn.cursor( )
+			cur.execute(
+				'''
+                SELECT doc_name, chunk, distance
+                FROM docqna_vec
+                WHERE embedding MATCH ?
+                ORDER BY distance ASC LIMIT ?;
+				''',
+				(qv.tobytes( ), int( k ))
+			)
+			rows = cur.fetchall( )
+			conn.close( )
+			return [ (r[ 0 ], r[ 1 ], float( r[ 2 ] )) for r in rows ]
+		except Exception:
+			st.session_state[ 'docqna_vec_ready' ] = False
+	
+	fallback_rows: List[
+		Tuple[ str, str, bytes ] ] = st.session_state.get( 'docqna_fallback_rows', [ ] )
+	results: List[ Tuple[ str, str, float ] ] = [ ]
+	
+	for doc_name, chunk_text_value, vec_blob in fallback_rows:
+		if not vec_blob:
+			continue
+		
+		v = np.frombuffer( vec_blob, dtype=np.float32 )
+		if v.size == 0:
+			continue
+		
+		score = cosine_sim( qv, v )
+		results.append( (doc_name, chunk_text_value, float( score )) )
+	
+	results.sort( key=lambda r: r[ 2 ], reverse=True )
+	return results[ : int( k ) ]
+
+def build_document_user_input( user_query: str, k: int = 6 ) -> str:
+	'''
+	
+		Purpose:
+		--------
+		Builds a Document Q&A prompt that injects retrieved chunks (RAG) instead of stuffing full documents.
+	
+		Parameters:
+		-----------
+		user_query:
+			The user question.
+		k:
+			The number of retrieved chunks to include.
+	
+		Returns:
+		--------
+		A str prompt suitable for llama.cpp completion.
+	
+	'''
+	system = str( st.session_state.get( 'system_instructions', '' ) or '' ).strip( )
+	hits = retrieve_top_doc_chunks( user_query, k=int( k ) )
+	
+	context_blocks: List[ str ] = [ ]
+	for doc_name, chunk, score in hits:
+		context_blocks.append( f'[Document: {doc_name}]\n{chunk}'.strip( ) )
+	
+	context = '\n\n'.join( context_blocks ).strip( )
+	
+	prompt_parts: List[ str ] = [ ]
+	
+	if system:
+		prompt_parts.append( system )
+	
+	if context:
+		prompt_parts.append(
+			'Use the following document excerpts to answer the question. If the excerpts do not contain '
+			'the answer, say you do not have enough information.\n\n'
+			f'{context}'
+		)
+	
+	prompt_parts.append( f'Question:\n{user_query}\n\nAnswer:' )
+	
+	return '\n\n'.join( prompt_parts ).strip( )
+
 # -------------- LLM  UTILITIES -------------------
 
 @st.cache_resource
@@ -2002,23 +2333,43 @@ elif mode == 'Document Q&A':
 				
 				else:
 					st.info( "No document loaded." )
-			
-			# ------------------------------------------------------------------
-			# Chat History Render
-			# ------------------------------------------------------------------
-			for msg in st.session_state.messages:
-				if isinstance( msg, dict ):
-					role = msg.get( 'role', '' )
-					content = msg.get( 'content', '' )
-				else:
-					try:
-						role, content = msg
-					except Exception:
-						role, content = '', ''
+					
+				# ------------------------------------------------------------------
+				# Chat History Render
+				# ------------------------------------------------------------------
+				if 'messages' not in st.session_state or not isinstance( st.session_state.messages, list ):
+					st.session_state.messages = [ ]
 				
-				if role:
-					with st.chat_message( role ):
-						st.markdown( content )
+				for msg in st.session_state.messages:
+					role = ''
+					content = ''
+					
+					if isinstance( msg, dict ):
+						role = str( msg.get( 'role', '' ) or '' ).strip( )
+						content = msg.get( 'content', '' )
+					else:
+						if isinstance( msg, tuple ) or isinstance( msg, list ):
+							if len( msg ) == 2:
+								role = str( msg[ 0 ] or '' ).strip( )
+								content = msg[ 1 ]
+							else:
+								role = ''
+								content = ''
+						else:
+							role = ''
+							content = ''
+					
+					if role not in ('user', 'assistant', 'system'):
+						role = 'assistant'
+					
+					if content is None:
+						content = ''
+					elif not isinstance( content, str ):
+						content = str( content )
+					
+					if role:
+						with st.chat_message( role ):
+							st.markdown( content )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
@@ -2026,7 +2377,12 @@ elif mode == 'Document Q&A':
 		# Chat Input
 		# ------------------------------------------------------------------
 		user_input = st.chat_input( 'Ask a question about the document' )
-		if user_input:
+		if user_input and isinstance( user_input, str ) and user_input.strip( ):
+			user_input = user_input.strip( )
+			
+			if 'messages' not in st.session_state or not isinstance( st.session_state.messages, list ):
+				st.session_state.messages = [ ]
+			
 			save_message( 'user', user_input )
 			st.session_state.messages.append( ('user', user_input) )
 			
@@ -2034,7 +2390,7 @@ elif mode == 'Document Q&A':
 				st.markdown( user_input )
 			
 			doc_user_input = build_document_user_input( user_input )
-			if not doc_user_input:
+			if not doc_user_input or not isinstance( doc_user_input, str ) or not doc_user_input.strip( ):
 				doc_user_input = user_input
 			
 			with st.chat_message( 'assistant' ):
@@ -2049,6 +2405,12 @@ elif mode == 'Document Q&A':
 					output=out
 				)
 			
+			if response is None:
+				response = ''
+			elif not isinstance( response, str ):
+				response = str( response )
+			
+			response = response.strip( )
 			save_message( 'assistant', response )
 			st.session_state.messages.append( ('assistant', response) )
 			
