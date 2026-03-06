@@ -2279,33 +2279,23 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		# Document Selection UI
 		# ------------------------------------------------------------------
-		with st.expander( label='Document Loader', icon='📥', expanded=True, width='stretch' ):
+		with st.expander( label='Document Loader', icon='📥', expanded=False, width='stretch' ):
 			doc_left, doc_right = st.columns( [ 0.5, 0.5 ], gap='medium', border=True )
 			with doc_left:
-				doc_source = st.radio(
-					label='Document Source',
-					options=[ 'uploadlocal' ],
-					index=0,
-					horizontal=True,
-					key='doc_source'
-				)
+				doc_source = st.radio( label='Document Source', options=[ 'uploadlocal' ],
+					index=0, horizontal=True, key='doc_source' )
 				
-				uploaded = st.file_uploader(
-					label='Upload a document (PDF, TXT, DOCX)',
-					type=[ 'pdf', 'txt', 'docx' ],
-					accept_multiple_files=True,
-					label_visibility='visible'
-				)
+				uploaded = st.file_uploader( label='Upload a document (PDF, TXT, DOCX)',
+					type=[ 'pdf', 'txt', 'docx' ], accept_multiple_files=True,
+					label_visibility='visible' )
 				
 				if uploaded is not None and type( uploaded ) == list and len( uploaded ) > 0:
 					st.session_state.uploaded = uploaded
-					
 					names: List[ str ] = [ f.name for f in uploaded if getattr( f, 'name', None ) ]
 					st.session_state.active_docs = names
-					
-					if 'doc_bytes' not in st.session_state or not isinstance( st.session_state.doc_bytes, dict ):
+					if 'doc_bytes' not in st.session_state or not isinstance(
+							st.session_state.doc_bytes, dict ):
 						st.session_state.doc_bytes = { }
-					
 					for f in uploaded:
 						try:
 							if getattr( f, 'name', None ):
@@ -2325,7 +2315,6 @@ elif mode == 'Document Q&A':
 				if st.session_state.get( 'active_docs' ):
 					name = st.session_state.active_docs[ 0 ]
 					file_bytes = st.session_state.doc_bytes.get( name )
-					
 					if file_bytes:
 						st.pdf( file_bytes, height=420 )
 					else:
