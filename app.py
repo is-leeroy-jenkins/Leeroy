@@ -1861,7 +1861,6 @@ if mode == 'Text Generation':
 				# ------------- Temperature ----------
 				with mind_c1:
 					set_temperature = st.slider( label='Temperature', min_value=0.0, max_value=1.0,
-						value=float( st.session_state.get( 'temperature' ) ),
 						help=cfg.TEMPERATURE, key='temperature' )
 				
 					temperature = st.session_state[ 'temperature' ]
@@ -2073,8 +2072,7 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False ):
 			with st.expander( label='⚙️ Response Controls', expanded=False ):
-				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33,
-				                                          .33 ], border=True, gap='medium' )
+				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
 				
 				# ------------- Temperature ----------
 				with mind_c1:
