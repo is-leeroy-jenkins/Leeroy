@@ -170,25 +170,98 @@ def cosine_sim( a: np.ndarray, b: np.ndarray ) -> float:
     return float( np.dot(a, b) / denom ) if denom else 0.0
 
 def ensure_db( ) -> None:
-    Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True)
-    with sqlite3.connect(cfg.DB_PATH) as conn:
-        conn.execute("""
-                     CREATE TABLE IF NOT EXISTS chat_history ( id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                                               role TEXT,
-                                                               content TEXT  ) """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS embeddings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chunk TEXT,
-                vector BLOB ) """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS Prompts (
-                PromptsId INTEGER NOT NULL UNIQUE,
-                Name TEXT(80),
+	"""
+		Purpose:
+		--------
+		Ensures that required SQLite folders and tables exist and that the Prompts table
+		contains the columns required by the prompt utilities.
+
+		Parameters:
+		-----------
+		None
+
+		Returns:
+		--------
+		None
+	"""
+	Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True )
+	
+	with sqlite3.connect( cfg.DB_PATH ) as conn:
+		conn.execute(
+			"""
+            CREATE TABLE IF NOT EXISTS chat_history
+            (
+                id
+                INTEGER
+                PRIMARY
+                KEY
+                AUTOINCREMENT,
+                role
+                TEXT,
+                content
+                TEXT
+            )
+			"""
+		)
+		
+		conn.execute(
+			"""
+            CREATE TABLE IF NOT EXISTS embeddings
+            (
+                id
+                INTEGER
+                PRIMARY
+                KEY
+                AUTOINCREMENT,
+                chunk
+                TEXT,
+                vector
+                BLOB
+            )
+			"""
+		)
+		
+		conn.execute(
+			"""
+            CREATE TABLE IF NOT EXISTS Prompts
+            (
+                PromptsId
+                INTEGER
+                NOT
+                NULL
+                UNIQUE,
+                Caption
+                TEXT,
+                Name
+                TEXT
+            (
+                80
+            ),
                 Text TEXT,
-                Version TEXT(80),
-                ID TEXT(80),
-                PRIMARY KEY(PromptsId AUTOINCREMENT) ) """)
+                Version TEXT
+            (
+                80
+            ),
+                ID TEXT
+            (
+                80
+            ),
+                PRIMARY KEY
+            (
+                PromptsId
+                AUTOINCREMENT
+            )
+                )
+			"""
+		)
+		
+		prompt_columns = [ row[ 1 ] for row in
+		                   conn.execute( 'PRAGMA table_info("Prompts");' ).fetchall( ) ]
+		
+		if 'Caption' not in prompt_columns:
+			conn.execute( 'ALTER TABLE "Prompts" ADD COLUMN "Caption" TEXT;' )
+		
+		conn.commit( )
 
 # -------- CHAT/TEXT UTILITIES --------------------
 
@@ -1319,7 +1392,7 @@ def drop_column( table: str, column: str ):
 		
 		conn.commit( )
 
-# ------------- DOC Q&A UTILITIES ----------------------
+# ------------- DOCQNA UTILITIES ----------------------
 
 def extract_text_from_bytes( file_bytes: bytes ) -> str:
 	"""
@@ -2222,18 +2295,18 @@ elif mode == 'Document Q&A':
 					role = ''
 					content = ''
 					
-					if role not in ('user', 'assistant', 'system'):
-						continue
-					
-					if content is None:
-						content = ''
-					elif not isinstance( content, str ):
-						content = str( content )
-					
-					with st.chat_message( role ):
-						st.markdown( content )
-					
-			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			if role not in ('user', 'assistant', 'system'):
+				continue
+			
+			if content is None:
+				content = ''
+			elif not isinstance( content, str ):
+				content = str( content )
+			
+			with st.chat_message( role ):
+				st.markdown( content )
+				
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
 		# Chat Input
