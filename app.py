@@ -2337,8 +2337,7 @@ elif mode == 'Document Q&A':
 					repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
 					max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
 					stream=True,
-					output=out
-				)
+					output=out )
 			
 			if response is None:
 				response = ''
