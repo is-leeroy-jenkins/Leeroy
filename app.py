@@ -51,7 +51,6 @@ import multiprocessing
 import os
 import hashlib
 from pathlib import Path
-
 import fitz  # pymupdf
 import sqlite3
 import plotly.express as px
@@ -155,6 +154,9 @@ if 'docqna_fingerprint' not in st.session_state:
 
 if 'docqna_chunk_count' not in st.session_state:
 	st.session_state[ 'docqna_chunk_count' ] = 0
+	
+if 'docqna_fallback_rows' not in st.session_state:
+	st.session_state[ 'docqna_fallback_rows' ] = [ ]
 	
 # ==============================================================================
 # UTILITIES
@@ -491,9 +493,10 @@ def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
 
 def insert_prompt( data: Dict[ str, Any ] ) -> None:
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute( 'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?)',
+		conn.execute(
+			'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?, ?)',
 			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ]) )
-
+		
 def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
@@ -547,8 +550,21 @@ def build_prompt( user_input: str ) -> str:
 	for d in basic_docs[ :6 ]:
 		prompt += f"<|system|>\n{d}\n</s>\n"
 	
-	for r, c in messages:
-		prompt += f"<|{r}|>\n{c}\n</s>\n"
+	if isinstance( messages, list ):
+		for msg in messages:
+			role = ''
+			content = ''
+			
+			if isinstance( msg, tuple ) or isinstance( msg, list ):
+				if len( msg ) == 2:
+					role = str( msg[ 0 ] or '' ).strip( )
+					content = str( msg[ 1 ] or '' )
+			elif isinstance( msg, dict ):
+				role = str( msg.get( 'role', '' ) or '' ).strip( )
+				content = str( msg.get( 'content', '' ) or '' )
+			
+			if role:
+				prompt += f"<|{role}|>\n{content}\n</s>\n"
 	
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
@@ -619,155 +635,7 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 	output.markdown( buf )
 	return buf.strip( )
 
-def build_document_user_input( question: str ) -> str:
-	"""
-		Purpose:
-		--------
-		Build the unified user_input string for Document Q&A. This is the single place where
-		document-context is injected for Phase 1, so Phase 2 can replace this with sqlite-vec
-		retrieval without touching any UI chat loop.
-
-		Parameters:
-		-----------
-		question : str
-			The user's question about the active document set.
-
-		Returns:
-		--------
-		str
-			A user_input string suitable to be passed into build_prompt().
-	"""
-	source = st.session_state.get( 'doc_source', '' )
-	active_docs = st.session_state.get( 'active_docs', [ ] )
-	doc_bytes = st.session_state.get( 'doc_bytes', { } )
-	
-	user_question = (question or '').strip( )
-	if not user_question:
-		return ''
-	
-	if not source:
-		return user_question
-	
-	if source != 'uploadlocal':
-		return user_question
-	
-	if not active_docs:
-		return user_question
-	
-	if len( active_docs ) == 1:
-		name = active_docs[ 0 ]
-		file_bytes = doc_bytes.get( name )
-		if not file_bytes:
-			return user_question
-		
-		text = extract_text_from_bytes( file_bytes )
-		text = (text or '').strip( )
-		if not text:
-			return user_question
-		
-		return f"""
-Use the following document to answer the question.
-Be precise and cite relevant portions when possible.
-
-DOCUMENT ({name}):
-{text}
-
-QUESTION:
-{user_question}
-""".strip( )
-	
-	combined_text = ""
-	for name in active_docs:
-		file_bytes = doc_bytes.get( name )
-		if not file_bytes:
-			continue
-		
-		text = extract_text_from_bytes( file_bytes )
-		text = (text or '').strip( )
-		if not text:
-			continue
-		
-		combined_text += f"\n\n===== DOCUMENT: {name} =====\n\n{text}\n"
-	
-	if not combined_text.strip( ):
-		return user_question
-	
-	return f"""
-You are analyzing multiple documents.
-
-Use the content below to answer the question.
-If multiple documents are relevant, compare them.
-Cite document names when possible.
-
-DOCUMENT SET:
-{combined_text}
-
-QUESTION:
-{user_question}
-""".strip( )
-
 # ----------- DATABASE UTILITIES -------------------------
-
-def initialize_database( ) -> None:
-	Path( "stores/sqlite" ).mkdir( parents=True, exist_ok=True )
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute( """
-                      CREATE TABLE IF NOT EXISTS chat_history
-                      (
-                          id
-                          INTEGER
-                          PRIMARY
-                          KEY
-                          AUTOINCREMENT,
-                          role
-                          TEXT,
-                          content
-                          TEXT
-                      )
-		              """ )
-		conn.execute( """
-                      CREATE TABLE IF NOT EXISTS embeddings
-                      (
-                          id
-                          INTEGER
-                          PRIMARY
-                          KEY
-                          AUTOINCREMENT,
-                          chunk
-                          TEXT,
-                          vector
-                          BLOB
-                      )
-		              """ )
-		conn.execute( """
-                      CREATE TABLE IF NOT EXISTS Prompts
-                      (
-                          PromptsId
-                          INTEGER
-                          NOT
-                          NULL
-                          UNIQUE,
-                          Name
-                          TEXT
-                      (
-                          80
-                      ),
-                          Text TEXT,
-                          Version TEXT
-                      (
-                          80
-                      ),
-                          ID TEXT
-                      (
-                          80
-                      ),
-                          PRIMARY KEY
-                      (
-                          PromptsId
-                          AUTOINCREMENT
-                      )
-                          )
-		              """ )
 
 def create_connection( ) -> sqlite3.Connection:
 	return sqlite3.connect( cfg.DB_PATH )
@@ -782,7 +650,7 @@ def create_schema( table: str ) -> List[ Tuple ]:
 	with create_connection( ) as conn:
 		return conn.execute( f'PRAGMA table_info("{table}");' ).fetchall( )
 
-def read_table( table: str, limit: int = None, offset: int = 0 ) -> pd.DataFrame:
+def read_table( table: str, limit: int=None, offset: int=0 ) -> pd.DataFrame:
 	query = f'SELECT rowid, * FROM "{table}"'
 	if limit:
 		query += f" LIMIT {limit} OFFSET {offset}"
@@ -865,7 +733,6 @@ def rename_table( old_name: str, new_name: str ) -> None:
 		if open_paren == -1:
 			raise ValueError( "Malformed CREATE TABLE statement." )
 		
-		new_create_sql = f'CREATE TABLE "{new_name}" {create_sql[ open_paren: ]}'
 		temp_name = f"{new_name}__rebuild_temp"
 		
 		conn.execute( "BEGIN" )
@@ -955,24 +822,34 @@ def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
 		
 		mapped_cols = [ (new_name if c == old_name else c) for c in cols ]
 		
-		open_paren = create_sql.find( "(" )
-		close_paren = create_sql.rfind( ")" )
-		if open_paren == -1 or close_paren == -1:
-			raise ValueError( "Malformed CREATE TABLE statement." )
-		
-		inner = create_sql[ open_paren + 1: close_paren ]
-		col_defs = [ c.strip( ) for c in inner.split( "," ) ]
-		
-		new_defs = [ ]
-		for col_def in col_defs:
-			first = col_def.split( )[ 0 ].strip( '"' )
-			if first == old_name:
-				new_defs.append( col_def.replace( f'"{old_name}"', f'"{new_name}"', 1 ) )
-				continue
-			new_defs.append( col_def )
-		
 		temp_table = f"{table_name}__rebuild_temp"
-		new_create_sql = f'CREATE TABLE "{temp_table}" ({", ".join( new_defs )});'
+		
+		col_defs: List[ str ] = [ ]
+		pk_cols = [ r for r in schema if int( r[ 5 ] or 0 ) > 0 ]
+		single_pk = len( pk_cols ) == 1
+		
+		for row in schema:
+			col_name = row[ 1 ]
+			col_type = row[ 2 ] or ''
+			not_null = int( row[ 3 ] or 0 )
+			default_value = row[ 4 ]
+			pk = int( row[ 5 ] or 0 )
+			
+			out_name = new_name if col_name == old_name else col_name
+			col_def = f'"{out_name}" {col_type}'.strip( )
+			
+			if not_null:
+				col_def += ' NOT NULL'
+			
+			if default_value is not None:
+				col_def += f' DEFAULT {default_value}'
+			
+			if single_pk and pk == 1:
+				col_def += ' PRIMARY KEY'
+			
+			col_defs.append( col_def )
+		
+		new_create_sql = f'CREATE TABLE "{temp_table}" ({", ".join( col_defs )});'
 		
 		old_select = ", ".join( [ f'"{c}"' for c in cols ] )
 		new_insert = ", ".join( [ f'"{c}"' for c in mapped_cols ] )
@@ -1372,61 +1249,50 @@ def drop_column( table: str, column: str ):
 		raise ValueError( "Table and column required." )
 	
 	with create_connection( ) as conn:
-		# ----------  Fetch original CREATE TABLE statement
-		row = conn.execute(
-			"""
-            SELECT sql
-            FROM sqlite_master
-            WHERE type ='table' AND name =?
-			""",
-			(table,)
-		).fetchone( )
-		
-		if not row or not row[ 0 ]:
+		schema = conn.execute( f'PRAGMA table_info("{table}");' ).fetchall( )
+		if not schema:
 			raise ValueError( "Table definition not found." )
 		
-		create_sql = row[ 0 ]
-		
-		# ----------  Extract column definitions
-		open_paren = create_sql.find( "(" )
-		close_paren = create_sql.rfind( ")" )
-		
-		if open_paren == -1 or close_paren == -1:
-			raise ValueError( "Malformed CREATE TABLE statement." )
-		
-		inner = create_sql[ open_paren + 1: close_paren ]
-		
-		column_defs = [ c.strip( ) for c in inner.split( "," ) ]
-		
-		# ----------  Remove target column
-		new_defs = [ ]
-		for col_def in column_defs:
-			col_name = col_def.split( )[ 0 ].strip( '"' )
-			if col_name != column:
-				new_defs.append( col_def )
-		
-		if len( new_defs ) == len( column_defs ):
+		col_names = [ r[ 1 ] for r in schema ]
+		if column not in col_names:
 			raise ValueError( "Column not found." )
 		
-		# ----------  Build new CREATE TABLE statement
+		remaining = [ r for r in schema if r[ 1 ] != column ]
+		if not remaining:
+			raise ValueError( "Cannot drop the only remaining column." )
+		
 		temp_table = f"{table}_rebuild_temp"
 		
-		new_create_sql = (
-				f'CREATE TABLE "{temp_table}" ('
-				+ ", ".join( new_defs )
-				+ ");"
-		)
+		pk_cols = [ r for r in remaining if int( r[ 5 ] or 0 ) > 0 ]
+		single_pk = len( pk_cols ) == 1
 		
-		# ----------  Begin transaction
+		new_defs: List[ str ] = [ ]
+		for row in remaining:
+			col_name = row[ 1 ]
+			col_type = row[ 2 ] or ''
+			not_null = int( row[ 3 ] or 0 )
+			default_value = row[ 4 ]
+			pk = int( row[ 5 ] or 0 )
+			
+			col_def = f'"{col_name}" {col_type}'.strip( )
+			
+			if not_null:
+				col_def += ' NOT NULL'
+			
+			if default_value is not None:
+				col_def += f' DEFAULT {default_value}'
+			
+			if single_pk and pk == 1:
+				col_def += ' PRIMARY KEY'
+			
+			new_defs.append( col_def )
+		
+		new_create_sql = f'CREATE TABLE "{temp_table}" ({", ".join( new_defs )});'
+		
 		conn.execute( "BEGIN" )
-		
 		conn.execute( new_create_sql )
 		
-		remaining_cols = [
-				c.split( )[ 0 ].strip( '"' )
-				for c in new_defs
-		]
-		
+		remaining_cols = [ r[ 1 ] for r in remaining ]
 		col_list = ", ".join( [ f'"{c}"' for c in remaining_cols ] )
 		
 		conn.execute(
@@ -1434,7 +1300,6 @@ def drop_column( table: str, column: str ):
 			f'SELECT {col_list} FROM "{table}";'
 		)
 		
-		# ----------  Preserve indexes
 		indexes = conn.execute(
 			"""
             SELECT sql
@@ -1445,14 +1310,11 @@ def drop_column( table: str, column: str ):
 		).fetchall( )
 		
 		conn.execute( f'DROP TABLE "{table}";' )
-		conn.execute(
-			f'ALTER TABLE "{temp_table}" RENAME TO "{table}";'
-		)
+		conn.execute( f'ALTER TABLE "{temp_table}" RENAME TO "{table}";' )
 		
-		# ----------  Recreate indexes
 		for idx in indexes:
 			idx_sql = idx[ 0 ]
-			if column not in idx_sql:
+			if idx_sql and column not in idx_sql:
 				conn.execute( idx_sql )
 		
 		conn.commit( )
@@ -1628,11 +1490,11 @@ def _docqna_ensure_vec_schema( dim: int ) -> bool:
 	
 	'''
 	conn = create_connection( )
-	ok = _docqna_safe_load_sqlite_vec( conn )
-	if not ok:
-		return False
-	
 	try:
+		ok = _docqna_safe_load_sqlite_vec( conn )
+		if not ok:
+			return False
+		
 		cur = conn.cursor( )
 		cur.execute(
 			f'''
@@ -1650,7 +1512,7 @@ def _docqna_ensure_vec_schema( dim: int ) -> bool:
 		return False
 	finally:
 		conn.close( )
-
+		
 def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	'''
 		
@@ -1741,7 +1603,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 		Purpose:
 		--------
 		Retrieves top-k document chunks relevant to the query, using sqlite-vec when available, and falling
-		back to in-memory cosine similarity when not.
+		back to persisted cosine similarity search when not.
 	
 		Parameters:
 		-----------
@@ -1784,11 +1646,15 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 		except Exception:
 			st.session_state[ 'docqna_vec_ready' ] = False
 	
-	fallback_rows: List[
-		Tuple[ str, str, bytes ] ] = st.session_state.get( 'docqna_fallback_rows', [ ] )
+	conn = create_connection( )
+	rows = conn.execute(
+		'SELECT chunk, vector FROM embeddings;'
+	).fetchall( )
+	conn.close( )
+	
 	results: List[ Tuple[ str, str, float ] ] = [ ]
 	
-	for doc_name, chunk_text_value, vec_blob in fallback_rows:
+	for chunk_text_value, vec_blob in rows:
 		if not vec_blob:
 			continue
 		
@@ -1797,7 +1663,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 			continue
 		
 		score = cosine_sim( qv, v )
-		results.append( (doc_name, chunk_text_value, float( score )) )
+		results.append( ('', chunk_text_value, float( score )) )
 	
 	results.sort( key=lambda r: r[ 2 ], reverse=True )
 	return results[ : int( k ) ]
@@ -2077,8 +1943,6 @@ if mode == 'Text Generation':
 			with st.chat_message( 'user' ):
 				st.markdown( user_input )
 			
-			prompt = build_prompt( user_input )
-
 			with st.chat_message( 'assistant' ):
 				out = st.empty( )
 				buf = run_llm_turn(
@@ -2279,23 +2143,33 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		# Document Selection UI
 		# ------------------------------------------------------------------
-		with st.expander( label='Document Loader', icon='📥', expanded=False, width='stretch' ):
+		with st.expander( label='Document Loader', icon='📥', expanded=True, width='stretch' ):
 			doc_left, doc_right = st.columns( [ 0.5, 0.5 ], gap='medium', border=True )
 			with doc_left:
-				doc_source = st.radio( label='Document Source', options=[ 'uploadlocal' ],
-					index=0, horizontal=True, key='doc_source' )
+				doc_source = st.radio(
+					label='Document Source',
+					options=[ 'uploadlocal' ],
+					index=0,
+					horizontal=True,
+					key='doc_source'
+				)
 				
-				uploaded = st.file_uploader( label='Upload a document (PDF, TXT, DOCX)',
-					type=[ 'pdf', 'txt', 'docx' ], accept_multiple_files=True,
-					label_visibility='visible' )
+				uploaded = st.file_uploader(
+					label='Upload a document (PDF, TXT, DOCX)',
+					type=[ 'pdf', 'txt', 'docx' ],
+					accept_multiple_files=True,
+					label_visibility='visible'
+				)
 				
 				if uploaded is not None and type( uploaded ) == list and len( uploaded ) > 0:
 					st.session_state.uploaded = uploaded
+					
 					names: List[ str ] = [ f.name for f in uploaded if getattr( f, 'name', None ) ]
 					st.session_state.active_docs = names
-					if 'doc_bytes' not in st.session_state or not isinstance(
-							st.session_state.doc_bytes, dict ):
+					
+					if 'doc_bytes' not in st.session_state or not isinstance( st.session_state.doc_bytes, dict ):
 						st.session_state.doc_bytes = { }
+					
 					for f in uploaded:
 						try:
 							if getattr( f, 'name', None ):
@@ -2315,52 +2189,51 @@ elif mode == 'Document Q&A':
 				if st.session_state.get( 'active_docs' ):
 					name = st.session_state.active_docs[ 0 ]
 					file_bytes = st.session_state.doc_bytes.get( name )
+					
 					if file_bytes:
 						st.pdf( file_bytes, height=420 )
 					else:
 						st.info( "Document loaded but preview unavailable." )
-				
 				else:
 					st.info( "No document loaded." )
-					
-				# ------------------------------------------------------------------
-				# Chat History Render
-				# ------------------------------------------------------------------
-				if 'messages' not in st.session_state or not isinstance( st.session_state.messages, list ):
-					st.session_state.messages = [ ]
-				
-				for msg in st.session_state.messages:
+			
+		# ------------------------------------------------------------------
+		# Chat History Render
+		# ------------------------------------------------------------------
+		if 'messages' not in st.session_state or not isinstance( st.session_state.messages, list ):
+			st.session_state.messages = [ ]
+		
+		for msg in st.session_state.messages:
+			role = ''
+			content = ''
+			
+			if isinstance( msg, dict ):
+				role = str( msg.get( 'role', '' ) or '' ).strip( )
+				content = msg.get( 'content', '' )
+			else:
+				if isinstance( msg, tuple ) or isinstance( msg, list ):
+					if len( msg ) == 2:
+						role = str( msg[ 0 ] or '' ).strip( )
+						content = msg[ 1 ]
+					else:
+						role = ''
+						content = ''
+				else:
 					role = ''
 					content = ''
 					
-					if isinstance( msg, dict ):
-						role = str( msg.get( 'role', '' ) or '' ).strip( )
-						content = msg.get( 'content', '' )
-					else:
-						if isinstance( msg, tuple ) or isinstance( msg, list ):
-							if len( msg ) == 2:
-								role = str( msg[ 0 ] or '' ).strip( )
-								content = msg[ 1 ]
-							else:
-								role = ''
-								content = ''
-						else:
-							role = ''
-							content = ''
-					
 					if role not in ('user', 'assistant', 'system'):
-						role = 'assistant'
+						continue
 					
 					if content is None:
 						content = ''
 					elif not isinstance( content, str ):
 						content = str( content )
 					
-					if role:
-						with st.chat_message( role ):
-							st.markdown( content )
-		
-		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+					with st.chat_message( role ):
+						st.markdown( content )
+					
+			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
 		# Chat Input
@@ -2409,21 +2282,27 @@ elif mode == 'Document Q&A':
 elif mode == 'Semantic Search':
 	st.subheader( "🔍 Semantic Search", help=cfg.SEMANTIC_SEARCH )
 	st.divider( )
-	st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
-		st.session_state.use_semantic )
-	files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
-	if files:
-		chunks = [ ]
-		for f in files:
-			chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
-		vecs = embedder.encode( chunks )
-		with sqlite3.connect( cfg.DB_PATH ) as conn:
-			conn.execute( 'DELETE FROM embeddings' )
-			for c, v in zip( chunks, vecs ):
-				conn.execute(
-					'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
-					( c, v.tobytes( ) ) )
-		st.success( 'Semantic index built' )
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
+	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	with center:
+		st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
+			st.session_state.use_semantic )
+		files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
+		if files:
+			chunks = [ ]
+			for f in files:
+				chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
+			vecs = embedder.encode( chunks )
+			with sqlite3.connect( cfg.DB_PATH ) as conn:
+				conn.execute( 'DELETE FROM embeddings' )
+				for c, v in zip( chunks, vecs ):
+					conn.execute(
+						'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
+						( c, v.tobytes( ) ) )
+			st.success( 'Semantic index built' )
 
 # ==============================================================================
 # PROMPT ENGINEERING MODE
