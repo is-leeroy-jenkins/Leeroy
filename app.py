@@ -169,8 +169,8 @@ def ensure_db( ) -> None:
 	"""
 		Purpose:
 		--------
-		Ensures that required SQLite folders and tables exist and that the Prompts table
-		contains the columns required by the prompt utilities.
+		Ensure required SQLite tables exist and that the Prompts table contains the
+		columns required by the prompt utilities and Prompt Engineering mode.
 
 		Parameters:
 		-----------
@@ -181,7 +181,6 @@ def ensure_db( ) -> None:
 		None
 	"""
 	Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True )
-	
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
 			"""
@@ -225,7 +224,9 @@ def ensure_db( ) -> None:
                 INTEGER
                 NOT
                 NULL
-                UNIQUE,
+                PRIMARY
+                KEY
+                AUTOINCREMENT,
                 Caption
                 TEXT,
                 Name
@@ -241,11 +242,6 @@ def ensure_db( ) -> None:
                 ID TEXT
             (
                 80
-            ),
-                PRIMARY KEY
-            (
-                PromptsId
-                AUTOINCREMENT
             )
                 )
 			"""
@@ -1581,7 +1577,7 @@ def _docqna_ensure_vec_schema( dim: int ) -> bool:
 		return False
 	finally:
 		conn.close( )
-		
+
 def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	'''
 		
@@ -1617,54 +1613,60 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	st.session_state[ 'docqna_vec_ready' ] = bool( vec_ready )
 	
 	conn = create_connection( )
-	cur = conn.cursor( )
-	
-	if vec_ready:
-		try:
-			cur.execute( 'DELETE FROM docqna_vec;' )
-			conn.commit( )
-		except Exception:
-			st.session_state[ 'docqna_vec_ready' ] = False
-			vec_ready = False
-	
-	total_chunks = 0
-	fallback_rows: List[ Tuple[ str, str, bytes ] ] = [ ]
-	
-	for name in active_docs:
-		b = doc_bytes.get( name )
-		if not b:
-			continue
-		
-		text = _docqna_extract_text_from_pdf_bytes( b )
-		if not text:
-			continue
-		
-		chunks = chunk_text( text )
-		if not chunks:
-			continue
-		
-		vecs = embedder.encode( chunks, show_progress_bar=False )
-		vecs = np.asarray( vecs, dtype=np.float32 )
+	try:
+		cur = conn.cursor( )
 		
 		if vec_ready:
-			for chunk_text_value, v in zip( chunks, vecs ):
-				cur.execute(
-					'INSERT INTO docqna_vec ( embedding, doc_name, chunk ) VALUES ( ?, ?, ? );',
-					(v.tobytes( ), name, chunk_text_value)
-				)
-		else:
-			for chunk_text_value, v in zip( chunks, vecs ):
-				fallback_rows.append( (name, chunk_text_value, v.tobytes( )) )
+			try:
+				cur.execute( 'DELETE FROM docqna_vec;' )
+				conn.commit( )
+			except Exception:
+				st.session_state[ 'docqna_vec_ready' ] = False
+				vec_ready = False
 		
-		total_chunks += int( len( chunks ) )
+		total_chunks = 0
+		fallback_rows: List[ Tuple[ str, str, bytes ] ] = [ ]
+		
+		for name in active_docs:
+			b = doc_bytes.get( name )
+			if not b:
+				continue
+			
+			text = _docqna_extract_text_from_pdf_bytes( b )
+			if not text:
+				continue
+			
+			chunks = chunk_text( text )
+			if not chunks:
+				continue
+			
+			vecs = embedder.encode( chunks, show_progress_bar=False )
+			vecs = np.asarray( vecs, dtype=np.float32 )
+			
+			if vec_ready:
+				for chunk_text_value, v in zip( chunks, vecs ):
+					cur.execute(
+						'INSERT INTO docqna_vec ( embedding, doc_name, chunk ) VALUES ( ?, ?, ? );',
+						(v.tobytes( ), name, chunk_text_value)
+					)
+			else:
+				for chunk_text_value, v in zip( chunks, vecs ):
+					fallback_rows.append( (name, chunk_text_value, v.tobytes( )) )
+			
+			total_chunks += int( len( chunks ) )
+		
+		conn.commit( )
+		st.session_state[ 'docqna_chunk_count' ] = total_chunks
+		
+		if not vec_ready:
+			st.session_state[ 'docqna_fallback_rows' ] = fallback_rows
 	
-	conn.commit( )
-	conn.close( )
-	
-	if not vec_ready:
-		st.session_state[ 'docqna_fallback_rows' ] = fallback_rows
-	
-	st.session_state[ 'docqna_chunk_count' ] = total_chunks
+	except Exception:
+		st.session_state[ 'docqna_vec_ready' ] = False
+		st.session_state[ 'docqna_fallback_rows' ] = [ ]
+		st.session_state[ 'docqna_chunk_count' ] = 0
+	finally:
+		conn.close( )
 
 def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
 	'''
@@ -1672,7 +1674,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 		Purpose:
 		--------
 		Retrieves top-k document chunks relevant to the query, using sqlite-vec when available, and falling
-		back to persisted cosine similarity search when not.
+		back to in-memory cosine similarity when not.
 	
 		Parameters:
 		-----------
@@ -1696,8 +1698,8 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 	qv = np.asarray( qv, dtype=np.float32 )[ 0 ]
 	
 	if st.session_state.get( 'docqna_vec_ready', False ):
+		conn = create_connection( )
 		try:
-			conn = create_connection( )
 			_docqna_safe_load_sqlite_vec( conn )
 			cur = conn.cursor( )
 			cur.execute(
@@ -1710,20 +1712,17 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 				(qv.tobytes( ), int( k ))
 			)
 			rows = cur.fetchall( )
-			conn.close( )
 			return [ (r[ 0 ], r[ 1 ], float( r[ 2 ] )) for r in rows ]
 		except Exception:
 			st.session_state[ 'docqna_vec_ready' ] = False
+		finally:
+			conn.close( )
 	
-	conn = create_connection( )
-	rows = conn.execute(
-		'SELECT chunk, vector FROM embeddings;'
-	).fetchall( )
-	conn.close( )
-	
+	fallback_rows: List[
+		Tuple[ str, str, bytes ] ] = st.session_state.get( 'docqna_fallback_rows', [ ] )
 	results: List[ Tuple[ str, str, float ] ] = [ ]
 	
-	for chunk_text_value, vec_blob in rows:
+	for doc_name, chunk_text_value, vec_blob in fallback_rows:
 		if not vec_blob:
 			continue
 		
@@ -1732,7 +1731,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 			continue
 		
 		score = cosine_sim( qv, v )
-		results.append( ('', chunk_text_value, float( score )) )
+		results.append( (doc_name, chunk_text_value, float( score )) )
 	
 	results.sort( key=lambda r: r[ 2 ], reverse=True )
 	return results[ : int( k ) ]
@@ -2545,13 +2544,14 @@ elif mode == 'Prompt Engineering':
 		# ------------------------------------------------------------------
 		with st.expander( "🖊️ Edit Prompt", expanded=False ):
 			st.text_input( "PromptsId", value=st.session_state.pe_selected_id or "",
-				disabled=True, )
+				disabled=True )
+			st.text_input( 'Caption', key='pe_caption' )
 			st.text_input( 'Name', key='pe_name' )
-			
 			st.text_area( 'Text', key='pe_text', height=260 )
 			st.text_input( 'Version', key='pe_version' )
-			c1, c2, c3 = st.columns( 3 )
 			
+			
+			c1, c2, c3 = st.columns( 3 )
 			with c1:
 				if st.button( '💾 Save Changes'
 				if st.session_state.pe_selected_id
