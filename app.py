@@ -983,7 +983,6 @@ def create_index( table: str, column: str ) -> None:
 
 def apply_filters( df: pd.DataFrame ) -> pd.DataFrame:
 	st.subheader( 'Advanced Filters' )
-	conditions = [ ]
 	col1, col2, col3 = st.columns( 3 )
 	column = col1.selectbox( 'Column', df.columns )
 	operator = col2.selectbox( 'Operator', [ '=', '!=', '>', '<', '>=', '<=', 'contains' ] )
@@ -2553,9 +2552,8 @@ elif mode == 'Prompt Engineering':
 			
 			c1, c2, c3 = st.columns( 3 )
 			with c1:
-				if st.button( '💾 Save Changes'
-				if st.session_state.pe_selected_id
-				else '➕ Create Prompt' ):
+				save_label = '💾 Save Changes' if st.session_state.pe_selected_id else '➕ Create Prompt'
+				if st.button( save_label ):
 					with get_conn( ) as conn:
 						if st.session_state.pe_selected_id:
 							conn.execute(
