@@ -8,5 +8,3 @@ pydantic
 typing_extensions
 pymupdf
 sqlite-vec
-streamlit-extras
-streamlit-pdf
