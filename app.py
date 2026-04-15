@@ -1836,7 +1836,7 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 	return '\n\n'.join( prompt_parts ).strip( )
 
 # -------------- LLM  UTILITIES -------------------
-
+@st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
 	"""
 	
@@ -1952,12 +1952,32 @@ def get_llm( ctx: int | None = None, threads: int | None = None ) -> Any | None:
 	except Exception:
 		return None
 
+def get_embedder( ) -> SentenceTransformer | None:
+	"""
+		Purpose:
+		--------
+		Lazily return the embedding model only when needed.
+	
+		Parameters:
+		-----------
+		None
+	
+		Returns:
+		--------
+		SentenceTransformer | None
+			Loaded embedder instance or None when unavailable.
+	"""
+	try:
+		return load_embedder( )
+	except Exception:
+		return None
+	
 # ==============================================================================
 # Init
 # ==============================================================================
 ensure_db( )
 llm = None
-embedder = load_embedder( )
+embedder = None
 
 if not isinstance( st.session_state.get( 'messages' ), list ):
 	st.session_state[ 'messages' ] = [ ]
