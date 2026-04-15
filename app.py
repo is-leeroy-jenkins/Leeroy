@@ -65,10 +65,30 @@ import config as cfg
 # Model Path Resolution
 # ==============================================================================
 MODEL_PATH_OBJ = Path( cfg.MODEL_PATH )
+LOCAL_MODEL_AVAILABLE = MODEL_PATH_OBJ.exists( )
 
-if not MODEL_PATH_OBJ.exists( ):
-    st.error( f'Model not found at {cfg.MODEL_PATH}' )
-    st.stop( )
+def local_llm_available( ) -> bool:
+	"""
+	
+		Purpose:
+		--------
+		Determine whether the optional local GGUF file is physically available
+		in the current execution environment.
+	
+		Parameters:
+		-----------
+		None
+	
+		Returns:
+		--------
+		bool
+			True when the configured local GGUF file exists.
+			
+	"""
+	try:
+		return bool( LOCAL_MODEL_AVAILABLE )
+	except Exception:
+		return False
     
 # ==============================================================================
 # SESSION STATE INITIALIZATION
@@ -155,6 +175,31 @@ if 'docqna_chunk_count' not in st.session_state:
 	
 if 'docqna_fallback_rows' not in st.session_state:
 	st.session_state[ 'docqna_fallback_rows' ] = [ ]
+
+# ------- TOKEN PARAMATERS  ---------------------------
+if 'last_answer' not in st.session_state:
+	st.session_state.last_answer = ''
+
+if 'last_sources' not in st.session_state:
+	st.session_state.last_sources = [ ]
+
+if 'last_analysis' not in st.session_state:
+	st.session_state.last_analysis = {
+			'tables': [ ],
+			'docqna_files': [ ],
+			'text': [ ],
+	}
+
+if 'last_call_usage' not in st.session_state:
+	st.session_state.last_call_usage = {
+			'prompt_tokens': 0,
+			'completion_tokens': 0,
+			'total_tokens': 0, }
+
+if 'token_usage' not in st.session_state:
+	st.session_state.token_usage = { 'prompt_tokens': 0,
+	                                 'completion_tokens': 0,
+	                                 'total_tokens': 0, }
 	
 # ==============================================================================
 # UTILITIES
@@ -643,7 +688,7 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 		--------
 		Run a single LLM turn using the application's shared prompt builder and either stream or
 		return the full response text.
-
+	
 		Parameters:
 		-----------
 		user_input : str
@@ -660,7 +705,7 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 			When True, stream tokens to the provided Streamlit placeholder.
 		output : Any | None
 			A Streamlit placeholder (e.g., st.empty()) used for streaming output.
-
+	
 		Returns:
 		--------
 		str
@@ -670,8 +715,17 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 		return ''
 	
 	prompt = build_prompt( user_input )
+	local_model = get_llm(
+		int( st.session_state.get( 'context_window', cfg.DEFAULT_CTX ) ),
+		int( st.session_state.get( 'cpu_threads', cfg.CORES ) )
+	)
+	
+	if local_model is None:
+		st.error( 'Local llama.cpp model is unavailable in this environment.' )
+		return ''
+	
 	if not stream:
-		resp = llm(
+		resp = local_model(
 			prompt,
 			stream=False,
 			max_tokens=max_tokens,
@@ -687,7 +741,7 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 	if output is None:
 		output = st.empty( )
 	
-	for chunk in llm(
+	for chunk in local_model(
 			prompt,
 			stream=True,
 			max_tokens=max_tokens,
@@ -1783,82 +1837,6 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 
 # -------------- LLM  UTILITIES -------------------
 
-def local_llm_enabled( ) -> bool:
-	"""
-	
-		Purpose:
-		--------
-		Determine whether the optional local llama.cpp model should be enabled.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		bool
-			True when local LLM support is enabled in configuration.
-			
-	"""
-	try:
-		return bool( getattr( cfg, 'ENABLE_LOCAL_LLM', False ) )
-	except Exception:
-		return False
-
-@st.cache_resource
-def load_llm( ctx: int, threads: int ):
-	"""
-	
-		Purpose:
-		--------
-		Lazily load the optional local llama.cpp model.
-	
-		Parameters:
-		-----------
-		ctx : int
-			Context window size.
-		threads : int
-			Number of CPU threads to allocate.
-	
-		Returns:
-		--------
-		Any
-			Instantiated llama.cpp model object.
-			
-	"""
-	from llama_cpp import Llama
-	
-	return Llama(
-		model_path=str( cfg.MODEL_PATH ),
-		n_ctx=ctx,
-		n_threads=threads,
-		n_batch=512,
-		verbose=False
-	)
-
-def get_llm( ):
-	"""
-	
-		Purpose:
-		--------
-		Return the optional local llama.cpp model only when enabled.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		Any | None
-			Loaded llama.cpp model instance or None when disabled.
-			
-	"""
-	if not local_llm_enabled( ):
-		return None
-	
-	return load_llm( cfg.DEFAULT_CTX, cfg.CORES )
-
-@st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
 	"""
 	
@@ -1878,11 +1856,107 @@ def load_embedder( ) -> SentenceTransformer:
 	"""
 	return SentenceTransformer( 'all-MiniLM-L6-v2' )
 
+def local_llm_enabled( ) -> bool:
+	"""
+	
+		Purpose:
+		--------
+		Determine whether optional local llama.cpp support is enabled in
+		configuration and available in the current environment.
+	
+		Parameters:
+		-----------
+		None
+	
+		Returns:
+		--------
+		bool
+			True when local LLM support is enabled and the GGUF exists.
+			
+	"""
+	try:
+		_is_enabled = bool( getattr( cfg, 'ENABLE_LOCAL_LLM', False ) )
+		return bool( _is_enabled and local_llm_available( ) )
+	except Exception:
+		return False
+
+@st.cache_resource
+def load_llm( ctx: int, threads: int ) -> Any | None:
+	"""
+	
+		Purpose:
+		--------
+		Lazily load the optional local llama.cpp model only when explicitly
+		enabled and physically available.
+	
+		Parameters:
+		-----------
+		ctx : int
+			Context window size.
+		threads : int
+			Number of CPU threads to allocate.
+	
+		Returns:
+		--------
+		Any | None
+			Instantiated llama.cpp model object, or None when unavailable.
+			
+	"""
+	try:
+		if not local_llm_enabled( ):
+			return None
+		
+		try:
+			from llama_cpp import Llama
+		except Exception:
+			return None
+		
+		return Llama(
+			model_path=str( cfg.MODEL_PATH ),
+			n_ctx=ctx,
+			n_threads=threads,
+			n_batch=512,
+			verbose=False
+		)
+	except Exception:
+		return None
+
+def get_llm( ctx: int | None = None, threads: int | None = None ) -> Any | None:
+	"""
+	
+		Purpose:
+		--------
+		Return the optional local llama.cpp model only when enabled,
+		available, and loadable in the current environment.
+	
+		Parameters:
+		-----------
+		ctx : int | None
+			Optional context window override.
+		threads : int | None
+			Optional CPU thread override.
+	
+		Returns:
+		--------
+		Any | None
+			Loaded llama.cpp model instance, or None when disabled or unavailable.
+			
+	"""
+	try:
+		if not local_llm_enabled( ):
+			return None
+		
+		_ctx = int( ctx ) if ctx else int( getattr( cfg, 'DEFAULT_CTX', 0 ) )
+		_threads = int( threads ) if threads else int( getattr( cfg, 'CORES', 1 ) )
+		return load_llm( _ctx, _threads )
+	except Exception:
+		return None
+
 # ==============================================================================
 # Init
 # ==============================================================================
 ensure_db( )
-llm = load_llm( cfg.DEFAULT_CTX, cfg.CORES )
+llm = None
 embedder = load_embedder( )
 
 if not isinstance( st.session_state.get( 'messages' ), list ):
@@ -1903,6 +1977,14 @@ with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO, size='large' )
 	
+	st.divider( )
+	
+	if getattr( cfg, 'ENABLE_LOCAL_LLM', False ):
+		if local_llm_available( ):
+			st.caption( 'Local GGUF available.' )
+		else:
+			st.caption( 'Local GGUF not available in this environment.' )
+			
 	c1, c2 = st.columns( [ 0.05, 0.95] )
 	with c2:
 		st.subheader( '⚙️ Application Mode' )
