@@ -2555,16 +2555,17 @@ elif mode == 'Semantic Search':
 			st.session_state.use_semantic )
 		files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
 		if files:
+			local_embedder = load_embedder( )
 			chunks = [ ]
 			for f in files:
 				chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
-			vecs = embedder.encode( chunks )
+			vecs = local_embedder.encode( chunks )
 			with sqlite3.connect( cfg.DB_PATH ) as conn:
 				conn.execute( 'DELETE FROM embeddings' )
 				for c, v in zip( chunks, vecs ):
 					conn.execute(
 						'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
-						( c, v.tobytes( ) ) )
+						(c, v.tobytes( )) )
 			st.success( 'Semantic index built' )
 
 # ==============================================================================
