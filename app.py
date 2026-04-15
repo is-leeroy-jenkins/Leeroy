@@ -57,7 +57,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from llama_cpp import Llama
 from sentence_transformers import SentenceTransformer
 
 import config as cfg
@@ -1784,13 +1783,99 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 
 # -------------- LLM  UTILITIES -------------------
 
+def local_llm_enabled( ) -> bool:
+	"""
+	
+		Purpose:
+		--------
+		Determine whether the optional local llama.cpp model should be enabled.
+	
+		Parameters:
+		-----------
+		None
+	
+		Returns:
+		--------
+		bool
+			True when local LLM support is enabled in configuration.
+			
+	"""
+	try:
+		return bool( getattr( cfg, 'ENABLE_LOCAL_LLM', False ) )
+	except Exception:
+		return False
+
 @st.cache_resource
-def load_llm( ctx: int, threads: int ) -> Llama:
-	return Llama( model_path=str( MODEL_PATH_OBJ ), n_ctx=ctx, n_threads=threads, n_batch=512,
-		verbose=False )
+def load_llm( ctx: int, threads: int ):
+	"""
+	
+		Purpose:
+		--------
+		Lazily load the optional local llama.cpp model.
+	
+		Parameters:
+		-----------
+		ctx : int
+			Context window size.
+		threads : int
+			Number of CPU threads to allocate.
+	
+		Returns:
+		--------
+		Any
+			Instantiated llama.cpp model object.
+			
+	"""
+	from llama_cpp import Llama
+	
+	return Llama(
+		model_path=str( cfg.MODEL_PATH ),
+		n_ctx=ctx,
+		n_threads=threads,
+		n_batch=512,
+		verbose=False
+	)
+
+def get_llm( ):
+	"""
+	
+		Purpose:
+		--------
+		Return the optional local llama.cpp model only when enabled.
+	
+		Parameters:
+		-----------
+		None
+	
+		Returns:
+		--------
+		Any | None
+			Loaded llama.cpp model instance or None when disabled.
+			
+	"""
+	if not local_llm_enabled( ):
+		return None
+	
+	return load_llm( cfg.DEFAULT_CTX, cfg.CORES )
 
 @st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
+	"""
+	
+		Purpose:
+		--------
+		Load the sentence-transformers model used for embedding and retrieval workflows.
+	
+		Parameters:
+		-----------
+		None
+	
+		Returns:
+		--------
+		SentenceTransformer
+			Loaded embedder instance.
+			
+	"""
 	return SentenceTransformer( 'all-MiniLM-L6-v2' )
 
 # ==============================================================================

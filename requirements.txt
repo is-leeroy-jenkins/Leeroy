@@ -1,4 +1,3 @@
-llama-cpp-python
 sentence-transformers
 numpy>=1.26.0
 pandas
@@ -8,3 +7,4 @@ pydantic
 typing_extensions
 pymupdf
 sqlite-vec
+llama-cpp-python

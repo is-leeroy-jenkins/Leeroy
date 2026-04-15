@@ -61,7 +61,7 @@ XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>",
 MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
 MODES = [ 'Text Generation', 'Document Q&A', 'Semantic Search',
           'Prompt Engineering', 'Data Management' ]
-
+ENABLE_LOCAL_LLM = True
 # ---------- DEFINITIONS -------------------
 SYSTEM_INSTRUCTIONS = r'''Optional. Gives the model high-level instructions on how it should behave while
 		generating a response, including tone, goals, and examples of correct responses. Any
