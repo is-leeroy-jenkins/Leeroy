@@ -650,14 +650,16 @@ def build_prompt( user_input: str ) -> str:
 	prompt = f"<|system|>\n{system_instructions}\n</s>\n"
 	
 	if use_semantic:
-		with sqlite3.connect( cfg.DB_PATH ) as conn:
-			rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
-		
-		if rows:
-			q = embedder.encode( [ user_input ] )[ 0 ]
-			scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
-			for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :top_k_value ]:
-				prompt += f"<|system|>\n{c}\n</s>\n"
+		local_embedder = get_embedder( )
+		if local_embedder is not None:
+			with sqlite3.connect( cfg.DB_PATH ) as conn:
+				rows = conn.execute( "SELECT chunk, vector FROM embeddings" ).fetchall( )
+			
+			if rows:
+				q = local_embedder.encode( [ user_input ] )[ 0 ]
+				scored = [ (c, cosine_sim( q, np.frombuffer( v ) )) for c, v in rows ]
+				for c, _ in sorted( scored, key=lambda x: x[ 1 ], reverse=True )[ :top_k_value ]:
+					prompt += f"<|system|>\n{c}\n</s>\n"
 	
 	for d in basic_docs[ :6 ]:
 		prompt += f"<|system|>\n{d}\n</s>\n"
@@ -2555,18 +2557,23 @@ elif mode == 'Semantic Search':
 			st.session_state.use_semantic )
 		files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
 		if files:
-			local_embedder = load_embedder( )
-			chunks = [ ]
-			for f in files:
-				chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
-			vecs = local_embedder.encode( chunks )
-			with sqlite3.connect( cfg.DB_PATH ) as conn:
-				conn.execute( 'DELETE FROM embeddings' )
-				for c, v in zip( chunks, vecs ):
-					conn.execute(
-						'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
-						(c, v.tobytes( )) )
-			st.success( 'Semantic index built' )
+			local_embedder = get_embedder( )
+			if local_embedder is None:
+				st.error( 'Embedding model is unavailable in this environment.' )
+			else:
+				chunks = [ ]
+				for f in files:
+					chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
+				
+				if chunks:
+					vecs = local_embedder.encode( chunks )
+					with sqlite3.connect( cfg.DB_PATH ) as conn:
+						conn.execute( 'DELETE FROM embeddings' )
+						for c, v in zip( chunks, vecs ):
+							conn.execute(
+								'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
+								(c, v.tobytes( )) )
+					st.success( 'Semantic index built' )
 
 # ==============================================================================
 # PROMPT ENGINEERING MODE
