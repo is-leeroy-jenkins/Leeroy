@@ -7,5 +7,4 @@ pydantic
 typing_extensions
 PyMuPDF
 sqlite-vec
-llama-cpp-python
 torchvision
