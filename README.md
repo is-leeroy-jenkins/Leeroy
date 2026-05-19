@@ -28,7 +28,13 @@ and modest GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and GGUF-
 * ⚙️ **Dynamic Parameter Controls** (temperature, top-p, top-k, context, etc.)
 * 🖥️ **Runs Fully Offline** (CPU-only supported)
 
----
+## 🧠 LLM
+
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
+
+Leeroy provides a local LLM fine-tuned variant of Meta's Llama 3.2 1B Instruct, quantized to Q4_K_M GGUF format for high-efficiency, low-latency inference. Named after the legendary charge-forward ethos, Leeroy specializes in executing user instructions with speed and accuracy — making it the ideal local LLM for both professional tasks and experimental builds.
+
+
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
 
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/images/leeroy-streamlit.gif)
