@@ -13,6 +13,8 @@ With strong alignment capabilities, multilingual robustness, and support for com
 Leeroy strikes a balance between performance, size, and instruction quality. Designed for use on CPUs 
 and modest GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and GGUF-compatible environments.
 
+## Demo
+![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
 
 ## ✨ Key Features
 
