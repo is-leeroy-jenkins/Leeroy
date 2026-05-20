@@ -44,10 +44,9 @@ ___
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
 
 Leeroy is designed to run against a local GGUF model, commonly a fine-tuned Llama-family model
-quantized for efficient local inference. The repository contains application code; the model should be
-stored separately and referenced through configuration.
+quantized for efficient local inference.
 
-Example model name:
+
 
 ```text
 Leeroy-3B-Instruct.Q4_K_M.gguf
