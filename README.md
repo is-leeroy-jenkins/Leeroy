@@ -121,11 +121,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🧠 Downloading the Leeroy LLM (Required)
-
-The Leeroy application **does not ship with the model**.
-
-Download the file:
+## 🧠 Custom LLM 
 
 👉 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
 
