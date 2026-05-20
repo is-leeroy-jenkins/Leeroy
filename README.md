@@ -38,6 +38,20 @@ operations.
 
 * Databricks workspace repository for the Leeroy codebase.
 * Supports collaborative development, analytics, notebook execution, and application deployment.
+* 
+## 🧠 Custom LLM
+
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
+
+Leeroy is designed to run against a local GGUF model, commonly a fine-tuned Llama-family model
+quantized for efficient local inference. The repository contains application code; the model should be
+stored separately and referenced through configuration.
+
+Example model name:
+
+```text
+Leeroy-3B-Instruct.Q4_K_M.gguf
+```
 
 
 ## 🧰 Overview
@@ -98,22 +112,7 @@ The application is intentionally simple and durable:
 | SQLite                | Local persistence for chat history, prompt records, embeddings, and imported data |
 | config.py             | Application constants, model path, UI labels, modes, and default runtime settings |
 
-## 🧠 Custom LLM
 
-[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
-
-Leeroy is designed to run against a local GGUF model, commonly a fine-tuned Llama-family model
-quantized for efficient local inference. The repository contains application code; the model should be
-stored separately and referenced through configuration.
-
-Example model name:
-
-```text
-Leeroy-3B-Instruct.Q4_K_M.gguf
-```
-
-The application checks the configured model path at startup and reports whether the GGUF file is
-available in the current environment.
 
 ## 🧊 Local LLM
 
