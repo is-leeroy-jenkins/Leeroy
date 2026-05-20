@@ -93,7 +93,7 @@ git clone https://github.com/<your-org>/leeroy.git
 cd leeroy
 ```
 
----
+
 
 ### 2️⃣ Create a Virtual Environment
 
@@ -111,7 +111,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
----
+
 
 ### 3️⃣ Install Dependencies
 
@@ -146,7 +146,7 @@ C:\Users\<you>\source\llm\lmstudio\lmstudio-community\
 leeroy-jankins\leeroy\Leeroy-3B-Instruct.Q4_K_M.gguf
 ```
 
----
+
 
 ## 🌱 Environment Variable Configuration
 
@@ -172,7 +172,7 @@ Restart your terminal after setting it.
 export LEEROY_LLM_PATH=/path/to/Leeroy-3B-Instruct.Q4_K_M.gguf
 ```
 
----
+
 
 ## ▶️ Running the Application
 
@@ -186,7 +186,7 @@ Then open your browser at:
 http://localhost:8501
 ```
 
----
+
 
 ## 🧭 Application Tabs
 
@@ -198,7 +198,7 @@ http://localhost:8501
 | **Semantic Search**        | Vector-based retrieval (optional toggle) |
 | **Export**                 | Download chat history as Markdown or PDF |
 
----
+
 
 ## 🧮 Token Usage & Parameters
 
@@ -206,7 +206,7 @@ http://localhost:8501
 * **Footer (Right)**: live model parameters
 * Updates automatically after each generation
 
----
+
 
 ## 📚 About the Leeroy LLM
 
@@ -222,7 +222,7 @@ Key characteristics (from the model README):
 
 For full model details, training data, benchmarks, and usage examples, see the Hugging Face README .
 
----
+
 
 ## 🔒 Notes on Licensing & Usage
 
@@ -234,7 +234,7 @@ For full model details, training data, benchmarks, and usage examples, see the H
   * Dataset terms
   * Organizational policies
 
----
+
 
 ## 🧰 Troubleshooting
 
@@ -247,5 +247,5 @@ For full model details, training data, benchmarks, and usage examples, see the H
 * **High memory usage**
   → Lower context (`n_ctx`) or reduce max tokens
 
----
+
 
