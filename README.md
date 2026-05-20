@@ -14,7 +14,6 @@
   <a href="#-design-and-architecture">Architecture</a> |
   <a href="#-capabilities">Capabilities</a> |
   <a href="#-data-management">Data</a> |
-  <a href="#-troubleshooting">Troubleshooting</a> |
 </p>
 
 Leeroy is a Python and Streamlit application for local language-model inference,
@@ -27,6 +26,7 @@ Leeroy uses an optional local GGUF model through `llama.cpp`, supports document 
 `sentence-transformers`, persists chat history and prompts in SQLite, and provides a Streamlit user
 interface for text generation, document Q&A, semantic indexing, prompt administration, and database
 operations.
+___
 
 ## 🎥 Demo
 
