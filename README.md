@@ -5,17 +5,16 @@
 <p align="center">
   <a href="#-overview">Overview</a> |
   <a href="#-features">Features</a> |
-  <a href="#-application-modes">Application Modes</a> |
+  <a href="#-application-modes">Modes</a> |
   <a href="#-requirements">Requirements</a> |
-  <a href="#-local-llm">Local LLM</a> |
+  <a href="#-local-llm">LLM</a> |
   <a href="#-installation">Installation</a> |
-  <a href="#-running-the-streamlit-application">Run App</a> |
+  <a href="#-running-the-streamlit-application">Run</a> |
   <a href="#-configuration">Configuration</a> |
   <a href="#-design-and-architecture">Architecture</a> |
   <a href="#-capabilities">Capabilities</a> |
-  <a href="#-data-management">Data Management</a> |
+  <a href="#-data-management">Data</a> |
   <a href="#-troubleshooting">Troubleshooting</a> |
-  <a href="#-license">License</a>
 </p>
 
 Leeroy is a Python and Streamlit application for local language-model inference,
