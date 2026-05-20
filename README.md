@@ -28,7 +28,7 @@ and modest GPUs, Leeroy runs natively in llama.cpp, LM Studio, Ollama, and GGUF-
 * ⚙️ **Dynamic Parameter Controls** (temperature, top-p, top-k, context, etc.)
 * 🖥️ **Runs Fully Offline** (CPU-only supported)
 
-## 🧠 LLM
+## 🧠 Custom LLM
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
 
