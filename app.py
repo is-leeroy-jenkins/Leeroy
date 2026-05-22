@@ -212,7 +212,7 @@ def cosine_sim( a: np.ndarray, b: np.ndarray ) -> float:
     denom = np.linalg.norm(a) * np.linalg.norm(b)
     return float( np.dot(a, b) / denom ) if denom else 0.0
 
-def ensure_db( ) -> None:
+def initialize_database( ) -> None:
 	"""
 		Purpose:
 		--------
@@ -577,7 +577,7 @@ def fetch_prompt_text( db_path: str, name: str ) -> str | None:
 	except Exception:
 		return None
 
-def fetch_prompts_df( ) -> pd.DataFrame:
+def fetch_prompts( ) -> pd.DataFrame:
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		df = pd.read_sql_query(
 			"SELECT PromptsId, Caption,  Name, Version, ID FROM Prompts ORDER BY PromptsId DESC",
@@ -1135,7 +1135,7 @@ def create_visualization( df: pd.DataFrame ):
 		fig = px.imshow( corr, text_auto=True )
 		st.plotly_chart( fig, use_container_width=True )
 
-def dm_create_table_from_df( table_name: str, df: pd.DataFrame ):
+def convert_dataframe( table_name: str, df: pd.DataFrame ):
 	columns = [ ]
 	for col in df.columns:
 		sql_type = get_sqlite_type( df[ col ].dtype )
@@ -1478,19 +1478,16 @@ def route_document_query( prompt: str ) -> str:
 		str
 			The assistant answer text.
 	"""
-	user_input = build_document_user_input( prompt )
+	user_input = build_docqna_input( prompt )
 	if not user_input:
 		user_input = (prompt or '').strip( )
 	
-	return run_llm_turn(
-		user_input=user_input,
+	return run_llm_turn( user_input=user_input,
 		temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
 		top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
 		repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
 		max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
-		stream=False,
-		output=None
-	)
+		stream=False, output=None )
 
 def summarize_active_document( ) -> str:
 	"""
@@ -1513,7 +1510,7 @@ def summarize_active_document( ) -> str:
 	
 	return route_document_query( summary_prompt.strip( ) )
 
-def _docqna_compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
+def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
 	'''
 		
 		Purpose:
@@ -1540,7 +1537,7 @@ def _docqna_compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str,
 		h.update( hashlib.sha256( b ).digest( ) )
 	return h.hexdigest( )
 
-def _docqna_extract_text_from_pdf_bytes( file_bytes: bytes ) -> str:
+def extract_text( file_bytes: bytes ) -> str:
 	'''
 	
 		Purpose:
@@ -1569,7 +1566,7 @@ def _docqna_extract_text_from_pdf_bytes( file_bytes: bytes ) -> str:
 	except Exception:
 		return ''
 
-def _docqna_safe_load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
+def load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
 	'''
 		
 		Purpose:
@@ -1594,7 +1591,7 @@ def _docqna_safe_load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
 	except Exception:
 		return False
 
-def _docqna_ensure_vec_schema( dim: int ) -> bool:
+def ensure_vec_schema( dim: int ) -> bool:
 	'''
 	
 		Purpose:
@@ -1613,7 +1610,7 @@ def _docqna_ensure_vec_schema( dim: int ) -> bool:
 	'''
 	conn = create_connection( )
 	try:
-		ok = _docqna_safe_load_sqlite_vec( conn )
+		ok = load_sqlite_vec( conn )
 		if not ok:
 			return False
 		
@@ -1635,7 +1632,7 @@ def _docqna_ensure_vec_schema( dim: int ) -> bool:
 	finally:
 		conn.close( )
 
-def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
+def rebuild_index( embedder: SentenceTransformer ) -> None:
 	'''
 		
 		Purpose:
@@ -1655,7 +1652,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	active_docs: List[ str ] = st.session_state.get( 'active_docs', [ ] )
 	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'doc_bytes', { } )
 	
-	fp = _docqna_compute_fingerprint( active_docs, doc_bytes )
+	fp = compute_fingerprint( active_docs, doc_bytes )
 	if fp and fp == st.session_state.get( 'docqna_fingerprint', '' ):
 		return
 	
@@ -1666,7 +1663,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	dim_value = getattr( embedder, 'get_sentence_embedding_dimension', lambda: 384 )( )
 	dim = int( dim_value ) if dim_value else 384
 	
-	vec_ready = _docqna_ensure_vec_schema( dim )
+	vec_ready = ensure_vec_schema( dim )
 	st.session_state[ 'docqna_vec_ready' ] = bool( vec_ready )
 	
 	conn = create_connection( )
@@ -1689,7 +1686,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 			if not b:
 				continue
 			
-			text = _docqna_extract_text_from_pdf_bytes( b )
+			text = extract_text( b )
 			if not text:
 				continue
 			
@@ -1725,7 +1722,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	finally:
 		conn.close( )
 
-def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
+def retrieve_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
 	'''
 	
 		Purpose:
@@ -1749,7 +1746,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 		return [ ]
 	
 	embedder: SentenceTransformer = load_embedder( )
-	_docqna_rebuild_index_if_needed( embedder )
+	rebuild_index( embedder )
 	
 	qv = embedder.encode( [ query ], show_progress_bar=False )
 	qv = np.asarray( qv, dtype=np.float32 )[ 0 ]
@@ -1757,7 +1754,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 	if st.session_state.get( 'docqna_vec_ready', False ):
 		conn = create_connection( )
 		try:
-			_docqna_safe_load_sqlite_vec( conn )
+			load_sqlite_vec( conn )
 			cur = conn.cursor( )
 			cur.execute(
 				'''
@@ -1793,7 +1790,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 	results.sort( key=lambda r: r[ 2 ], reverse=True )
 	return results[ : int( k ) ]
 
-def build_document_user_input( user_query: str, k: int = 6 ) -> str:
+def build_docqna_input( user_query: str, k: int = 6 ) -> str:
 	'''
 	
 		Purpose:
@@ -1813,7 +1810,7 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 	
 	'''
 	system = str( st.session_state.get( 'system_instructions', '' ) or '' ).strip( )
-	hits = retrieve_top_doc_chunks( user_query, k=int( k ) )
+	hits = retrieve_chunks( user_query, k=int( k ) )
 	
 	context_blocks: List[ str ] = [ ]
 	for doc_name, chunk, score in hits:
@@ -1977,7 +1974,7 @@ def get_embedder( ) -> SentenceTransformer | None:
 # ==============================================================================
 # Init
 # ==============================================================================
-ensure_db( )
+initialize_database( )
 llm = None
 embedder = None
 
@@ -2506,7 +2503,7 @@ elif mode == 'Document Q&A':
 			with st.chat_message( 'user' ):
 				st.markdown( user_input )
 			
-			doc_user_input = build_document_user_input( user_input )
+			doc_user_input = build_docqna_input( user_input )
 			if not doc_user_input or not isinstance( doc_user_input, str ) or not doc_user_input.strip( ):
 				doc_user_input = user_input
 			
