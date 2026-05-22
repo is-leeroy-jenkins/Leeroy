@@ -2019,26 +2019,26 @@ with st.sidebar:
 # TEXT GENERATION MODE
 # ==============================================================================
 if mode == 'Text Generation':
-	st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
-	st.divider( )
-	messages = st.session_state.get( 'messages', [ ] )
-	max_tokens = st.session_state.get( 'max_tokens', 0 )
-	top_percent = st.session_state.get( 'top_percent', 0.0 )
-	top_k = st.session_state.get( 'top_k', 0 )
-	temperature = st.session_state.get( 'temperature', 0.0 )
-	is_grounded = st.session_state.get( 'is_grounded', False )
-	frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
-	presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
-	repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
-	repeat_window = st.session_state.get( 'repeat_window', 0.0 )
-	cpu_threads = st.session_state.get( 'cpu_threads', cfg.CORES )
-	context_window = st.session_state.get( 'context_window', cfg.DEFAULT_CTX )
-	
-	# ------------------------------------------------------------------
-	# Main Chat UI
-	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
+		st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
+		st.divider( )
+		messages = st.session_state.get( 'messages', [ ] )
+		max_tokens = st.session_state.get( 'max_tokens', 0 )
+		top_percent = st.session_state.get( 'top_percent', 0.0 )
+		top_k = st.session_state.get( 'top_k', 0 )
+		temperature = st.session_state.get( 'temperature', 0.0 )
+		is_grounded = st.session_state.get( 'is_grounded', False )
+		frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
+		presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
+		repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
+		repeat_window = st.session_state.get( 'repeat_window', 0.0 )
+		cpu_threads = st.session_state.get( 'cpu_threads', cfg.CORES )
+		context_window = st.session_state.get( 'context_window', cfg.DEFAULT_CTX )
+		
+		# ------------------------------------------------------------------
+		# Main Chat UI
+		# ------------------------------------------------------------------
 		# ------------------------------------------------------------------
 		# Expander — Mind Controls
 		# ------------------------------------------------------------------
@@ -2234,28 +2234,25 @@ if mode == 'Text Generation':
 # RETRIEVAL AUGMENTATION
 # ==============================================================================
 elif mode == 'Document Q&A':
-	st.subheader( "📚 Retrieval Augementation", help=cfg.RETRIEVAL_AUGMENTATION )
-	st.divider( )
-	messages = st.session_state.get( 'messages', [ ] )
-	uploaded = st.session_state.get( 'uploaded', [ ] )
-	active_docs = st.session_state.get( 'active_docs', [ ] )
-	doc_bytes = st.session_state.get( 'doc_bytes', { } )
-	max_tokens = st.session_state.get( 'max_tokens', 0 )
-	top_percent = st.session_state.get( 'top_percent', 0.0 )
-	top_k = st.session_state.get( 'top_k', 0 )
-	temperature = st.session_state.get( 'temperature', 0.0 )
-	frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
-	presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
-	repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
-	repeat_window = st.session_state.get( 'repeat_window', 0.0 )
-	cpu_threads = st.session_state.get( 'cpu_threads', cfg.CORES )
-	context_window = st.session_state.get( 'context_window', cfg.DEFAULT_CTX )
-	
-	# ------------------------------------------------------------------
-	# Main Chat UI
-	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
+		st.subheader( "📚 Retrieval Augementation", help=cfg.RETRIEVAL_AUGMENTATION )
+		st.divider( )
+		messages = st.session_state.get( 'messages', [ ] )
+		uploaded = st.session_state.get( 'uploaded', [ ] )
+		active_docs = st.session_state.get( 'active_docs', [ ] )
+		doc_bytes = st.session_state.get( 'doc_bytes', { } )
+		max_tokens = st.session_state.get( 'max_tokens', 0 )
+		top_percent = st.session_state.get( 'top_percent', 0.0 )
+		top_k = st.session_state.get( 'top_k', 0 )
+		temperature = st.session_state.get( 'temperature', 0.0 )
+		frequency_penalty = st.session_state.get( 'frequency_penalty', 0.0 )
+		presense_penalty = st.session_state.get( 'presense_penalty', 0.0 )
+		repeat_penalty = st.session_state.get( 'repeat_penalty', 0.0 )
+		repeat_window = st.session_state.get( 'repeat_window', 0.0 )
+		cpu_threads = st.session_state.get( 'cpu_threads', cfg.CORES )
+		context_window = st.session_state.get( 'context_window', cfg.DEFAULT_CTX )
+		
 		# ------------------------------------------------------------------
 		# Expander — Mind Controls
 		# ------------------------------------------------------------------
@@ -2412,20 +2409,12 @@ elif mode == 'Document Q&A':
 		with st.expander( label='Document Loader', icon='📥', expanded=False, width='stretch' ):
 			doc_left, doc_right = st.columns( [ 0.5, 0.5 ], gap='medium', border=True )
 			with doc_left:
-				doc_source = st.radio(
-					label='Document Source',
-					options=[ 'uploadlocal' ],
-					index=0,
-					horizontal=True,
-					key='doc_source'
-				)
+				doc_source = st.radio( label='Document Source', options=[ 'uploadlocal' ],
+					index=0, horizontal=True, key='doc_source' )
 				
-				uploaded = st.file_uploader(
-					label='Upload a document (PDF, TXT, DOCX)',
-					type=[ 'pdf', 'txt', 'docx' ],
-					accept_multiple_files=True,
-					label_visibility='visible'
-				)
+				uploaded = st.file_uploader( label='Upload a document (PDF, TXT, DOCX)',
+					type=[ 'pdf', 'txt', 'docx' ], accept_multiple_files=True,
+					label_visibility='visible' )
 				
 				if uploaded is not None and type( uploaded ) == list and len( uploaded ) > 0:
 					st.session_state.uploaded = uploaded
@@ -2523,14 +2512,12 @@ elif mode == 'Document Q&A':
 			
 			with st.chat_message( 'assistant' ):
 				out = st.empty( )
-				response = run_llm_turn(
-					user_input=doc_user_input,
+				response = run_llm_turn( user_input=doc_user_input,
 					temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
 					top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
 					repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
 					max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
-					stream=True,
-					output=out )
+					stream=True, output=out )
 			
 			if response is None:
 				response = ''
@@ -2545,50 +2532,52 @@ elif mode == 'Document Q&A':
 # SEMANTIC SEARCH
 # ==============================================================================
 elif mode == 'Semantic Search':
-	st.subheader( "🔍 Semantic Search", help=cfg.SEMANTIC_SEARCH )
-	st.divider( )
-	
-	# ------------------------------------------------------------------
-	# Main Chat UI
-	# ------------------------------------------------------------------
-	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	left, center, right = st.columns( [ 0.05, 0.90, 0.05 ] )
 	with center:
-		st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
-			st.session_state.use_semantic )
-		files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
-		if files:
-			local_embedder = get_embedder( )
-			if local_embedder is None:
-				st.error( 'Embedding model is unavailable in this environment.' )
-			else:
-				chunks = [ ]
-				for f in files:
-					chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
-				
-				if chunks:
-					vecs = local_embedder.encode( chunks )
-					with sqlite3.connect( cfg.DB_PATH ) as conn:
-						conn.execute( 'DELETE FROM embeddings' )
-						for c, v in zip( chunks, vecs ):
-							conn.execute(
-								'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
-								(c, v.tobytes( )) )
-					st.success( 'Semantic index built' )
+		st.subheader( "🔍 Semantic Search", help=cfg.SEMANTIC_SEARCH )
+		st.divider( )
+		
+		# ------------------------------------------------------------------
+		# Main Chat UI
+		# ------------------------------------------------------------------
+		left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+		with center:
+			st.session_state.use_semantic = st.checkbox( 'Use Semantic Context',
+				st.session_state.use_semantic )
+			files = st.file_uploader( 'Upload for embedding', accept_multiple_files=True )
+			if files:
+				local_embedder = get_embedder( )
+				if local_embedder is None:
+					st.error( 'Embedding model is unavailable in this environment.' )
+				else:
+					chunks = [ ]
+					for f in files:
+						chunks.extend( chunk_text( f.read( ).decode( errors='ignore' ) ) )
+					
+					if chunks:
+						vecs = local_embedder.encode( chunks )
+						with sqlite3.connect( cfg.DB_PATH ) as conn:
+							conn.execute( 'DELETE FROM embeddings' )
+							for c, v in zip( chunks, vecs ):
+								conn.execute(
+									'INSERT INTO embeddings (chunk, vector) VALUES (?, ?)',
+									(c, v.tobytes( )) )
+						st.success( 'Semantic index built' )
 
 # ==============================================================================
 # PROMPT ENGINEERING MODE
 # ==============================================================================
 elif mode == 'Prompt Engineering':
-	st.subheader( '📝 Prompt Engineering', help=cfg.PROMPT_ENGINEERING )
-	st.divider( )
-	import sqlite3
-	import math
-	
-	TABLE = 'Prompts'
-	PAGE_SIZE = 10
-	st.session_state.setdefault( 'pe_cascade_enabled', False )
 	left, center, right = st.columns( [ 0.05, 0.90, 0.05 ] )
 	with center:
+		st.subheader( '📝 Prompt Engineering', help=cfg.PROMPT_ENGINEERING )
+		st.divider( )
+		import sqlite3
+		import math
+		
+		TABLE = 'Prompts'
+		PAGE_SIZE = 10
+		st.session_state.setdefault( 'pe_cascade_enabled', False )
 		st.checkbox( 'Cascade selection into System Instructions', key='pe_cascade_enabled' )
 		
 		# ------------------------------------------------------------------
@@ -2696,8 +2685,7 @@ elif mode == 'Prompt Engineering':
 		# ------------------------------------------------------------------
 		table_rows = [ ]
 		for r in rows:
-			table_rows.append(
-				{
+			table_rows.append( {
 						'Selected': r[ 0 ] == st.session_state.pe_selected_id,
 						'PromptsId': r[ 0 ],
 						'Caption': r[ 1 ],
@@ -2811,12 +2799,12 @@ elif mode == 'Prompt Engineering':
 # DATA MANAGEMENT MODE
 # ==============================================================================
 elif mode == 'Data Management':
-	st.subheader( "🏛️ Data Management", help=cfg.DATA_MANAGEMENT )
-	st.divider( )
 	left, center, right = st.columns( [ 0.05, 0.90, 0.05 ] )
 	with center:
-		tabs = st.tabs( [ "📥 Import", "🗂 Browse", "💉 CRUD", "📊 Explore", "🔎 Filter",
-		                  "🧮 Aggregate", "📈 Visualize", "⚙ Admin", "🧠 SQL" ] )
+		st.subheader( '🏛️ Data Management', help=cfg.DATA_MANAGEMENT )
+		st.divider( )
+		tabs = st.tabs( [ '📥 Import', '🗂 Browse', '💉 CRUD', '📊 Explore', '🔎 Filter',
+		                  '🧮 Aggregate', '📈 Visualize', '⚙ Admin', '🧠 SQL' ] )
 		
 		tables = list_tables( )
 		if not tables:
