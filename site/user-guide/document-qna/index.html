@@ -83,6 +83,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#document-qa" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -533,6 +538,26 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document Q&A
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -550,6 +575,91 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 Workflow Position
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grounded-answer-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Grounded Answer Behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unloading-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧹 Unloading Documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Recommended Sequence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-api-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Related API Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -864,6 +974,82 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 Workflow Position
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grounded-answer-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Grounded Answer Behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unloading-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧹 Unloading Documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Recommended Sequence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-api-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Related API Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -883,9 +1069,173 @@
   
 
 
-  <h1>Document Q&A</h1>
-
-
+<h1 id="document-qa">Document Q&amp;A<a class="headerlink" href="#document-qa" title="Permanent link">&para;</a></h1>
+<p>Document Q&amp;A mode lets users upload documents, extract text, retrieve relevant chunks, and ask
+grounded questions against document content.</p>
+<h2 id="purpose">🧭 Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>Document Q&amp;A mode supports retrieval-augmented generation over uploaded files. It stores active
+document bytes in Streamlit session state, extracts text, chunks the content, embeds chunks,
+retrieves relevant excerpts, and builds a document-grounded prompt for the local model.</p>
+<h2 id="workflow-position">🧱 Workflow Position<a class="headerlink" href="#workflow-position" title="Permanent link">&para;</a></h2>
+<p>```text id="dewe9p"
+Upload Document
+  │
+  ▼
+Store Document Bytes
+  │
+  ▼
+Extract Text
+  │
+  ▼
+Chunk Text
+  │
+  ▼
+Generate Embeddings
+  │
+  ├── sqlite-vec Retrieval
+  │
+  └── Cosine Fallback Retrieval
+  │
+  ▼
+Build Grounded Prompt
+  │
+  ▼
+Generate Answer
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>## 📥 Loading Documents
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>1. Select `Document Q&amp;A` from the sidebar.
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>2. Open the Document Loader expander.
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>3. Upload one or more supported files.
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>Supported upload types:
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>| Type | Notes                                                                                           |
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>| ---- | ----------------------------------------------------------------------------------------------- |
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>| PDF  | Text extraction uses PyMuPDF.                                                                   |
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>| TXT  | Text-like content can be decoded directly.                                                      |
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>| DOCX | Upload control accepts the file type; extraction support depends on the active extraction path. |
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>After upload, Leeroy stores:
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>| Session Key   | Purpose                                    |
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>| ------------- | ------------------------------------------ |
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>| `uploaded`    | Uploaded file objects.                     |
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>| `active_docs` | Names of active documents.                 |
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>| `doc_bytes`   | Raw document bytes keyed by document name. |
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>## 👁️ Document Preview
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>When a document is active and previewable, Leeroy displays the first active document in the preview
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>panel.
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>If preview bytes are unavailable, the app displays a notice instead of failing.
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>## 🧠 Retrieval Pipeline
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>Document Q&amp;A uses a retrieval workflow instead of stuffing full documents directly into every
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>prompt.
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>| Step        | Description                                                                    |
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>| ----------- | ------------------------------------------------------------------------------ |
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>| Fingerprint | Builds a stable fingerprint from active document names and bytes.              |
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>| Extract     | Extracts document text from bytes.                                             |
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>| Chunk       | Splits extracted text into overlapping chunks.                                 |
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>| Embed       | Encodes chunks with the sentence-transformer model.                            |
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>| Store       | Uses sqlite-vec if available, otherwise stores fallback rows in session state. |
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>| Retrieve    | Retrieves the top relevant chunks for the user query.                          |
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>| Prompt      | Builds a grounded prompt using the retrieved excerpts.                         |
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>## 🔍 sqlite-vec and Fallback Retrieval
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>Leeroy attempts to use sqlite-vec for vector retrieval when available. If sqlite-vec is unavailable
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>or cannot be loaded, the app falls back to in-memory cosine similarity.
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a>| Retrieval Path  | Use Case                                                   |
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>| --------------- | ---------------------------------------------------------- |
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>| sqlite-vec      | Preferred path when the extension is installed and usable. |
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>| Cosine fallback | Safe fallback when sqlite-vec is unavailable.              |
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>This keeps Document Q&amp;A usable across more environments.
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>## 💬 Asking Questions
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a>After loading a document, use the chat input to ask a question.
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a>Example questions:
+</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a>
+</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a>```text id=&quot;snsuf9&quot;
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a>What is the purpose of this document?
+</span></code></pre></div></p>
+<p>```text id="q6uc36"
+Summarize the key findings and identify any risks or open issues.
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>```text id=&quot;gv4a4g&quot;
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>List the major requirements and explain which ones appear mandatory.
+</span></code></pre></div></p>
+<p><code>text id="w587a4"
+What evidence in the document supports the main conclusion?</code></p>
+<h2 id="grounded-answer-behavior">🧾 Grounded Answer Behavior<a class="headerlink" href="#grounded-answer-behavior" title="Permanent link">&para;</a></h2>
+<p>The Document Q&amp;A prompt instructs the model to use retrieved document excerpts. If the excerpts do
+not contain enough information, the model should say that the available context is insufficient.</p>
+<p>For best results:</p>
+<table>
+<thead>
+<tr>
+<th>Practice</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ask specific questions</td>
+<td>Improves retrieval precision.</td>
+</tr>
+<tr>
+<td>Use documents with extractable text</td>
+<td>Scanned images may not produce useful text unless OCR is added.</td>
+</tr>
+<tr>
+<td>Keep related files loaded together</td>
+<td>Helps retrieval find related context.</td>
+</tr>
+<tr>
+<td>Avoid extremely broad first questions</td>
+<td>Broad questions can retrieve diffuse context.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="unloading-documents">🧹 Unloading Documents<a class="headerlink" href="#unloading-documents" title="Permanent link">&para;</a></h2>
+<p>Use the Unload Document control to clear uploaded documents, active document names, and stored
+document bytes.</p>
+<p>This resets the active document context without clearing chat history or prompt templates.</p>
+<h2 id="recommended-sequence">✅ Recommended Sequence<a class="headerlink" href="#recommended-sequence" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Open Document Q&amp;A.</li>
+<li>Upload a document.</li>
+<li>Confirm preview availability.</li>
+<li>Ask a narrow question first.</li>
+<li>Review the answer for document grounding.</li>
+<li>Ask follow-up questions with specific terms from the document.</li>
+<li>Unload documents when switching topics.</li>
+</ol>
+<h2 id="related-api-pages">🔗 Related API Pages<a class="headerlink" href="#related-api-pages" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>API Page</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../api/app/">App API</a></td>
+<td>Source documentation for document extraction, chunking, fingerprinting, indexing, retrieval, and grounded prompt construction.</td>
+</tr>
+<tr>
+<td><a href="../../api/config/">Configuration API</a></td>
+<td>Runtime constants and UI help text used by Document Q&amp;A.</td>
+</tr>
+</tbody>
+</table>
 
 
 
