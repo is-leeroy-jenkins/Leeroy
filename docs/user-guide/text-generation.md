@@ -11,7 +11,8 @@ drafting, analysis, summarization, explanation, and general local LLM work.
 
 ## 🧱 Workflow Position
 
-```text id="zeu8bl"
+```text
+
 User Prompt
   │
   ├── System Instructions
@@ -30,20 +31,25 @@ Streaming Chat Response
   │
   ▼
 SQLite Chat History
+
 ```
 
 ## 🖥️ Opening Text Generation Mode
 
 1. Start Leeroy.
 
-```powershell id="bxn0mj"
+```powershell
+
 streamlit run app.py
+
 ```
 
 2. In the sidebar, select:
 
-```text id="okyd52"
+```text
+
 Text Generation
+
 ```
 
 3. Confirm that the main page displays the Text Generation heading and chat interface.
@@ -54,16 +60,22 @@ Use the System Instructions expander to define behavior before submitting prompt
 
 Examples:
 
-```text id="tmrhfp"
+```text
+
 Respond as a concise federal budget analyst. Use short paragraphs and include a recommendation.
+
 ```
 
-```text id="uyy6oj"
+```text
+
 Explain technical terms clearly. Use a table when comparing options.
+
 ```
 
-```text id="n7z86y"
+```text
+
 Use only the provided context. If context is insufficient, say so.
+
 ```
 
 System instructions are included in the prompt before the user message and can also be populated
@@ -107,16 +119,22 @@ from reusable templates.
 
 ## 🧪 Example Prompts
 
-```text id="h669r5"
+```text
+
 Summarize the operational risks of relying on a local GGUF model for document analysis.
+
 ```
 
-```text id="i9w1jv"
+```text
+
 Create a concise checklist for validating a MkDocs documentation build.
+
 ```
 
-```text id="a1xyme"
+```text 
+
 Explain how SQLite-backed prompt storage improves repeatability for analysts.
+
 ```
 
 ## 🧹 Clearing Chat History

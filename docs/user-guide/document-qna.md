@@ -11,7 +11,8 @@ retrieves relevant excerpts, and builds a document-grounded prompt for the local
 
 ## 🧱 Workflow Position
 
-```text id="dewe9p"
+```text
+
 Upload Document
   │
   ▼
@@ -35,6 +36,7 @@ Build Grounded Prompt
   │
   ▼
 Generate Answer
+
 ```
 
 ## 📥 Loading Documents
@@ -99,20 +101,28 @@ After loading a document, use the chat input to ask a question.
 
 Example questions:
 
-```text id="snsuf9"
+```text
+
 What is the purpose of this document?
+
 ```
 
-```text id="q6uc36"
+```text
+
 Summarize the key findings and identify any risks or open issues.
+
 ```
 
-```text id="gv4a4g"
+```text
+
 List the major requirements and explain which ones appear mandatory.
+
 ```
 
-```text id="w587a4"
+```text
+
 What evidence in the document supports the main conclusion?
+
 ```
 
 ## 🧾 Grounded Answer Behavior

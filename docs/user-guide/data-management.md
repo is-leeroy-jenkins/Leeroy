@@ -11,7 +11,8 @@ values, administer schema changes, and run guarded read-only SQL queries.
 
 ## 🧱 Workflow Position
 
-```text id="9lj02u"
+```text
+
 SQLite Database
   │
   ├── Imported Tables
@@ -33,6 +34,7 @@ Data Management Mode
   │
   ▼
 Interactive Analysis and Administration
+
 ```
 
 ## 🗄️ Database Connection
@@ -192,7 +194,8 @@ Allowed starting patterns include:
 
 Blocked operations include:
 
-```text id="9aouol"
+```text 
+
 INSERT
 UPDATE
 DELETE
@@ -204,6 +207,7 @@ DETACH
 VACUUM
 REPLACE
 TRIGGER
+
 ```
 
 This keeps SQL exploration safer while still allowing useful inspection and analysis.
@@ -212,28 +216,34 @@ This keeps SQL exploration safer while still allowing useful inspection and anal
 
 List tables:
 
-```sql id="eph1r5"
+```sql 
+
 SELECT name
 FROM sqlite_master
 WHERE type = 'table'
 ORDER BY name;
+
 ```
 
 Preview prompt records:
 
-```sql id="g3xtgk"
+```sql
+
 SELECT PromptsId, Caption, Name, Version
 FROM Prompts
 ORDER BY PromptsId DESC
 LIMIT 20;
+
 ```
 
 Count chat messages by role:
 
-```sql id="eklybg"
+```sql
+
 SELECT role, COUNT(*) AS message_count
 FROM chat_history
 GROUP BY role;
+
 ```
 
 ## ✅ Recommended Sequence

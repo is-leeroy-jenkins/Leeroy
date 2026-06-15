@@ -642,6 +642,50 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#opening-semantic-search-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Opening Semantic Search Mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uploading-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📥 Uploading Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chunking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Chunking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧠 Embedding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sqlite-storage" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1028,6 +1072,50 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#opening-semantic-search-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Opening Semantic Search Mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uploading-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📥 Uploading Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chunking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Chunking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#embedding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧠 Embedding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sqlite-storage" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1123,75 +1211,99 @@ text/vector pairs in the local SQLite <code>embeddings</code> table.</p>
 <p>Semantic context can then be used by the Text Generation pipeline when semantic grounding is
 enabled.</p>
 <h2 id="workflow-position">🧱 Workflow Position<a class="headerlink" href="#workflow-position" title="Permanent link">&para;</a></h2>
-<p>```text id="mpsx0m"
-Upload Files
-  │
-  ▼
-Decode Text
-  │
-  ▼
-Chunk Text
-  │
-  ▼
-Generate Embeddings
-  │
-  ▼
-Store Chunks and Vectors in SQLite
-  │
-  ▼
-Use Semantic Context in Prompt Builder
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>## 🔍 Opening Semantic Search Mode
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>1. Start Leeroy.
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>```powershell id=&quot;emw3he&quot;
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>streamlit run app.py
-</span></code></pre></div></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Upload Files
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  │
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  ▼
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Decode Text
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  │
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  ▼
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>Chunk Text
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  │
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  ▼
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>Generate Embeddings
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  │
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  ▼
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>Store Chunks and Vectors in SQLite
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  │
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  ▼
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>Use Semantic Context in Prompt Builder
+</span></code></pre></div>
+<h2 id="opening-semantic-search-mode">🔍 Opening Semantic Search Mode<a class="headerlink" href="#opening-semantic-search-mode" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Start Leeroy.</li>
+</ol>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">streamlit</span> <span class="n">run</span> <span class="n">app</span><span class="p">.</span><span class="n">py</span>
+</span></code></pre></div>
 <ol>
 <li>Select the sidebar mode:</li>
 </ol>
-<p>```text id="v1ss95"
-Semantic Search
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>3. Confirm that the Semantic Search page displays the semantic context toggle and upload control.
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>## 📥 Uploading Files
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>Use the upload control to load files for embedding.
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>The Semantic Search workflow reads uploaded file bytes and attempts to decode them as text. The
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>decoded text is split into overlapping chunks before embedding.
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>For best results, use files with extractable text content.
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>| File Content     | Expected Behavior                                                |
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>| ---------------- | ---------------------------------------------------------------- |
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>| Plain text       | Best fit for direct decoding and chunking.                       |
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>| Markdown         | Good fit because text structure is preserved.                    |
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>| CSV-like text    | Usable if the content is meaningful as text.                     |
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>| Binary documents | May not decode usefully in this mode. Use Document Q&amp;A for PDFs. |
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>## 🧩 Chunking
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>Leeroy uses the shared text chunking helper to split uploaded content into overlapping chunks.
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>Chunking improves retrieval because it allows the application to compare the user’s prompt against
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>smaller, focused text windows rather than one large document.
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>| Chunking Feature | Purpose                                       |
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>| ---------------- | --------------------------------------------- |
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>| Fixed chunk size | Keeps retrieved context manageable.           |
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>| Overlap          | Preserves continuity across chunk boundaries. |
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>| Ordered chunks   | Keeps source text progression intact.         |
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>## 🧠 Embedding
-</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>
-</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>Semantic Search uses the local sentence-transformer embedder loaded by the application.
-</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>
-</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>The default model is:
-</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
-</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>```text id=&quot;tjg2bo&quot;
-</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>all-MiniLM-L6-v2
-</span></code></pre></div></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Semantic Search
+</span></code></pre></div>
+<ol>
+<li>Confirm that the Semantic Search page displays the semantic context toggle and upload control.</li>
+</ol>
+<h2 id="uploading-files">📥 Uploading Files<a class="headerlink" href="#uploading-files" title="Permanent link">&para;</a></h2>
+<p>Use the upload control to load files for embedding.</p>
+<p>The Semantic Search workflow reads uploaded file bytes and attempts to decode them as text. The
+decoded text is split into overlapping chunks before embedding.</p>
+<p>For best results, use files with extractable text content.</p>
+<table>
+<thead>
+<tr>
+<th>File Content</th>
+<th>Expected Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plain text</td>
+<td>Best fit for direct decoding and chunking.</td>
+</tr>
+<tr>
+<td>Markdown</td>
+<td>Good fit because text structure is preserved.</td>
+</tr>
+<tr>
+<td>CSV-like text</td>
+<td>Usable if the content is meaningful as text.</td>
+</tr>
+<tr>
+<td>Binary documents</td>
+<td>May not decode usefully in this mode. Use Document Q&amp;A for PDFs.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="chunking">🧩 Chunking<a class="headerlink" href="#chunking" title="Permanent link">&para;</a></h2>
+<p>Leeroy uses the shared text chunking helper to split uploaded content into overlapping chunks.</p>
+<p>Chunking improves retrieval because it allows the application to compare the user’s prompt against
+smaller, focused text windows rather than one large document.</p>
+<table>
+<thead>
+<tr>
+<th>Chunking Feature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fixed chunk size</td>
+<td>Keeps retrieved context manageable.</td>
+</tr>
+<tr>
+<td>Overlap</td>
+<td>Preserves continuity across chunk boundaries.</td>
+</tr>
+<tr>
+<td>Ordered chunks</td>
+<td>Keeps source text progression intact.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="embedding">🧠 Embedding<a class="headerlink" href="#embedding" title="Permanent link">&para;</a></h2>
+<p>Semantic Search uses the local sentence-transformer embedder loaded by the application.</p>
+<p>The default model is:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>all-MiniLM-L6-v2
+</span></code></pre></div>
 <p>Each chunk is encoded into a vector. Leeroy stores the chunk text and vector bytes in SQLite.</p>
 <h2 id="sqlite-storage">🗄️ SQLite Storage<a class="headerlink" href="#sqlite-storage" title="Permanent link">&para;</a></h2>
 <p>Semantic Search writes to the local <code>embeddings</code> table.</p>
@@ -1234,8 +1346,8 @@ prompt.</p>
 <li>Ask a question that relates to the uploaded content.</li>
 </ol>
 <p>Example prompt after indexing:</p>
-<p><code>text id="t2m5l4"
-Using the available semantic context, summarize the main operating assumptions and risks.</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Using the available semantic context, summarize the main operating assumptions and risks.
+</span></code></pre></div>
 <h2 id="recommended-sequence">✅ Recommended Sequence<a class="headerlink" href="#recommended-sequence" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Use clean, text-based files.</li>

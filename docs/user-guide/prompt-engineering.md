@@ -10,7 +10,8 @@ instructions for Text Generation and Document Q&A workflows.
 
 ## 🧱 Workflow Position
 
-```text id="l7rlah"
+```text
+
 Create or Select Prompt Template
   │
   ▼
@@ -24,6 +25,7 @@ Cascade into System Instructions
   │
   ▼
 Use in Text Generation or Document Q&A
+
 ```
 
 ## 🗄️ Prompt Table
@@ -95,8 +97,10 @@ To create a prompt:
 
 Example prompt text:
 
-```text id="qoy99b"
+```text
+
 Respond as a concise federal data analyst. Use a short executive summary, followed by key findings, risks, and recommended next steps.
+
 ```
 
 ## 🔁 Cascading into System Instructions
@@ -116,7 +120,8 @@ Recommended use cases:
 
 ## 🧪 Example Prompt Template
 
-```text id="miny8d"
+```text 
+
 Caption: Federal Analytical Summary
 Name: federal_summary
 Version: 1.0
@@ -131,6 +136,7 @@ You are supporting a federal analyst. Provide a concise summary using:
 5. Recommended next steps
 
 Use plain language and avoid unsupported assumptions.
+
 ```
 
 ## ✅ Recommended Sequence

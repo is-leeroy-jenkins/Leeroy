@@ -64,19 +64,25 @@ Verify the following UI areas after changes:
 Build the documentation from the repository root.
 
 ```powershell
+
 mkdocs build
+
 ```
 
 Serve the documentation locally.
 
 ```powershell
+
 mkdocs serve
+
 ```
 
 Open the local documentation site.
 
 ```text
+
 http://127.0.0.1:8000/
+
 ```
 
 ## ✅ Documentation Validation Checklist
@@ -104,6 +110,7 @@ Public modules, classes, functions, methods, and properties should use Google-st
 Recommended structure:
 
 ```python
+
 def function_name( value: str ) -> str:
     """Return a normalized value.
 
@@ -116,11 +123,13 @@ def function_name( value: str ) -> str:
     Returns:
         str: Normalized value.
     """
+
 ```
 
 Use these section names only when applicable:
 
 ```text
+
 Purpose:
 Args:
 Attributes:
@@ -128,17 +137,20 @@ Returns:
 Raises:
 Notes:
 Examples:
+
 ```
 
 Avoid these patterns:
 
 ```text
+
 Parameters:
 -----------
 Returns:
 --------
 Returns:
     None:
+    
 ```
 
 Do not add `Returns:` sections to `__init__` methods.
@@ -148,6 +160,7 @@ Do not add `Returns:` sections to `__init__` methods.
 Use the application logging pattern for existing exception handlers that need diagnostics.
 
 ```python
+
 from boogr import Error, Logger
 
 try:
@@ -159,11 +172,13 @@ except Exception as e:
     exception.method = 'operation_name( ) -> object'
     Logger( ).write( exception )
     raise exception
+
 ```
 
 For fallback helpers, preserve the original fallback behavior.
 
 ```python
+
 try:
     return bool( value )
 except Exception as e:
@@ -173,6 +188,7 @@ except Exception as e:
     exception.method = 'helper_name( ) -> bool'
     Logger( ).write( exception )
     return False
+
 ```
 
 The `exception.method` value must be a stable signature string. It must not include prompts, user
@@ -184,6 +200,7 @@ addresses.
 Recommended documentation tree:
 
 ```text
+
 docs/
 ├── index.md
 ├── architecture.md
@@ -208,6 +225,7 @@ docs/
 └── images/
     ├── leeroy-architecture.png
     └── leeroy-class-map.png
+    
 ```
 
 ## 🚢 GitHub Pages Deployment

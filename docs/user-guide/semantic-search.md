@@ -14,7 +14,8 @@ enabled.
 
 ## 🧱 Workflow Position
 
-```text id="mpsx0m"
+```text
+
 Upload Files
   │
   ▼
@@ -31,20 +32,25 @@ Store Chunks and Vectors in SQLite
   │
   ▼
 Use Semantic Context in Prompt Builder
+
 ```
 
 ## 🔍 Opening Semantic Search Mode
 
 1. Start Leeroy.
 
-```powershell id="emw3he"
+```powershell
+
 streamlit run app.py
+
 ```
 
 2. Select the sidebar mode:
 
-```text id="v1ss95"
+```text 
+
 Semantic Search
+
 ```
 
 3. Confirm that the Semantic Search page displays the semantic context toggle and upload control.
@@ -84,8 +90,10 @@ Semantic Search uses the local sentence-transformer embedder loaded by the appli
 
 The default model is:
 
-```text id="tjg2bo"
+```text
+
 all-MiniLM-L6-v2
+
 ```
 
 Each chunk is encoded into a vector. Leeroy stores the chunk text and vector bytes in SQLite.
@@ -122,8 +130,10 @@ prompt.
 
 Example prompt after indexing:
 
-```text id="t2m5l4"
+```text
+
 Using the available semantic context, summarize the main operating assumptions and risks.
+
 ```
 
 ## ✅ Recommended Sequence
