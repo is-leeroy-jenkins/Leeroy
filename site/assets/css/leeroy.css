@@ -1,0 +1,1155 @@
+/*
+ * ==========================================================================================
+ *  Leeroy Documentation Theme
+ *  File: docs/assets/css/leeroy.css
+ *
+ *  Purpose:
+ *      Provides a dark-mode Material for MkDocs theme layer for the Leeroy documentation site.
+ *      The stylesheet preserves a dark blue title/header background, improves readability,
+ *      widens documentation content, styles tables/cards/admonitions, supports mkdocstrings
+ *      API reference pages, and supports the progressive JavaScript enhancements in leeroy.js.
+ * ==========================================================================================
+ */
+/* ==========================================================================================
+   Root Theme Variables
+   ========================================================================================== */
+:root
+{
+	--leeroy-blue: #024FA3;
+	--leeroy-blue-dark: #00254C;
+	--leeroy-blue-deep: #011A33;
+	--leeroy-blue-bright: #0078FC;
+	--leeroy-blue-soft: #4DA3FF;
+	--leeroy-bg: #141414;
+	--leeroy-bg-alt: #1B1B1B;
+	--leeroy-surface: #242424;
+	--leeroy-surface-2: #303030;
+	--leeroy-surface-3: #414141;
+	--leeroy-border: #565557;
+	--leeroy-border-blue: #00254C;
+	--leeroy-table-header: #023770;
+	--leeroy-text: #FFFFFF;
+	--leeroy-text-soft: #E6EAF0;
+	--leeroy-text-muted: #B8C2CC;
+	--leeroy-text-dim: #8F9BA8;
+	--leeroy-code-bg: #101820;
+	--leeroy-code-border: #25364A;
+	--leeroy-success: #33D17A;
+	--leeroy-warning: #F5C542;
+	--leeroy-danger: #FF6B6B;
+	--leeroy-info: #4DA3FF;
+	--leeroy-radius-sm: 6px;
+	--leeroy-radius-md: 10px;
+	--leeroy-radius-lg: 14px;
+	--leeroy-radius-xl: 18px;
+	--leeroy-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+	--leeroy-shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.22);
+	--leeroy-transition: 140ms ease-in-out;
+}
+
+/* ==========================================================================================
+   Material Theme Overrides
+   ========================================================================================== */
+[data-md-color-scheme='slate']
+{
+	--md-default-bg-color: var(--leeroy-bg);
+	--md-default-bg-color--light: var(--leeroy-bg-alt);
+	--md-default-bg-color--lighter: var(--leeroy-surface);
+	--md-default-bg-color--lightest: var(--leeroy-surface-2);
+	--md-default-fg-color: var(--leeroy-text-soft);
+	--md-default-fg-color--light: var(--leeroy-text-muted);
+	--md-default-fg-color--lighter: var(--leeroy-text-dim);
+	--md-default-fg-color--lightest: #6F7B87;
+	--md-primary-fg-color: var(--leeroy-blue);
+	--md-primary-fg-color--light: var(--leeroy-blue-bright);
+	--md-primary-fg-color--dark: var(--leeroy-blue-dark);
+	--md-accent-fg-color: var(--leeroy-blue-bright);
+	--md-accent-fg-color--transparent: rgba(0, 120, 252, 0.16);
+	--md-typeset-a-color: var(--leeroy-blue-soft);
+	--md-code-bg-color: var(--leeroy-code-bg);
+	--md-code-fg-color: #EAF2FF;
+	--md-code-hl-color: rgba(0, 120, 252, 0.22);
+	--md-code-hl-number-color: #B7D9FF;
+	--md-code-hl-special-color: #FFB3D1;
+	--md-code-hl-function-color: #9CDCFE;
+	--md-code-hl-constant-color: #DCDCAA;
+	--md-code-hl-keyword-color: #C586C0;
+	--md-code-hl-string-color: #CE9178;
+	--md-code-hl-name-color: #EAF2FF;
+	--md-code-hl-operator-color: #D4D4D4;
+	--md-code-hl-punctuation-color: #D4D4D4;
+	--md-code-hl-comment-color: #6A9955;
+	--md-code-hl-generic-color: #D4D4D4;
+	--md-code-hl-variable-color: #9CDCFE;
+}
+
+/* ==========================================================================================
+   Global Layout
+   ========================================================================================== */
+html
+{
+	scroll-behavior: smooth;
+}
+
+body
+{
+	background: radial-gradient(circle at 12% 0%, rgba(0, 120, 252, 0.12), transparent 30rem),
+	radial-gradient(circle at 85% 10%, rgba(2, 79, 163, 0.16), transparent 34rem),
+	var(--leeroy-bg);
+	color: var(--leeroy-text-soft);
+}
+
+.md-main__inner,
+.md-grid
+{
+	max-width: 94rem;
+}
+
+.md-content__inner
+{
+	max-width: none;
+	padding-bottom: 3.5rem;
+}
+
+.md-sidebar,
+.md-sidebar__scrollwrap
+{
+	scrollbar-width: thin;
+	scrollbar-color: var(--leeroy-border) transparent;
+}
+
+/* ==========================================================================================
+   Dark Blue Header / Title Bar
+   ========================================================================================== */
+.md-header
+{
+	background: linear-gradient(90deg, var(--leeroy-blue-dark) 0%, var(--leeroy-blue) 48%, var(--leeroy-blue-dark) 100%);
+	box-shadow: 0 4px 18px rgba(0, 0, 0, 0.38);
+	border-bottom: 1px solid rgba(77, 163, 255, 0.28);
+}
+
+.md-header__title,
+.md-header__topic,
+.md-header__button
+{
+	color: #FFFFFF;
+}
+
+.md-header__title
+{
+	font-weight: 700;
+	letter-spacing: 0.01em;
+}
+
+.md-header__button:hover
+{
+	color: #D8EBFF;
+}
+
+.md-tabs
+{
+	background: linear-gradient(90deg, var(--leeroy-blue-dark) 0%, #023770 48%, var(--leeroy-blue-dark) 100%);
+	border-bottom: 1px solid rgba(77, 163, 255, 0.22);
+}
+
+.md-tabs__link
+{
+	color: rgba(255, 255, 255, 0.84);
+	font-weight: 600;
+}
+
+.md-tabs__link:hover,
+.md-tabs__link--active
+{
+	color: #FFFFFF;
+}
+
+.md-search__form
+{
+	background-color: rgba(255, 255, 255, 0.12);
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--leeroy-radius-md);
+}
+
+.md-search__form:hover
+{
+	background-color: rgba(255, 255, 255, 0.18);
+}
+
+.md-search__input
+{
+	color: #FFFFFF;
+}
+
+.md-search__input::placeholder
+{
+	color: rgba(255, 255, 255, 0.72);
+}
+
+.md-search__icon
+{
+	color: rgba(255, 255, 255, 0.78);
+}
+
+/* ==========================================================================================
+   Typography
+   ========================================================================================== */
+.md-typeset
+{
+	font-size: 0.84rem;
+	line-height: 1.68;
+	color: var(--leeroy-text-soft);
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6
+{
+	color: #FFFFFF;
+	font-weight: 750;
+	letter-spacing: -0.015em;
+}
+
+.md-typeset h1
+{
+	margin-bottom: 0.75rem;
+	padding-bottom: 0.55rem;
+	border-bottom: 1px solid rgba(77, 163, 255, 0.26);
+	font-size: 2.05rem;
+}
+
+.md-typeset h2
+{
+	margin-top: 2.15rem;
+	color: #F5FAFF;
+	font-size: 1.48rem;
+}
+
+.md-typeset h3
+{
+	margin-top: 1.65rem;
+	color: #EAF4FF;
+	font-size: 1.18rem;
+}
+
+.md-typeset h4
+{
+	color: #D8EBFF;
+	font-size: 1.02rem;
+}
+
+.md-typeset p,
+.md-typeset li
+{
+	color: var(--leeroy-text-soft);
+}
+
+.md-typeset strong
+{
+	color: #FFFFFF;
+	font-weight: 700;
+}
+
+.md-typeset em
+{
+	color: #D9E8F8;
+}
+
+.md-typeset a
+{
+	color: var(--leeroy-blue-soft);
+	text-decoration-thickness: 0.08em;
+	text-underline-offset: 0.16em;
+}
+
+.md-typeset a:hover
+{
+	color: #8AC5FF;
+}
+
+.md-typeset hr
+{
+	border-bottom-color: rgba(86, 85, 87, 0.7);
+}
+
+/* ==========================================================================================
+   Navigation
+   ========================================================================================== */
+.md-nav__title
+{
+	color: #FFFFFF;
+	font-weight: 700;
+}
+
+.md-nav__item .md-nav__link--active
+{
+	color: var(--leeroy-blue-soft);
+	font-weight: 700;
+}
+
+.md-nav__link:hover
+{
+	color: #FFFFFF;
+}
+
+.md-nav--secondary .md-nav__link
+{
+	color: var(--leeroy-text-muted);
+}
+
+.md-nav--secondary .md-nav__link:hover,
+.md-nav--secondary .md-nav__link.leeroy-toc-active
+{
+	color: var(--leeroy-blue-soft);
+}
+
+.leeroy-toc-active
+{
+	font-weight: 700;
+}
+
+.leeroy-toc-marker
+{
+	display: none;
+}
+
+/* ==========================================================================================
+   Page Tools from leeroy.js
+   ========================================================================================== */
+.leeroy-page-tools
+{
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.45rem;
+	margin: -0.25rem 0 1.15rem;
+}
+
+.leeroy-page-tools button
+{
+	padding: 0.32rem 0.62rem;
+	border: 1px solid rgba(77, 163, 255, 0.34);
+	border-radius: var(--leeroy-radius-md);
+	background: rgba(0, 120, 252, 0.12);
+	color: var(--leeroy-blue-soft);
+	font-size: 0.72rem;
+	font-weight: 750;
+	cursor: pointer;
+	transition: background-color var(--leeroy-transition),
+	border-color var(--leeroy-transition),
+	color var(--leeroy-transition);
+}
+
+.leeroy-page-tools button:hover
+{
+	background: rgba(0, 120, 252, 0.22);
+	border-color: rgba(77, 163, 255, 0.58);
+	color: #FFFFFF;
+}
+
+.leeroy-page-path
+{
+	margin: -0.65rem 0 1rem;
+	color: var(--leeroy-text-dim);
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+}
+
+/* ==========================================================================================
+   Headings with JS-Injected Section Links
+   ========================================================================================== */
+.leeroy-heading-link
+{
+	margin-left: 0.45rem;
+	padding: 0.08rem 0.35rem;
+	border: 1px solid rgba(77, 163, 255, 0.28);
+	border-radius: var(--leeroy-radius-sm);
+	background: rgba(0, 120, 252, 0.10);
+	color: var(--leeroy-blue-soft);
+	font-size: 0.72em;
+	font-weight: 700;
+	cursor: pointer;
+	opacity: 0;
+	transform: translateY(-1px);
+	transition: opacity var(--leeroy-transition),
+	background-color var(--leeroy-transition),
+	border-color var(--leeroy-transition),
+	color var(--leeroy-transition);
+}
+
+h2:hover .leeroy-heading-link,
+h3:hover .leeroy-heading-link,
+h4:hover .leeroy-heading-link,
+.leeroy-heading-link:focus
+{
+	opacity: 1;
+}
+
+.leeroy-heading-link:hover
+{
+	background: rgba(0, 120, 252, 0.18);
+	border-color: rgba(77, 163, 255, 0.55);
+	color: #FFFFFF;
+}
+
+/* ==========================================================================================
+   Tables
+   ========================================================================================== */
+.md-typeset table:not([class])
+{
+	display: table;
+	width: 100%;
+	border: 1px solid var(--leeroy-border);
+	border-collapse: separate;
+	border-spacing: 0;
+	border-radius: var(--leeroy-radius-lg);
+	overflow: hidden;
+	background-color: rgba(36, 36, 36, 0.92);
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+.md-typeset table:not([class]) th
+{
+	background: linear-gradient(180deg, var(--leeroy-table-header) 0%, var(--leeroy-blue-dark) 100%);
+	color: #FFFFFF;
+	font-weight: 750;
+	border-bottom: 1px solid rgba(77, 163, 255, 0.34);
+}
+
+.md-typeset table:not([class]) td
+{
+	color: var(--leeroy-text-soft);
+	border-top: 1px solid rgba(0, 37, 76, 0.86);
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) td
+{
+	background-color: rgba(255, 255, 255, 0.025);
+}
+
+.md-typeset table:not([class]) tr:hover td
+{
+	background-color: rgba(0, 120, 252, 0.08);
+}
+
+.md-typeset table:not([class]) code
+{
+	white-space: nowrap;
+}
+
+.leeroy-table-tools
+{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin: 1rem 0 0.45rem;
+	padding: 0.65rem;
+	border: 1px solid rgba(86, 85, 87, 0.72);
+	border-radius: var(--leeroy-radius-lg);
+	background: rgba(36, 36, 36, 0.82);
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+.leeroy-table-filter
+{
+	width: min(24rem, 100%);
+	padding: 0.45rem 0.7rem;
+	border: 1px solid rgba(77, 163, 255, 0.34);
+	border-radius: var(--leeroy-radius-md);
+	background: rgba(20, 20, 20, 0.92);
+	color: #FFFFFF;
+	font-size: 0.78rem;
+}
+
+.leeroy-table-filter::placeholder
+{
+	color: var(--leeroy-text-dim);
+}
+
+.leeroy-table-filter:focus
+{
+	outline: 2px solid rgba(77, 163, 255, 0.42);
+	outline-offset: 2px;
+}
+
+.leeroy-table-count
+{
+	color: var(--leeroy-text-muted);
+	font-size: 0.74rem;
+	white-space: nowrap;
+}
+
+/* ==========================================================================================
+   Code Blocks
+   ========================================================================================== */
+.md-typeset code
+{
+	border-radius: var(--leeroy-radius-sm);
+	background-color: rgba(16, 24, 32, 0.96);
+	color: #EAF2FF;
+	font-size: 0.78rem;
+}
+
+.md-typeset pre
+{
+	border: 1px solid var(--leeroy-code-border);
+	border-radius: var(--leeroy-radius-lg);
+	background: linear-gradient(180deg, rgba(16, 24, 32, 0.98), rgba(13, 18, 24, 0.98));
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+.md-typeset pre > code
+{
+	font-size: 0.76rem;
+	line-height: 1.62;
+}
+
+.leeroy-code-label
+{
+	display: inline-flex;
+	align-items: center;
+	margin: 1rem 0 0;
+	padding: 0.25rem 0.58rem;
+	border: 1px solid rgba(77, 163, 255, 0.28);
+	border-bottom: none;
+	border-radius: var(--leeroy-radius-md) var(--leeroy-radius-md) 0 0;
+	background: linear-gradient(180deg, var(--leeroy-blue-dark), #021F3E);
+	color: #FFFFFF;
+	font-size: 0.68rem;
+	font-weight: 750;
+	letter-spacing: 0.035em;
+	text-transform: uppercase;
+}
+
+.leeroy-code-label + .highlight,
+.leeroy-code-label + pre
+{
+	margin-top: 0 !important;
+}
+
+.leeroy-code-collapsed
+{
+	position: relative;
+	overflow: hidden;
+}
+
+.leeroy-code-collapsed::after
+{
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 5rem;
+	background: linear-gradient(180deg, transparent, rgba(16, 24, 32, 0.98));
+	content: '';
+	pointer-events: none;
+}
+
+.leeroy-code-toggle
+{
+	display: inline-flex;
+	align-items: center;
+	margin: 0.35rem 0 1rem;
+	padding: 0.35rem 0.65rem;
+	border: 1px solid rgba(77, 163, 255, 0.32);
+	border-radius: var(--leeroy-radius-md);
+	background: rgba(0, 120, 252, 0.12);
+	color: var(--leeroy-blue-soft);
+	font-size: 0.72rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background-color var(--leeroy-transition),
+	color var(--leeroy-transition),
+	border-color var(--leeroy-transition);
+}
+
+.leeroy-code-toggle:hover
+{
+	background: rgba(0, 120, 252, 0.22);
+	border-color: rgba(77, 163, 255, 0.6);
+	color: #FFFFFF;
+}
+
+/* ==========================================================================================
+   Admonitions and Details
+   ========================================================================================== */
+.md-typeset .admonition,
+.md-typeset details
+{
+	border-radius: var(--leeroy-radius-lg);
+	border-color: rgba(77, 163, 255, 0.32);
+	background-color: rgba(36, 36, 36, 0.86);
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary
+{
+	border-radius: var(--leeroy-radius-lg) var(--leeroy-radius-lg) 0 0;
+	background-color: rgba(2, 55, 112, 0.72);
+	color: #FFFFFF;
+	font-weight: 750;
+}
+
+.md-typeset .admonition.note,
+.md-typeset details.note
+{
+	border-color: rgba(77, 163, 255, 0.38);
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning
+{
+	border-color: rgba(245, 197, 66, 0.5);
+}
+
+.md-typeset .admonition.danger,
+.md-typeset details.danger
+{
+	border-color: rgba(255, 107, 107, 0.5);
+}
+
+/* ==========================================================================================
+   Cards, Grids, Buttons
+   ========================================================================================== */
+.md-typeset .grid.cards > ul > li
+{
+	border: 1px solid rgba(86, 85, 87, 0.74);
+	border-radius: var(--leeroy-radius-lg);
+	background: rgba(36, 36, 36, 0.84);
+	box-shadow: var(--leeroy-shadow-soft);
+	transition: transform var(--leeroy-transition),
+	border-color var(--leeroy-transition),
+	background-color var(--leeroy-transition);
+}
+
+.md-typeset .grid.cards > ul > li:hover
+{
+	transform: translateY(-2px);
+	border-color: rgba(77, 163, 255, 0.45);
+	background: rgba(48, 48, 48, 0.94);
+}
+
+.md-typeset .md-button
+{
+	border-radius: var(--leeroy-radius-md);
+	font-weight: 750;
+}
+
+.md-typeset .md-button--primary
+{
+	background-color: var(--leeroy-blue);
+	border-color: var(--leeroy-blue);
+	color: #FFFFFF;
+}
+
+.md-typeset .md-button--primary:hover
+{
+	background-color: var(--leeroy-blue-bright);
+	border-color: var(--leeroy-blue-bright);
+	color: #FFFFFF;
+}
+
+/* ==========================================================================================
+   Images and Diagrams
+   ========================================================================================== */
+.md-typeset img
+{
+	border-radius: var(--leeroy-radius-lg);
+}
+
+.md-typeset p > img,
+.md-typeset figure img
+{
+	display: block;
+	margin: 1.2rem auto;
+	border: 1px solid rgba(77, 163, 255, 0.22);
+	box-shadow: var(--leeroy-shadow);
+}
+
+.md-typeset figure
+{
+	text-align: center;
+}
+
+.md-typeset figcaption
+{
+	color: var(--leeroy-text-muted);
+	font-size: 0.76rem;
+}
+
+/* ==========================================================================================
+   API Reference / mkdocstrings
+   ========================================================================================== */
+.doc.doc-object,
+.doc-class,
+.doc-function,
+.doc-method,
+.doc-attribute,
+.doc-property
+{
+	position: relative;
+	margin-top: 1.1rem;
+	padding: 0.85rem 1rem;
+	border: 1px solid rgba(86, 85, 87, 0.72);
+	border-radius: var(--leeroy-radius-lg);
+	background: rgba(27, 27, 27, 0.84);
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+.doc-heading
+{
+	color: #FFFFFF;
+}
+
+.doc-label,
+.doc-label-class-attribute,
+.doc-label-instance-attribute
+{
+	border-radius: var(--leeroy-radius-sm);
+	background: rgba(0, 120, 252, 0.14);
+	color: var(--leeroy-blue-soft);
+}
+
+.doc-signature
+{
+	color: #EAF2FF;
+}
+
+.doc-contents
+{
+	color: var(--leeroy-text-soft);
+}
+
+.doc-contents table
+{
+	font-size: 0.78rem;
+}
+
+.leeroy-api-badge
+{
+	display: inline-flex;
+	align-items: center;
+	margin-left: 0.5rem;
+	padding: 0.1rem 0.45rem;
+	border: 1px solid rgba(77, 163, 255, 0.32);
+	border-radius: 999px;
+	background: rgba(0, 120, 252, 0.12);
+	color: var(--leeroy-blue-soft);
+	font-size: 0.62rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	vertical-align: middle;
+}
+
+/* ==========================================================================================
+   API Tools Panel
+   ========================================================================================== */
+.leeroy-api-tools
+{
+	margin: 1.25rem 0 1.75rem;
+	padding: 1rem 1.1rem;
+	border: 1px solid rgba(77, 163, 255, 0.42);
+	border-radius: var(--leeroy-radius-lg);
+	background: linear-gradient(180deg, rgba(2, 37, 76, 0.78), rgba(20, 28, 40, 0.92));
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+.leeroy-api-tools-title
+{
+	margin: 0 0 0.75rem !important;
+	padding-bottom: 0 !important;
+	border-bottom: none !important;
+	color: #FFFFFF !important;
+	font-size: 1rem !important;
+	font-weight: 800 !important;
+}
+
+.leeroy-api-search-label
+{
+	display: block;
+	margin-bottom: 0.35rem;
+	color: var(--leeroy-text-muted);
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.leeroy-api-search
+{
+	width: 100%;
+	padding: 0.75rem 0.9rem;
+	border: 1px solid rgba(77, 163, 255, 0.5);
+	border-radius: var(--leeroy-radius-md);
+	background-color: rgba(10, 18, 26, 0.96);
+	color: #FFFFFF;
+	font-size: 0.9rem;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+.leeroy-api-search::placeholder
+{
+	color: rgba(230, 234, 240, 0.52);
+}
+
+.leeroy-api-search:focus
+{
+	outline: 2px solid rgba(77, 163, 255, 0.48);
+	outline-offset: 2px;
+	border-color: rgba(77, 163, 255, 0.82);
+}
+
+.leeroy-api-tool-buttons
+{
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.55rem;
+	margin-top: 1rem;
+}
+
+.leeroy-api-tool-button
+{
+	padding: 0.48rem 0.82rem;
+	border: 1px solid rgba(77, 163, 255, 0.5);
+	border-radius: 999px;
+	background: linear-gradient(180deg, rgba(2, 79, 163, 0.82), rgba(0, 37, 76, 0.92));
+	color: #FFFFFF;
+	font-size: 0.74rem;
+	font-weight: 800;
+	cursor: pointer;
+	transition: background-color var(--leeroy-transition),
+	border-color var(--leeroy-transition),
+	color var(--leeroy-transition),
+	transform var(--leeroy-transition);
+}
+
+.leeroy-api-tool-button:hover
+{
+	border-color: rgba(255, 255, 255, 0.68);
+	background: linear-gradient(180deg, rgba(0, 120, 252, 0.92), rgba(2, 79, 163, 0.95));
+	color: #FFFFFF;
+	transform: translateY(-1px);
+}
+
+.leeroy-api-tool-button:active
+{
+	transform: translateY(0);
+}
+
+.leeroy-api-filter-status
+{
+	margin: 0.75rem 0 0;
+	color: var(--leeroy-text-muted);
+	font-size: 0.72rem;
+	font-weight: 700;
+}
+
+.leeroy-api-hidden
+{
+	display: none !important;
+}
+
+/* ==========================================================================================
+   Reading Progress and Scroll-to-Top
+   ========================================================================================== */
+#leeroy-reading-progress
+{
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 9999;
+	width: 100%;
+	height: 3px;
+	background: transparent;
+	pointer-events: none;
+}
+
+#leeroy-reading-progress span
+{
+	display: block;
+	width: 0%;
+	height: 100%;
+	background: linear-gradient(90deg, var(--leeroy-blue-soft), var(--leeroy-blue-bright), #80D0FF);
+	box-shadow: 0 0 12px rgba(77, 163, 255, 0.9);
+	transition: width 90ms linear;
+}
+
+.leeroy-scroll-top
+{
+	position: fixed;
+	right: 1.05rem;
+	bottom: 1.05rem;
+	z-index: 150;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.45rem;
+	height: 2.45rem;
+	border: 1px solid rgba(77, 163, 255, 0.45);
+	border-radius: 999px;
+	background: linear-gradient(180deg, var(--leeroy-blue), var(--leeroy-blue-dark));
+	color: #FFFFFF;
+	font-size: 1.15rem;
+	font-weight: 900;
+	box-shadow: var(--leeroy-shadow);
+	cursor: pointer;
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(0.6rem);
+	transition: opacity var(--leeroy-transition),
+	transform var(--leeroy-transition),
+	background-color var(--leeroy-transition),
+	border-color var(--leeroy-transition);
+}
+
+.leeroy-scroll-top.is-visible
+{
+	opacity: 1;
+	pointer-events: auto;
+	transform: translateY(0);
+}
+
+.leeroy-scroll-top:hover
+{
+	border-color: rgba(255, 255, 255, 0.72);
+	background: linear-gradient(180deg, var(--leeroy-blue-bright), var(--leeroy-blue));
+}
+
+/* ==========================================================================================
+   Links
+   ========================================================================================== */
+.leeroy-external-link
+{
+	font-weight: 600;
+}
+
+.leeroy-external-indicator
+{
+	color: var(--leeroy-blue-soft);
+	font-size: 0.82em;
+}
+
+/* ==========================================================================================
+   Focus and Accessibility
+   ========================================================================================== */
+.leeroy-keyboard-mode a:focus,
+.leeroy-keyboard-mode button:focus,
+.leeroy-keyboard-mode input:focus,
+.leeroy-keyboard-mode textarea:focus,
+.leeroy-keyboard-mode select:focus,
+.leeroy-keyboard-mode summary:focus
+{
+	outline: 2px solid var(--leeroy-blue-soft) !important;
+	outline-offset: 3px !important;
+}
+
+/* ==========================================================================================
+   Utility Badges and Inline Helpers
+   ========================================================================================== */
+.leeroy-pill,
+.md-typeset .leeroy-pill
+{
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.12rem 0.5rem;
+	border: 1px solid rgba(77, 163, 255, 0.36);
+	border-radius: 999px;
+	background: rgba(0, 120, 252, 0.12);
+	color: var(--leeroy-blue-soft);
+	font-size: 0.72rem;
+	font-weight: 750;
+	white-space: nowrap;
+}
+
+.leeroy-pill-success
+{
+	border-color: rgba(51, 209, 122, 0.42);
+	background: rgba(51, 209, 122, 0.12);
+	color: var(--leeroy-success);
+}
+
+.leeroy-pill-warning
+{
+	border-color: rgba(245, 197, 66, 0.46);
+	background: rgba(245, 197, 66, 0.12);
+	color: var(--leeroy-warning);
+}
+
+.leeroy-pill-danger
+{
+	border-color: rgba(255, 107, 107, 0.46);
+	background: rgba(255, 107, 107, 0.12);
+	color: var(--leeroy-danger);
+}
+
+/* ==========================================================================================
+   Mermaid and Diagram Support
+   ========================================================================================== */
+.mermaid
+{
+	margin: 1.2rem 0;
+	padding: 1rem;
+	border: 1px solid rgba(77, 163, 255, 0.24);
+	border-radius: var(--leeroy-radius-lg);
+	background: rgba(16, 24, 32, 0.88);
+	box-shadow: var(--leeroy-shadow-soft);
+}
+
+/* ==========================================================================================
+   Footer
+   ========================================================================================== */
+.md-footer
+{
+	border-top: 1px solid rgba(77, 163, 255, 0.22);
+	background: var(--leeroy-blue-dark);
+}
+
+.md-footer-meta
+{
+	background: #011A33;
+}
+
+/* ==========================================================================================
+   Responsive Adjustments
+   ========================================================================================== */
+@media screen and (max-width: 76.1875em)
+{
+	.md-main__inner,
+	.md-grid
+	{
+		max-width: 100%;
+	}
+	
+	.md-typeset
+	{
+		font-size: 0.82rem;
+	}
+	
+	.leeroy-table-tools
+	{
+		align-items: flex-start;
+		flex-direction: column;
+	}
+	
+	.leeroy-table-filter
+	{
+		width: 100%;
+	}
+	
+	.leeroy-page-tools
+	{
+		margin-top: 0;
+	}
+}
+
+@media screen and (max-width: 44.9375em)
+{
+	.md-typeset h1
+	{
+		font-size: 1.65rem;
+	}
+	
+	.md-typeset h2
+	{
+		font-size: 1.28rem;
+	}
+	
+	.md-typeset h3
+	{
+		font-size: 1.08rem;
+	}
+	
+	.leeroy-api-tool-buttons,
+	.leeroy-page-tools
+	{
+		flex-direction: column;
+		align-items: stretch;
+	}
+	
+	.leeroy-api-tool-button,
+	.leeroy-page-tools button
+	{
+		width: 100%;
+	}
+	
+	.leeroy-scroll-top
+	{
+		right: 0.75rem;
+		bottom: 0.75rem;
+		width: 2.25rem;
+		height: 2.25rem;
+	}
+}
+
+/* ==========================================================================================
+   Print Adjustments
+   ========================================================================================== */
+@media print
+{
+	.md-header,
+	.md-tabs,
+	.md-sidebar,
+	.md-footer,
+	.leeroy-page-tools,
+	.leeroy-api-tools,
+	.leeroy-scroll-top,
+	#leeroy-reading-progress,
+	.leeroy-heading-link,
+	.leeroy-code-toggle,
+	.leeroy-table-tools
+	{
+		display: none !important;
+	}
+	
+	body
+	{
+		background: #FFFFFF !important;
+		color: #000000 !important;
+	}
+	
+	.md-typeset,
+	.md-typeset p,
+	.md-typeset li,
+	.md-typeset h1,
+	.md-typeset h2,
+	.md-typeset h3,
+	.md-typeset h4,
+	.md-typeset h5,
+	.md-typeset h6
+	{
+		color: #000000 !important;
+	}
+	
+	.md-content__inner
+	{
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+	
+	.md-typeset pre,
+	.md-typeset code
+	{
+		background: #F4F4F4 !important;
+		color: #000000 !important;
+		box-shadow: none !important;
+	}
+	
+	.md-typeset table:not([class])
+	{
+		box-shadow: none !important;
+		border-color: #999999 !important;
+	}
+	
+	.md-typeset table:not([class]) th
+	{
+		background: #DDDDDD !important;
+		color: #000000 !important;
+	}
+}

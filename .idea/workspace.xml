@@ -5,8 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8c4485b5-ee7a-4248-a172-0b2b0775c3c7" name="Changes" comment="update">
+      <change afterPath="$PROJECT_DIR$/docs/api/app.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/boogr.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/config.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/api/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/assets/css/leeroy.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/assets/js/leeroy.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/img/leeroy_project.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guide/data-management.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guide/document-qna.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guide/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guide/prompt-engineering.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guide/semantic-search.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guide/text-generation.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mkdocs.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/boogr.py" beforeDir="false" afterPath="$PROJECT_DIR$/boogr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,7 +70,7 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "last_opened_file_path": "C:/Users/terry/source/repos/Leeroy",
+    "last_opened_file_path": "C:/Users/terry/source/repos/Leeroy/docs/img",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -61,6 +81,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\terry\source\repos\Leeroy\docs\img" />
       <recent name="C:\Users\terry\source\repos\Leeroy" />
     </key>
   </component>
@@ -86,7 +107,7 @@
       <workItem from="1779483959731" duration="474000" />
       <workItem from="1779485891727" duration="3569000" />
       <workItem from="1780351836709" duration="146000" />
-      <workItem from="1781546753418" duration="1573000" />
+      <workItem from="1781546753418" duration="4535000" />
     </task>
     <task id="LOCAL-00001" summary="update">
       <option name="closed" value="true" />
@@ -192,7 +213,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781547627047</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="update">
+      <option name="closed" value="true" />
+      <created>1781548651687</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1781548651687</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

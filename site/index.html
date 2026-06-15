@@ -1,0 +1,2438 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for Leeroy, a local-first Streamlit application for local LLM inference, document Q&A, semantic search, prompt engineering, and SQLite-backed data management.">
+      
+      
+        <meta name="author" content="Terry D. Eppler">
+      
+      
+        <link rel="canonical" href="https://is-leeroy-jenkins.github.io/Leeroy/">
+      
+      
+      
+        <link rel="next" href="architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="img/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Leeroy Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="assets/css/leeroy.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#custom-llm" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Leeroy Documentation" class="md-header__button md-logo" aria-label="Leeroy Documentation" data-md-component="logo">
+      
+  <img src="img/favicon.ico" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Leeroy Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/is-leeroy-jenkins/Leeroy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    is-leeroy-jenkins/Leeroy
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="architecture/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Architecture
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="user-guide/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="api/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="development/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Leeroy Documentation" class="md-nav__button md-logo" aria-label="Leeroy Documentation" data-md-component="logo">
+      
+  <img src="img/favicon.ico" alt="logo">
+
+    </a>
+    Leeroy Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/is-leeroy-jenkins/Leeroy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    is-leeroy-jenkins/Leeroy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#custom-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧠 Custom LLM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✨ Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#application-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Application Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛠️ Requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧊 Local LLM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📦 Installation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📦 Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Clone the Repository
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-create-and-activate-a-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Create and Activate a Virtual Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-install-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Install Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⚙️ Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-streamlit-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🚀 Running the Streamlit Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#text-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💬 Text Generation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-qa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Document Q&amp;A
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Semantic Search
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-engineering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📝 Prompt Engineering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏛️ Data Management
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-and-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Design and Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💻 Capabilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📁 File Organization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧪 Example Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Example Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#local-llm-loading-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local LLM Loading Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sentence-embedding-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sentence Embedding Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-prompt-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite Prompt Query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streamlit-launch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Streamlit Launch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧮 Runtime Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/text-generation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Text Generation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/document-qna/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Document Q&A
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/semantic-search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Search
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/prompt-engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prompt Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/data-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/boogr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#custom-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧠 Custom LLM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✨ Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#application-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Application Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛠️ Requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧊 Local LLM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📦 Installation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📦 Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Clone the Repository
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-create-and-activate-a-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Create and Activate a Virtual Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-install-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Install Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⚙️ Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-streamlit-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🚀 Running the Streamlit Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#text-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💬 Text Generation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-qa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Document Q&amp;A
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Semantic Search
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-engineering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📝 Prompt Engineering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏛️ Data Management
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-and-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Design and Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💻 Capabilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📁 File Organization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧪 Example Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧪 Example Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#local-llm-loading-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local LLM Loading Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sentence-embedding-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sentence Embedding Pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-prompt-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLite Prompt Query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streamlit-launch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Streamlit Launch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧮 Runtime Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Home</h1>
+
+<p><img alt="" src="img/leeroy_project.png" /></p>
+<hr />
+<p>Leeroy is a Python and Streamlit application for local language-model inference,
+retrieval-augmented generation, semantic search, prompt engineering, and SQLite-backed data
+management. It is designed for federal analysts, technical users, and data-science workflows that
+benefit from local execution, durable prompt storage, document-grounded question answering, and
+controlled analytical tooling.</p>
+<p>Leeroy uses an optional local GGUF model through <code>llama.cpp</code>, supports document retrieval with
+<code>sentence-transformers</code>, persists chat history and prompts in SQLite, and provides a Streamlit user
+interface for text generation, document Q&amp;A, semantic indexing, prompt administration, and database
+operations.</p>
+<h2 id="custom-llm">🧠 Custom LLM<a class="headerlink" href="#custom-llm" title="Permanent link">&para;</a></h2>
+<p><a href="https://huggingface.co/leeroy-jankins/leeroy"><img alt="HuggingFace" src="https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg" /></a></p>
+<p>Leeroy is designed to run against a local GGUF model, commonly a fine-tuned Llama-family model
+quantized for efficient local inference.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Leeroy-3B-Instruct.Q4_K_M.gguf
+</span></code></pre></div>
+<h2 id="overview">🧰 Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Leeroy is a local-first analytical assistant built around a Streamlit interface and a configurable
+local GGUF model. The application checks whether the configured model file exists, lazily loads the
+model only when enabled and available, and routes text-generation and document-question-answering
+turns through a shared prompt builder.</p>
+<p>The application is intentionally simple and durable:</p>
+<ul>
+<li>The model is stored outside the repository.</li>
+<li>The app reads the model path from configuration.</li>
+<li>Chat history, embeddings, and prompts are persisted in SQLite.</li>
+<li>Document Q&amp;A uses local text extraction, chunking, embeddings, and retrieval.</li>
+<li>Data Management provides practical SQLite inspection and administration tools.</li>
+</ul>
+<h2 id="features">✨ Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Local LLM inference</strong> through <code>llama.cpp</code> and a configurable GGUF model path.</li>
+<li><strong>Lazy model loading</strong> so environments without the model can still load the Streamlit UI.</li>
+<li><strong>Text Generation mode</strong> with streaming output and adjustable inference parameters.</li>
+<li><strong>Document Q&amp;A mode</strong> with upload-based document retrieval and local RAG prompt construction.</li>
+<li><strong>Semantic Search mode</strong> for building an embedding index from uploaded documents.</li>
+<li><strong>Prompt Engineering mode</strong> backed by the local SQLite <code>Prompts</code> table.</li>
+<li><strong>Data Management mode</strong> for importing, browsing, editing, profiling, visualizing, and querying
+  SQLite data.</li>
+<li><strong>System Instructions editor</strong> with reusable prompt-template loading.</li>
+<li><strong>SQLite persistence</strong> for chat history, prompt records, embeddings, and imported tabular data.</li>
+<li><strong>Document text extraction</strong> using PyMuPDF for PDFs and defensive text decoding for text-like
+  files.</li>
+<li><strong>Vector retrieval</strong> using <code>sentence-transformers</code>, <code>sqlite-vec</code> when available, and
+  cosine-similarity fallback.</li>
+<li><strong>Interactive visualizations</strong> through Plotly Express.</li>
+<li><strong>Fixed footer status bar</strong> showing active mode, temperature, Top-P, Top-K, penalties, token
+  limits,
+  context size, thread count, semantic status, and loaded document counts.</li>
+</ul>
+<h2 id="application-modes">🧩 Application Modes<a class="headerlink" href="#application-modes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Text Generation</code></td>
+<td>Chat with the local Leeroy model using streaming llama.cpp output and configurable inference controls.</td>
+</tr>
+<tr>
+<td><code>Document Q&amp;A</code></td>
+<td>Upload one or more documents, build a retrieval context, and ask document-grounded questions.</td>
+</tr>
+<tr>
+<td><code>Semantic Search</code></td>
+<td>Upload files, chunk text, create sentence-transformer embeddings, and persist the semantic index in SQLite.</td>
+</tr>
+<tr>
+<td><code>Prompt Engineering</code></td>
+<td>Search, sort, page, select, edit, create, update, and delete reusable prompt records.</td>
+</tr>
+<tr>
+<td><code>Data Management</code></td>
+<td>Import Excel workbooks, browse SQLite tables, run CRUD operations, profile data, filter, aggregate, visualize, administer schema, and run guarded SQL queries.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="requirements">🛠️ Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python 3.10+</td>
+<td>Runtime environment</td>
+</tr>
+<tr>
+<td>Streamlit</td>
+<td>Web application framework</td>
+</tr>
+<tr>
+<td>llama-cpp-python</td>
+<td>Optional local GGUF model inference</td>
+</tr>
+<tr>
+<td>PyMuPDF / <code>fitz</code></td>
+<td>PDF text extraction and document preview support</td>
+</tr>
+<tr>
+<td>numpy</td>
+<td>Vector math and cosine similarity</td>
+</tr>
+<tr>
+<td>pandas</td>
+<td>Table import, display, CRUD support, and SQL result handling</td>
+</tr>
+<tr>
+<td>plotly.express</td>
+<td>Interactive charts and visualizations</td>
+</tr>
+<tr>
+<td>sentence-transformers</td>
+<td>Local embedding model for semantic search and document retrieval</td>
+</tr>
+<tr>
+<td>sqlite-vec</td>
+<td>Optional SQLite vector table support for Document Q&amp;A</td>
+</tr>
+<tr>
+<td>SQLite</td>
+<td>Local persistence for chat history, prompt records, embeddings, and imported data</td>
+</tr>
+<tr>
+<td>config.py</td>
+<td>Application constants, model path, UI labels, modes, and default runtime settings</td>
+</tr>
+</tbody>
+</table>
+<h2 id="local-llm">🧊 Local LLM<a class="headerlink" href="#local-llm" title="Permanent link">&para;</a></h2>
+<p>Leeroy uses optional local LLM support. The model is loaded only when local LLM support is enabled
+and the configured GGUF file exists.</p>
+<p>The relevant configuration pattern is:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ENABLE_LOCAL_LLM</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">MODEL_PATH</span> <span class="o">=</span> <span class="s2">&quot;C:/path/to/Leeroy-3B-Instruct.Q4_K_M.gguf&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">DEFAULT_CTX</span> <span class="o">=</span> <span class="mi">4096</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">CORES</span> <span class="o">=</span> <span class="mi">4</span>
+</span></code></pre></div>
+<p>The model-loading path uses <code>llama_cpp.Llama</code> with:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model_path</code></td>
+<td>Path to the GGUF model file</td>
+</tr>
+<tr>
+<td><code>n_ctx</code></td>
+<td>Context window size</td>
+</tr>
+<tr>
+<td><code>n_threads</code></td>
+<td>CPU thread count</td>
+</tr>
+<tr>
+<td><code>n_batch</code></td>
+<td>Batch size for inference</td>
+</tr>
+<tr>
+<td><code>verbose</code></td>
+<td>Runtime logging control</td>
+</tr>
+</tbody>
+</table>
+<p>Recommended model locations include:</p>
+<ul>
+<li>A local <code>models/</code> or <code>llm/</code> folder.</li>
+<li>An LM Studio model cache.</li>
+<li>An external drive.</li>
+<li>A shared read-only model directory.</li>
+</ul>
+<p>Example Windows path:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>C:\Users\&lt;you&gt;\source\llm\lmstudio\lmstudio-community\leeroy-jankins\leeroy\Leeroy-3B-Instruct.Q4_K_M.gguf
+</span></code></pre></div>
+<h2 id="installation">📦 Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<h3 id="1-clone-the-repository">1. Clone the Repository<a class="headerlink" href="#1-clone-the-repository" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/is-leeroy-jenkins/Leeroy.git
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>Leeroy
+</span></code></pre></div>
+<h3 id="2-create-and-activate-a-virtual-environment">2. Create and Activate a Virtual Environment<a class="headerlink" href="#2-create-and-activate-a-virtual-environment" title="Permanent link">&para;</a></h3>
+<p>Windows PowerShell:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">python</span> <span class="n">-m</span> <span class="n">venv</span> <span class="p">.</span><span class="n">venv</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="p">.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">Activate</span><span class="p">.</span><span class="n">ps1</span>
+</span></code></pre></div>
+<p>Command Prompt:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python -m venv .venv
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>.venv\Scripts\activate.bat
+</span></code></pre></div>
+<p>macOS / Linux:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+</span></code></pre></div>
+<h3 id="3-install-dependencies">3. Install Dependencies<a class="headerlink" href="#3-install-dependencies" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span></code></pre></div>
+<h2 id="configuration">⚙️ Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<p>Leeroy is configured primarily through <code>config.py</code>.</p>
+<p>Common configuration values include:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MODEL_PATH</code></td>
+<td>Local path to the GGUF model file</td>
+</tr>
+<tr>
+<td><code>ENABLE_LOCAL_LLM</code></td>
+<td>Enables or disables local model loading</td>
+</tr>
+<tr>
+<td><code>DEFAULT_CTX</code></td>
+<td>Default context window</td>
+</tr>
+<tr>
+<td><code>CORES</code></td>
+<td>Default CPU thread count</td>
+</tr>
+<tr>
+<td><code>DB_PATH</code></td>
+<td>SQLite database path</td>
+</tr>
+<tr>
+<td><code>MODES</code></td>
+<td>Sidebar application mode list</td>
+</tr>
+<tr>
+<td><code>FAVICON</code></td>
+<td>Streamlit page icon</td>
+</tr>
+<tr>
+<td><code>LOGO</code></td>
+<td>Sidebar logo path</td>
+</tr>
+<tr>
+<td><code>BLUE_DIVIDER</code></td>
+<td>Shared divider markup</td>
+</tr>
+</tbody>
+</table>
+<p>Optional environment-variable pattern:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">setx</span> <span class="n">LEEROY_LLM_PATH</span> <span class="s2">&quot;C:\path\to\Leeroy-3B-Instruct.Q4_K_M.gguf&quot;</span>
+</span></code></pre></div>
+<p>Then bind that value inside <code>config.py</code> if the project uses environment-based model path resolution.</p>
+<h2 id="running-the-streamlit-application">🚀 Running the Streamlit Application<a class="headerlink" href="#running-the-streamlit-application" title="Permanent link">&para;</a></h2>
+<p>From the project root:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>streamlit<span class="w"> </span>run<span class="w"> </span>app.py
+</span></code></pre></div>
+<p>Once running, the application is available at:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>http://localhost:8501
+</span></code></pre></div>
+<h2 id="text-generation">💬 Text Generation<a class="headerlink" href="#text-generation" title="Permanent link">&para;</a></h2>
+<p>The <code>Text Generation</code> mode provides streaming local inference through the shared <code>run_llm_turn()</code>
+pipeline.</p>
+<p>Control groups include:</p>
+<table>
+<thead>
+<tr>
+<th>Control Group</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Response Controls</td>
+<td>Temperature, Top-P, Top-K, grounding toggle</td>
+</tr>
+<tr>
+<td>Probability Controls</td>
+<td>Repeat window, repeat penalty, presence penalty, frequency penalty</td>
+</tr>
+<tr>
+<td>Context Controls</td>
+<td>Context window, CPU threads, max tokens, random seed</td>
+</tr>
+<tr>
+<td>System Instructions</td>
+<td>Instruction editor, template selector, clear button</td>
+</tr>
+</tbody>
+</table>
+<p>The text-generation workflow is:</p>
+<ol>
+<li>User enters a chat prompt.</li>
+<li>The app stores the user message in SQLite.</li>
+<li>The prompt builder combines system instructions, optional semantic context, document context,
+   and chat history.</li>
+<li><code>llama.cpp</code> streams the response into the Streamlit chat message.</li>
+<li>The assistant message is saved to SQLite.</li>
+</ol>
+<h2 id="document-qa">📚 Document Q&amp;A<a class="headerlink" href="#document-qa" title="Permanent link">&para;</a></h2>
+<p>The <code>Document Q&amp;A</code> mode supports local retrieval-augmented generation.</p>
+<p>Supported upload types include:</p>
+<ul>
+<li><code>pdf</code></li>
+<li><code>txt</code></li>
+<li><code>docx</code></li>
+</ul>
+<p>The workflow includes:</p>
+<ol>
+<li>Upload one or more documents.</li>
+<li>Store active document names and bytes in Streamlit session state.</li>
+<li>Preview the first active document when supported.</li>
+<li>Extract text from PDF bytes using PyMuPDF.</li>
+<li>Chunk extracted text.</li>
+<li>Generate embeddings with <code>sentence-transformers</code>.</li>
+<li>Store vectors in <code>sqlite-vec</code> if available.</li>
+<li>Fall back to in-memory cosine similarity when vector-table support is unavailable.</li>
+<li>Retrieve the top relevant document chunks.</li>
+<li>Build a document-grounded prompt.</li>
+<li>Stream the answer from the local model.</li>
+</ol>
+<h2 id="semantic-search">🔍 Semantic Search<a class="headerlink" href="#semantic-search" title="Permanent link">&para;</a></h2>
+<p>The <code>Semantic Search</code> mode builds a reusable local embedding index.</p>
+<p>Semantic Search supports:</p>
+<ul>
+<li>Uploading multiple files.</li>
+<li>Chunking decoded text.</li>
+<li>Embedding chunks with <code>sentence-transformers</code>.</li>
+<li>Storing chunks and vector blobs in the SQLite <code>embeddings</code> table.</li>
+<li>Enabling semantic context through the <code>use_semantic</code> session-state flag.</li>
+</ul>
+<p>When semantic context is enabled, Text Generation can retrieve similar chunks from the embedding
+store and inject them into the prompt.</p>
+<h2 id="prompt-engineering">📝 Prompt Engineering<a class="headerlink" href="#prompt-engineering" title="Permanent link">&para;</a></h2>
+<p>The <code>Prompt Engineering</code> mode manages reusable prompt records in the SQLite <code>Prompts</code> table.</p>
+<p>Prompt records include:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PromptsId</code></td>
+<td>Primary key</td>
+</tr>
+<tr>
+<td><code>Caption</code></td>
+<td>Display caption used by template selectors</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td>Prompt name</td>
+</tr>
+<tr>
+<td><code>Text</code></td>
+<td>Prompt body</td>
+</tr>
+<tr>
+<td><code>Version</code></td>
+<td>Prompt version</td>
+</tr>
+<tr>
+<td><code>ID</code></td>
+<td>External or user-defined identifier</td>
+</tr>
+</tbody>
+</table>
+<p>Prompt Engineering supports:</p>
+<ul>
+<li>Search by prompt name or text.</li>
+<li>Sort by prompt fields.</li>
+<li>Sort direction selection.</li>
+<li>Pagination.</li>
+<li>Jump-to-ID navigation.</li>
+<li>Prompt row selection.</li>
+<li>Editing existing prompts.</li>
+<li>Creating new prompts.</li>
+<li>Deleting prompts.</li>
+<li>Clearing the current selection.</li>
+<li>Cascading selected prompt content into system instructions.</li>
+</ul>
+<h2 id="data-management">🏛️ Data Management<a class="headerlink" href="#data-management" title="Permanent link">&para;</a></h2>
+<p>The <code>Data Management</code> mode provides a SQLite administration and exploration interface.</p>
+<p>Tabs include:</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Import</td>
+<td>Import Excel workbook sheets into SQLite tables</td>
+</tr>
+<tr>
+<td>Browse</td>
+<td>Browse existing SQLite tables</td>
+</tr>
+<tr>
+<td>CRUD</td>
+<td>Insert, update, and delete table rows</td>
+</tr>
+<tr>
+<td>Explore</td>
+<td>Page through table records</td>
+</tr>
+<tr>
+<td>Filter</td>
+<td>Filter rows by column text containment</td>
+</tr>
+<tr>
+<td>Aggregate</td>
+<td>Run simple numeric aggregations</td>
+</tr>
+<tr>
+<td>Visualize</td>
+<td>Render charts from table data</td>
+</tr>
+<tr>
+<td>Admin</td>
+<td>Profile data, drop tables, create indexes, create tables, view schema, and alter tables</td>
+</tr>
+<tr>
+<td>SQL</td>
+<td>Execute guarded read-only SQL and download query results as CSV</td>
+</tr>
+</tbody>
+</table>
+<p>Administrative operations include:</p>
+<ul>
+<li>Table profiling.</li>
+<li>Table dropping with confirmation.</li>
+<li>Index creation.</li>
+<li>Custom table creation.</li>
+<li>Schema viewing.</li>
+<li>Row-count metrics.</li>
+<li>Index listing.</li>
+<li>Add column.</li>
+<li>Rename column.</li>
+<li>Rename table.</li>
+<li>Drop column.</li>
+</ul>
+<p>The SQL console allows read-only SQL workflows and blocks unsafe operations such as:</p>
+<ul>
+<li><code>INSERT</code></li>
+<li><code>UPDATE</code></li>
+<li><code>DELETE</code></li>
+<li><code>DROP</code></li>
+<li><code>ALTER</code></li>
+<li><code>CREATE</code></li>
+<li><code>ATTACH</code></li>
+<li><code>DETACH</code></li>
+<li><code>VACUUM</code></li>
+<li><code>REPLACE</code></li>
+<li><code>TRIGGER</code></li>
+</ul>
+<h2 id="design-and-architecture">🧩 Design and Architecture<a class="headerlink" href="#design-and-architecture" title="Permanent link">&para;</a></h2>
+<p>Leeroy uses a local-first Streamlit architecture:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UI Layer</td>
+<td>Streamlit sidebar, expanders, tabs, chat messages, uploaders, dataframes, and charts</td>
+</tr>
+<tr>
+<td>Mode Layer</td>
+<td>Text Generation, Document Q&amp;A, Semantic Search, Prompt Engineering, and Data Management blocks</td>
+</tr>
+<tr>
+<td>Local Model Layer</td>
+<td>Optional <code>llama.cpp</code> model loading through <code>llama-cpp-python</code></td>
+</tr>
+<tr>
+<td>Prompt Layer</td>
+<td>Shared prompt builder with system instructions, semantic context, basic document context, and chat history</td>
+</tr>
+<tr>
+<td>Retrieval Layer</td>
+<td>PyMuPDF extraction, chunking, sentence-transformer embeddings, sqlite-vec, and cosine fallback</td>
+</tr>
+<tr>
+<td>Persistence Layer</td>
+<td>SQLite database for chat history, prompts, embeddings, and imported data</td>
+</tr>
+<tr>
+<td>Visualization Layer</td>
+<td>Plotly Express charts over SQLite-backed pandas DataFrames</td>
+</tr>
+<tr>
+<td>Status Layer</td>
+<td>Fixed footer summarizing active mode and runtime parameters</td>
+</tr>
+</tbody>
+</table>
+<p>Architecture diagram:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>┌──────────────────────────────────────────────┐
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>│                Leeroy Streamlit App          │
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>│                                              │
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>│  - Text Generation                           │
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>│  - Document Q&amp;A                              │
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>│  - Semantic Search                           │
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>│  - Prompt Engineering                        │
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>│  - Data Management                           │
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>└──────────────────────┬───────────────────────┘
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>                       │
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>                       ▼
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>┌──────────────────────────────────────────────┐
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>│              Shared Prompt Pipeline          │
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>│                                              │
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>│  - System instructions                       │
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>│  - Chat history                              │
+</span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>│  - Semantic context                          │
+</span><span id="__span-11-18"><a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>│  - Document excerpts                         │
+</span><span id="__span-11-19"><a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>└──────────────────────┬───────────────────────┘
+</span><span id="__span-11-20"><a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>                       │
+</span><span id="__span-11-21"><a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>                       ▼
+</span><span id="__span-11-22"><a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>┌──────────────────────────────────────────────┐
+</span><span id="__span-11-23"><a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>│             Local llama.cpp Model            │
+</span><span id="__span-11-24"><a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>│                                              │
+</span><span id="__span-11-25"><a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>│  - GGUF model path                           │
+</span><span id="__span-11-26"><a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>│  - Context window                            │
+</span><span id="__span-11-27"><a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>│  - CPU threads                               │
+</span><span id="__span-11-28"><a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>│  - Streaming output                          │
+</span><span id="__span-11-29"><a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>└──────────────────────┬───────────────────────┘
+</span><span id="__span-11-30"><a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>                       │
+</span><span id="__span-11-31"><a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>                       ▼
+</span><span id="__span-11-32"><a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>┌──────────────────────────────────────────────┐
+</span><span id="__span-11-33"><a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a>│              SQLite Persistence              │
+</span><span id="__span-11-34"><a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>│                                              │
+</span><span id="__span-11-35"><a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a>│  - chat_history                              │
+</span><span id="__span-11-36"><a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a>│  - embeddings                                │
+</span><span id="__span-11-37"><a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a>│  - Prompts                                   │
+</span><span id="__span-11-38"><a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a>│  - imported data tables                      │
+</span><span id="__span-11-39"><a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a>└──────────────────────────────────────────────┘
+</span></code></pre></div>
+<h2 id="capabilities">💻 Capabilities<a class="headerlink" href="#capabilities" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local Text Generation</td>
+<td>Streams responses from a local llama.cpp model</td>
+</tr>
+<tr>
+<td>System Instructions</td>
+<td>Stores and applies global assistant behavior instructions</td>
+</tr>
+<tr>
+<td>Prompt Templates</td>
+<td>Loads reusable prompt text from SQLite</td>
+</tr>
+<tr>
+<td>Chat Persistence</td>
+<td>Saves user and assistant messages to SQLite</td>
+</tr>
+<tr>
+<td>Document Q&amp;A</td>
+<td>Retrieves relevant document chunks and injects them into the prompt</td>
+</tr>
+<tr>
+<td>Semantic Search</td>
+<td>Builds and stores embeddings for uploaded text files</td>
+</tr>
+<tr>
+<td>SQLite Vector Retrieval</td>
+<td>Uses sqlite-vec where available for document retrieval</td>
+</tr>
+<tr>
+<td>Cosine Fallback</td>
+<td>Falls back to in-memory cosine similarity when sqlite-vec is unavailable</td>
+</tr>
+<tr>
+<td>Excel Import</td>
+<td>Imports workbook sheets into SQLite tables</td>
+</tr>
+<tr>
+<td>Table Browsing</td>
+<td>Displays SQLite table contents in Streamlit</td>
+</tr>
+<tr>
+<td>CRUD Operations</td>
+<td>Inserts, updates, and deletes table rows</td>
+</tr>
+<tr>
+<td>Data Profiling</td>
+<td>Computes type, null, distinct, minimum, maximum, and mean summaries</td>
+</tr>
+<tr>
+<td>Visualization</td>
+<td>Builds histograms, bar charts, line charts, scatter plots, box plots, pies, and correlation heatmaps</td>
+</tr>
+<tr>
+<td>SQL Console</td>
+<td>Runs guarded read-only SQL and reports execution metrics</td>
+</tr>
+<tr>
+<td>Footer Status</td>
+<td>Shows active mode and runtime parameters</td>
+</tr>
+</tbody>
+</table>
+<h2 id="file-organization">📁 File Organization<a class="headerlink" href="#file-organization" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>File / Folder</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/is-leeroy-jenkins/Leeroy/blob/main/app.py"><code>app.py</code></a></td>
+<td>Main Streamlit application</td>
+</tr>
+<tr>
+<td><a href="https://github.com/is-leeroy-jenkins/Leeroy/blob/main/config.py"><code>config.py</code></a></td>
+<td>Constants, model path, modes, help text, paths, and UI settings</td>
+</tr>
+<tr>
+<td><a href="https://github.com/is-leeroy-jenkins/Leeroy/blob/main/requirements.txt"><code>requirements.txt</code></a></td>
+<td>Python package requirements</td>
+</tr>
+<tr>
+<td><code>stores/sqlite/Data.db</code></td>
+<td>Local SQLite database for chat history, prompts, embeddings, and imported data</td>
+</tr>
+<tr>
+<td><code>resources/images</code></td>
+<td>Project images, logos, and README assets</td>
+</tr>
+<tr>
+<td><code>models/</code> or external model path</td>
+<td>Recommended location for local GGUF model files</td>
+</tr>
+</tbody>
+</table>
+<h2 id="example-usage">🧪 Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">&para;</a></h2>
+<h3 id="local-llm-loading-pattern">Local LLM Loading Pattern<a class="headerlink" href="#local-llm-loading-pattern" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">llama_cpp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Llama</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">Llama</span><span class="p">(</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="n">model_path</span><span class="o">=</span><span class="s2">&quot;C:/path/to/Leeroy-3B-Instruct.Q4_K_M.gguf&quot;</span><span class="p">,</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="n">n_ctx</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="n">n_threads</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="n">n_batch</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="sentence-embedding-pattern">Sentence Embedding Pattern<a class="headerlink" href="#sentence-embedding-pattern" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">sentence_transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SentenceTransformer</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">embedder</span> <span class="o">=</span> <span class="n">SentenceTransformer</span><span class="p">(</span> <span class="s2">&quot;all-MiniLM-L6-v2&quot;</span> <span class="p">)</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">vectors</span> <span class="o">=</span> <span class="n">embedder</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span> <span class="p">[</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>        <span class="s2">&quot;Federal analysts need reliable local retrieval over policy documents.&quot;</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="p">]</span> <span class="p">)</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="nb">print</span><span class="p">(</span> <span class="n">vectors</span><span class="o">.</span><span class="n">shape</span> <span class="p">)</span>
+</span></code></pre></div>
+<h3 id="sqlite-prompt-query">SQLite Prompt Query<a class="headerlink" href="#sqlite-prompt-query" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">with</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span> <span class="s2">&quot;stores/sqlite/Data.db&quot;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="n">rows</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>        <span class="s2">&quot;SELECT PromptsId, Caption, Name, Version FROM Prompts ORDER BY PromptsId DESC&quot;</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">(</span> <span class="p">)</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="nb">print</span><span class="p">(</span> <span class="n">rows</span> <span class="p">)</span>
+</span></code></pre></div>
+<h3 id="streamlit-launch">Streamlit Launch<a class="headerlink" href="#streamlit-launch" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>streamlit<span class="w"> </span>run<span class="w"> </span>app.py
+</span></code></pre></div>
+<h2 id="runtime-parameters">🧮 Runtime Parameters<a class="headerlink" href="#runtime-parameters" title="Permanent link">&para;</a></h2>
+<p>Leeroy exposes the following active runtime parameters in the UI and footer:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperature</td>
+<td>Sampling randomness</td>
+</tr>
+<tr>
+<td>Top-P</td>
+<td>Nucleus sampling probability</td>
+</tr>
+<tr>
+<td>Top-K</td>
+<td>Token candidate limit</td>
+</tr>
+<tr>
+<td>Frequency Penalty</td>
+<td>Penalizes repeated token frequency</td>
+</tr>
+<tr>
+<td>Presence Penalty</td>
+<td>Penalizes already-present tokens</td>
+</tr>
+<tr>
+<td>Repeat Penalty</td>
+<td>Penalizes repeated generation patterns</td>
+</tr>
+<tr>
+<td>Repeat Window</td>
+<td>Token window used for repeat control</td>
+</tr>
+<tr>
+<td>Max Tokens</td>
+<td>Maximum response length</td>
+</tr>
+<tr>
+<td>Context Window</td>
+<td>llama.cpp context length</td>
+</tr>
+<tr>
+<td>CPU Threads</td>
+<td>Number of CPU threads used by the model</td>
+</tr>
+<tr>
+<td>Semantic</td>
+<td>Indicates whether semantic context is enabled</td>
+</tr>
+<tr>
+<td>Docs</td>
+<td>Number of loaded basic document/context entries</td>
+</tr>
+</tbody>
+</table>
+<h2 id="troubleshooting">🧰 Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local model unavailable</td>
+<td>Confirm <code>ENABLE_LOCAL_LLM</code> is enabled and <code>MODEL_PATH</code> points to an existing GGUF file.</td>
+</tr>
+<tr>
+<td>UI loads but generation fails</td>
+<td>Verify <code>llama-cpp-python</code> is installed and compatible with your Python version.</td>
+</tr>
+<tr>
+<td>Slow generation</td>
+<td>Increase CPU thread count, reduce context window, or reduce max tokens.</td>
+</tr>
+<tr>
+<td>High memory usage</td>
+<td>Lower <code>n_ctx</code>, reduce batch size, or use a smaller quantized model.</td>
+</tr>
+<tr>
+<td>Document Q&amp;A returns weak answers</td>
+<td>Confirm documents are loaded, extracted text is available, and semantic chunks are being generated.</td>
+</tr>
+<tr>
+<td>Semantic Search fails</td>
+<td>Confirm <code>sentence-transformers</code> can download or load <code>all-MiniLM-L6-v2</code>.</td>
+</tr>
+<tr>
+<td>PDF extraction fails</td>
+<td>Confirm PyMuPDF is installed and the file is a valid PDF.</td>
+</tr>
+<tr>
+<td>SQL query blocked</td>
+<td>Use a read-only <code>SELECT</code>, <code>WITH</code>, <code>EXPLAIN</code>, or safe <code>PRAGMA</code> query.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+        
+          
+          <a href="architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Architecture
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "search.highlight", "search.share", "content.code.copy", "content.code.select", "content.tabs.link"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="assets/js/leeroy.js"></script>
+      
+    
+  </body>
+</html>

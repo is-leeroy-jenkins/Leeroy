@@ -1,25 +1,6 @@
-###### Leeroy
 
-![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/images/leeroy_project.png)
-
-<p align="left">
-  <a href="#-overview">Overview</a> ·
-  <a href="#-features">Features</a> ·
-  <a href="#-application-modes">Modes</a> ·
-  <a href="#-requirements">Requirements</a> ·
-  <a href="#-local-llm">LLM</a> ·
-  <a href="#-installation">Installation</a> ·
-  <a href="#-running-the-streamlit-application">Run</a> ·
-  <a href="#-configuration">Configuration</a> ·
-  <a href="#-design-and-architecture">Architecture</a> ·
-  <a href="#-capabilities">Capabilities</a> ·
-  <a href="#-data-management">Data</a>  ·
-</p>
-
+![](./img/leeroy_project.png)
 ___
-
-
-[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0078FC?style=for-the-badge&logo=github)](https://is-leeroy-jenkins.github.io/Leeroy/)
 
 Leeroy is a Python and Streamlit application for local language-model inference,
 retrieval-augmented generation, semantic search, prompt engineering, and SQLite-backed data
@@ -32,17 +13,6 @@ Leeroy uses an optional local GGUF model through `llama.cpp`, supports document 
 interface for text generation, document Q&A, semantic indexing, prompt administration, and database
 operations.
 
-## 🎥 Demo
-[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
-![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
-
-## 🧱 Databricks
-
-[![Leeroy](https://img.shields.io/badge/Databricks-Leeroy-FF3621?logo=databricks\&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152438493?o=7474645703081351)
-
-* Databricks workspace repository for the Leeroy codebase.
-* Supports collaborative development, analytics, notebook execution, and application deployment.
-
 ## 🧠 Custom LLM
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy)
@@ -50,12 +20,9 @@ operations.
 Leeroy is designed to run against a local GGUF model, commonly a fine-tuned Llama-family model
 quantized for efficient local inference.
 
-
-
 ```text
 Leeroy-3B-Instruct.Q4_K_M.gguf
 ```
-
 
 ## 🧰 Overview
 
@@ -80,13 +47,17 @@ The application is intentionally simple and durable:
 * **Document Q&A mode** with upload-based document retrieval and local RAG prompt construction.
 * **Semantic Search mode** for building an embedding index from uploaded documents.
 * **Prompt Engineering mode** backed by the local SQLite `Prompts` table.
-* **Data Management mode** for importing, browsing, editing, profiling, visualizing, and querying SQLite data.
+* **Data Management mode** for importing, browsing, editing, profiling, visualizing, and querying
+  SQLite data.
 * **System Instructions editor** with reusable prompt-template loading.
 * **SQLite persistence** for chat history, prompt records, embeddings, and imported tabular data.
-* **Document text extraction** using PyMuPDF for PDFs and defensive text decoding for text-like files.
-* **Vector retrieval** using `sentence-transformers`, `sqlite-vec` when available, and cosine-similarity fallback.
+* **Document text extraction** using PyMuPDF for PDFs and defensive text decoding for text-like
+  files.
+* **Vector retrieval** using `sentence-transformers`, `sqlite-vec` when available, and
+  cosine-similarity fallback.
 * **Interactive visualizations** through Plotly Express.
-* **Fixed footer status bar** showing active mode, temperature, Top-P, Top-K, penalties, token limits,
+* **Fixed footer status bar** showing active mode, temperature, Top-P, Top-K, penalties, token
+  limits,
   context size, thread count, semantic status, and loaded document counts.
 
 ## 🧩 Application Modes
@@ -114,8 +85,6 @@ The application is intentionally simple and durable:
 | sqlite-vec            | Optional SQLite vector table support for Document Q&A                             |
 | SQLite                | Local persistence for chat history, prompt records, embeddings, and imported data |
 | config.py             | Application constants, model path, UI labels, modes, and default runtime settings |
-
-
 
 ## 🧊 Local LLM
 
@@ -468,11 +437,11 @@ Architecture diagram:
 from llama_cpp import Llama
 
 llm = Llama(
-    model_path="C:/path/to/Leeroy-3B-Instruct.Q4_K_M.gguf",
-    n_ctx=4096,
-    n_threads=4,
-    n_batch=512,
-    verbose=False
+	model_path="C:/path/to/Leeroy-3B-Instruct.Q4_K_M.gguf",
+	n_ctx=4096,
+	n_threads=4,
+	n_batch=512,
+	verbose=False
 )
 ```
 
@@ -481,12 +450,12 @@ llm = Llama(
 ```python
 from sentence_transformers import SentenceTransformer
 
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
-vectors = embedder.encode([
-    "Federal analysts need reliable local retrieval over policy documents."
-])
+embedder = SentenceTransformer( "all-MiniLM-L6-v2" )
+vectors = embedder.encode( [
+		"Federal analysts need reliable local retrieval over policy documents."
+] )
 
-print(vectors.shape)
+print( vectors.shape )
 ```
 
 ### SQLite Prompt Query
@@ -494,12 +463,12 @@ print(vectors.shape)
 ```python
 import sqlite3
 
-with sqlite3.connect("stores/sqlite/Data.db") as conn:
-    rows = conn.execute(
-        "SELECT PromptsId, Caption, Name, Version FROM Prompts ORDER BY PromptsId DESC"
-    ).fetchall()
+with sqlite3.connect( "stores/sqlite/Data.db" ) as conn:
+	rows = conn.execute(
+		"SELECT PromptsId, Caption, Name, Version FROM Prompts ORDER BY PromptsId DESC"
+	).fetchall( )
 
-print(rows)
+print( rows )
 ```
 
 ### Streamlit Launch
@@ -539,21 +508,4 @@ Leeroy exposes the following active runtime parameters in the UI and footer:
 | Semantic Search fails             | Confirm `sentence-transformers` can download or load `all-MiniLM-L6-v2`.                            |
 | PDF extraction fails              | Confirm PyMuPDF is installed and the file is a valid PDF.                                           |
 | SQL query blocked                 | Use a read-only `SELECT`, `WITH`, `EXPLAIN`, or safe `PRAGMA` query.                                |
-
-
-## 🚀 Application Badges
-
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python\&logoColor=white)](#-requirements)
-[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](#-running-the-streamlit-application)
-[![llama.cpp](https://img.shields.io/badge/llama.cpp-Local%20LLM-111111?logo=meta\&logoColor=white)](#-local-llm)
-[![GGUF](https://img.shields.io/badge/GGUF-Quantized%20Model-6A5ACD)](#-local-llm)
-[![SQLite](https://img.shields.io/badge/SQLite-Data%20Store-003B57?logo=sqlite\&logoColor=white)](#-data-management)
-[![HuggingFace](https://img.shields.io/badge/HuggingFace-Model%20Host-FFD21E?logo=huggingface\&logoColor=black)](#-custom-llm)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](#-license)
-
-
-## 📝 License
-
-Leeroy is published under the [MIT License](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/LICENSE).
-
 

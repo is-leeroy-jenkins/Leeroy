@@ -42,6 +42,7 @@
 	</summary>
 	******************************************************************************************
 '''
+
 from __future__ import annotations
 
 import base64
@@ -60,6 +61,7 @@ import streamlit as st
 from sentence_transformers import SentenceTransformer
 
 import config as cfg
+from boogr import Error, Logger
 
 # ==============================================================================
 # Model Path Resolution
@@ -67,29 +69,46 @@ import config as cfg
 MODEL_PATH_OBJ = Path( cfg.MODEL_PATH )
 LOCAL_MODEL_AVAILABLE = MODEL_PATH_OBJ.exists( )
 
-def local_llm_available( ) -> bool:
+def write_error( error: Exception, cause: str, method: str ) -> None:
+	"""Write an application error record without interrupting fallback handling.
+
+	Purpose:
+		Wraps a caught exception in the project ``Error`` object and writes it through the
+		SQLite-backed ``Logger``. The helper is used by existing fallback handlers that must
+		preserve their original return behavior while still recording diagnostic metadata.
+
+	Args:
+		error: Caught exception instance to wrap and persist.
+		cause: Logical workflow component associated with the failure.
+		method: Stable function or method signature associated with the failure.
 	"""
-	
-		Purpose:
-		--------
-		Determine whether the optional local GGUF file is physically available
-		in the current execution environment.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		bool
-			True when the configured local GGUF file exists.
-			
+	try:
+		exception = Error( error )
+		exception.module = 'app'
+		exception.cause = cause
+		exception.method = method
+		Logger( ).write( exception )
+	except Exception:
+		return None
+
+def local_llm_available( ) -> bool:
+	"""Determine whether the configured local model file is available.
+
+	Purpose:
+		Checks the resolved model-path state created during module import and returns whether
+		the optional local GGUF file exists in the current execution environment. This helper
+		allows the Streamlit UI and local model loader to degrade safely when the model file
+		is not present.
+
+	Returns:
+		bool: Return value produced by the operation.
 	"""
 	try:
 		return bool( LOCAL_MODEL_AVAILABLE )
-	except Exception:
+	except Exception as e:
+		write_error( e, 'local_llm', 'local_llm_available( ) -> bool' )
 		return False
-    
+
 # ==============================================================================
 # SESSION STATE INITIALIZATION
 # ==============================================================================
@@ -149,8 +168,8 @@ if 'selected_prompt_id' not in st.session_state:
 
 if 'pending_system_prompt_name' not in st.session_state:
 	st.session_state[ 'pending_system_prompt_name' ] = ''
-	
-#-------- DOCQNA ---------------------
+
+# -------- DOCQNA ---------------------
 
 if 'uploaded' not in st.session_state:
 	st.session_state[ 'uploaded' ] = [ ]
@@ -160,7 +179,7 @@ if 'active_docs' not in st.session_state:
 
 if 'doc_bytes' not in st.session_state:
 	st.session_state[ 'doc_bytes' ] = { }
-	
+
 if 'doc_source' not in st.session_state:
 	st.session_state[ 'doc_source' ] = 'uploadlocal'
 
@@ -172,7 +191,7 @@ if 'docqna_fingerprint' not in st.session_state:
 
 if 'docqna_chunk_count' not in st.session_state:
 	st.session_state[ 'docqna_chunk_count' ] = 0
-	
+
 if 'docqna_fallback_rows' not in st.session_state:
 	st.session_state[ 'docqna_fallback_rows' ] = [ ]
 
@@ -200,32 +219,56 @@ if 'token_usage' not in st.session_state:
 	st.session_state.token_usage = { 'prompt_tokens': 0,
 	                                 'completion_tokens': 0,
 	                                 'total_tokens': 0, }
-	
+
 # ==============================================================================
 # UTILITIES
 # ==============================================================================
 def image_to_base64( path: str ) -> str:
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
+	"""Convert an image file to a Base64 text string.
+
+	Purpose:
+		Reads a local image file and converts the raw bytes into a Base64-encoded string that
+		can be embedded in Streamlit or Markdown output. The helper supports UI image
+		rendering workflows that need inline image data.
+
+	Args:
+		path: Filesystem path to the image file.
+
+	Returns:
+		str: Return value produced by the operation.
+	"""
+	with open( path, "rb" ) as f:
+		return base64.b64encode( f.read( ) ).decode( )
 
 def cosine_sim( a: np.ndarray, b: np.ndarray ) -> float:
-    denom = np.linalg.norm(a) * np.linalg.norm(b)
-    return float( np.dot(a, b) / denom ) if denom else 0.0
+	"""Calculate cosine similarity between two vectors.
+
+	Purpose:
+		Computes normalized dot-product similarity for semantic retrieval, document chunk
+		ranking, and fallback vector matching when sqlite-vec is unavailable. The helper
+		returns a safe zero score when either vector has zero magnitude.
+
+	Args:
+		a: First vector.
+		b: Second vector.
+
+	Returns:
+		float: Return value produced by the operation.
+	"""
+	denom = np.linalg.norm( a ) * np.linalg.norm( b )
+	return float( np.dot( a, b ) / denom ) if denom else 0.0
 
 def initialize_database( ) -> None:
-	"""
-		Purpose:
-		--------
-		Ensure required SQLite tables exist and that the Prompts table contains the
-		columns required by the prompt utilities and Prompt Engineering mode.
+	"""Create required application database tables.
 
-		Parameters:
-		-----------
-		None
+	Purpose:
+		Ensures the local SQLite storage directory exists and creates the tables required for
+		chat history, semantic embeddings, and prompt templates. The function also applies a
+		defensive schema update for the Prompts table so prompt-selection utilities can rely
+		on the Caption column.
 
-		Returns:
-		--------
-		None
+	Raises:
+		Error: Raised when SQLite initialization fails after writing diagnostic metadata.
 	"""
 	Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True )
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
@@ -305,24 +348,19 @@ def initialize_database( ) -> None:
 # -------- CHAT/TEXT UTILITIES --------------------
 
 def normalize_text( text: str ) -> str:
-	"""
-		
-		Purpose
-		-------
-		Normalize text by:
-			• Converting to lowercase
-			• Removing punctuation except sentence delimiters (. ! ?)
-			• Ensuring clean sentence boundary spacing
-			• Collapsing whitespace
-	
-		Parameters
-		----------
-		text: str
-	
-		Returns
-		-------
-		str
-		
+	"""Normalize text for matching and comparison workflows.
+
+	Purpose:
+		Standardizes free text by lowercasing content, removing punctuation except sentence
+		delimiters, normalizing sentence-boundary spacing, and collapsing repeated whitespace.
+		The helper supports prompt, document, and search workflows that need consistent text
+		comparison behavior.
+
+	Args:
+		text: Source text to process.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	if not text:
 		return ""
@@ -342,6 +380,21 @@ def normalize_text( text: str ) -> str:
 	return text
 
 def chunk_text( text: str, size: int = 1200, overlap: int = 200 ) -> List[ str ]:
+	"""Split text into overlapping chunks.
+
+	Purpose:
+		Creates overlapping text windows used by semantic indexing, retrieval-augmented
+		generation, and document Q&A workflows. The overlap preserves local context across
+		chunk boundaries so retrieved excerpts remain coherent.
+
+	Args:
+		text: Source text to process.
+		size: Maximum character length for each chunk.
+		overlap: Number of characters shared between adjacent chunks.
+
+	Returns:
+		list[str]: Return value produced by the operation.
+	"""
 	chunks, i = [ ], 0
 	while i < len( text ):
 		chunks.append( text[ i:i + size ] )
@@ -349,20 +402,18 @@ def chunk_text( text: str, size: int = 1200, overlap: int = 200 ) -> List[ str ]
 	return chunks
 
 def convert_xml( text: str ) -> str:
-	"""
-		
-			Purpose:
-			_________
-			Convert XML-delimited prompt text into Markdown by treating XML-like
-			tags as section delimiters, not as strict XML.
-	
-			Parameters:
-			-----------
-			text (str) - Prompt text containing XML-like opening and closing tags.
-	
-			Returns:
-			---------
-			Markdown-formatted text using level-2 headings (##).
+	"""Convert XML-like prompt sections into Markdown.
+
+	Purpose:
+		Transforms prompt text containing XML-like opening and closing tags into Markdown
+		section blocks. The function treats tags as lightweight section delimiters instead of
+		strict XML, allowing prompt templates to be rendered more clearly in the UI.
+
+	Args:
+		text: Source text to process.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	markdown_blocks: List[ str ] = [ ]
 	for match in cfg.XML_BLOCK_PATTERN.finditer( text ):
@@ -377,26 +428,19 @@ def convert_xml( text: str ) -> str:
 	return "\n\n".join( markdown_blocks )
 
 def markdown_converter( text: Any ) -> str:
-	"""
-		Purpose:
-		--------
-		Convert between Markdown headings and simple XML-like heading tags.
-	
-		Behavior:
-		---------
-		Auto-detects direction:
-		  - If <h1>...</h1> / <h2>...</h2> ... exist, converts to Markdown (# / ## / ###).
-		  - Otherwise converts Markdown headings (# / ## / ###) to <hN>...</hN> tags.
-	
-		Parameters:
-		-----------
-		text : Any
-			Source text. Non-string values return "".
-	
-		Returns:
-		--------
-		str
-			Converted text.
+	"""Convert between Markdown headings and XML-like heading tags.
+
+	Purpose:
+		Auto-detects whether the supplied text contains simple hN heading tags or Markdown
+		heading syntax. HTML-like headings are converted to Markdown headings; otherwise
+		Markdown headings are converted to matching hN tags. Non-string or empty inputs return
+		an empty string.
+
+	Args:
+		text: Source text to process.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	if not isinstance( text, str ) or not text.strip( ):
 		return ""
@@ -443,12 +487,12 @@ def markdown_converter( text: Any ) -> str:
 	return out.strip( )
 
 def inject_response_css( ) -> None:
-	"""
-	
-		Purpose:
-		_________
-		Set the the format via css.
-		
+	"""Inject chat-response CSS into the Streamlit page.
+
+	Purpose:
+		Adds inline CSS that styles chat-message paragraphs, headings, and links inside
+		Streamlit chat responses. The style layer keeps generated responses visually
+		consistent with the Leeroy dark-mode interface and shared blue accent color.
 	"""
 	st.markdown(
 		"""
@@ -489,12 +533,12 @@ def inject_response_css( ) -> None:
 		""", unsafe_allow_html=True )
 
 def style_subheaders( ) -> None:
-	"""
-	
-		Purpose:
-		_________
-		Sets the style of subheaders in the main UI
-		
+	"""Inject shared subheader CSS into the Streamlit page.
+
+	Purpose:
+		Applies the Leeroy blue accent color to selected Markdown and chat subheaders in the
+		main Streamlit UI. The helper centralizes visual styling used by sidebar and mode-
+		rendering sections.
 	"""
 	st.markdown(
 		"""
@@ -510,34 +554,58 @@ def style_subheaders( ) -> None:
 		unsafe_allow_html=True, )
 
 def save_message( role: str, content: str ) -> None:
+	"""Persist a chat message to SQLite.
+
+	Purpose:
+		Writes a single chat-history record to the configured application database. The
+		function supports durable conversation history for the Text Generation and Document
+		Q&A modes.
+
+	Args:
+		role: Chat role associated with the message.
+		content: Message content to store.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( 'INSERT INTO chat_history (role, content) VALUES (?, ?)', (role, content) )
 
 def load_history( ) -> List[ Tuple[ str, str ] ]:
+	"""Load persisted chat history from SQLite.
+
+	Purpose:
+		Reads stored chat messages in insertion order so Streamlit session state can be
+		reconstructed when the application starts or reruns.
+
+	Returns:
+		list[tuple[str, str]]: Return value produced by the operation.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		return conn.execute( 'SELECT role, content FROM chat_history ORDER BY id' ).fetchall( )
 
 def clear_history( ) -> None:
+	"""Delete persisted chat history.
+
+	Purpose:
+		Removes all rows from the SQLite chat_history table so the Streamlit chat UI can be
+		reset without affecting prompt templates, embeddings, or imported data.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( "DELETE FROM chat_history" )
 
-#-------- PROMPT ENGINEERING UTILITIES ----------------
+# -------- PROMPT ENGINEERING UTILITIES ----------------
 
 def fetch_prompt_names( db_path: str ) -> list[ str ]:
-	"""
-		Purpose:
-		--------
-		Retrieve template names from Prompts table.
-	
-		Parameters:
-		-----------
-		db_path : str
-			SQLite database path.
-	
-		Returns:
-		--------
-		list[str]
-			Sorted prompt names.
+	"""Retrieve available prompt-template captions.
+
+	Purpose:
+		Reads prompt captions from the configured SQLite Prompts table for use by Streamlit
+		template selectors. Database failures preserve the existing safe fallback by returning
+		an empty list.
+
+	Args:
+		db_path: SQLite database path.
+
+	Returns:
+		list[str]: Return value produced by the operation.
 	"""
 	try:
 		conn = sqlite3.connect( db_path )
@@ -546,26 +614,23 @@ def fetch_prompt_names( db_path: str ) -> list[ str ]:
 		rows = cur.fetchall( )
 		conn.close( )
 		return [ r[ 0 ] for r in rows if r and r[ 0 ] is not None ]
-	except Exception:
+	except Exception as e:
+		write_error( e, 'prompts', 'fetch_prompt_names( db_path: str ) -> list[str]' )
 		return [ ]
 
 def fetch_prompt_text( db_path: str, name: str ) -> str | None:
-	"""
-		Purpose:
-		--------
-		Retrieve template text by name.
-	
-		Parameters:
-		-----------
-		db_path : str
-			SQLite database path.
-		name : str
-			Template name.
-	
-		Returns:
-		--------
-		str | None
-			Prompt text if found.
+	"""Retrieve prompt-template text by caption.
+
+	Purpose:
+		Reads a single prompt body from the configured SQLite Prompts table using the selected
+		caption. Database failures preserve the existing safe fallback by returning None.
+
+	Args:
+		db_path: SQLite database path.
+		name: Prompt caption or object name used by the operation.
+
+	Returns:
+		str | None: Return value produced by the operation.
 	"""
 	try:
 		conn = sqlite3.connect( db_path )
@@ -574,10 +639,21 @@ def fetch_prompt_text( db_path: str, name: str ) -> str | None:
 		row = cur.fetchone( )
 		conn.close( )
 		return str( row[ 0 ] ) if row and row[ 0 ] is not None else None
-	except Exception:
+	except Exception as e:
+		write_error( e, 'prompts', 'fetch_prompt_text( db_path: str, name: str ) -> str | None' )
 		return None
 
 def fetch_prompts( ) -> pd.DataFrame:
+	"""Load prompt metadata for prompt administration.
+
+	Purpose:
+		Reads prompt metadata from the configured SQLite Prompts table, orders rows by most
+		recent identifier first, and inserts a selection flag used by the Prompt Engineering
+		data editor.
+
+	Returns:
+		pd.DataFrame: Return value produced by the operation.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		df = pd.read_sql_query(
 			"SELECT PromptsId, Caption,  Name, Version, ID FROM Prompts ORDER BY PromptsId DESC",
@@ -586,6 +662,18 @@ def fetch_prompts( ) -> pd.DataFrame:
 	return df
 
 def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
+	"""Load a prompt record by primary key.
+
+	Purpose:
+		Retrieves the full prompt record for a selected PromptsId value and returns a
+		dictionary keyed by SQLite column names for prompt-editing workflows.
+
+	Args:
+		pid: Prompt primary key value.
+
+	Returns:
+		dict[str, Any] | None: Return value produced by the operation.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		cur = conn.execute(
 			"SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE PromptsId=?",
@@ -595,6 +683,18 @@ def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
 		return dict( zip( [ c[ 0 ] for c in cur.description ], row ) ) if row else None
 
 def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
+	"""Load a prompt record by caption.
+
+	Purpose:
+		Retrieves the full prompt record for a selected prompt caption and returns a
+		dictionary keyed by SQLite column names for template-loading workflows.
+
+	Args:
+		name: Prompt caption or object name used by the operation.
+
+	Returns:
+		dict[str, Any] | None: Return value produced by the operation.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		cur = conn.execute(
 			"SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE Caption=?",
@@ -604,12 +704,31 @@ def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
 		return dict( zip( [ c[ 0 ] for c in cur.description ], row ) ) if row else None
 
 def insert_prompt( data: Dict[ str, Any ] ) -> None:
+	"""Insert a prompt record.
+
+	Purpose:
+		Writes a new prompt-template record to the configured SQLite Prompts table using the
+		fields collected by the Prompt Engineering UI.
+
+	Args:
+		data: Prompt field dictionary.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
 			'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?, ?)',
 			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ]) )
-		
+
 def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
+	"""Update an existing prompt record.
+
+	Purpose:
+		Updates an existing prompt-template record in the configured SQLite Prompts table
+		using the selected PromptsId value and edited field values.
+
+	Args:
+		pid: Prompt primary key value.
+		data: Prompt field dictionary.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
 			"UPDATE Prompts SET Caption=?, Name=?, Text=?, Version=?, ID=? WHERE PromptsId=?",
@@ -618,25 +737,31 @@ def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
 		)
 
 def delete_prompt( pid: int ) -> None:
+	"""Delete a prompt record.
+
+	Purpose:
+		Removes a prompt-template record from the configured SQLite Prompts table using the
+		selected PromptsId value.
+
+	Args:
+		pid: Prompt primary key value.
+	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( "DELETE FROM Prompts WHERE PromptsId=?", (pid,) )
 
 def build_prompt( user_input: str ) -> str:
-	"""
-		Purpose:
-		--------
-		Build a llama.cpp-compatible prompt using the application's system instructions, optional
-		retrieval context (semantic + basic RAG), and the current in-memory chat history.
+	"""Build a llama.cpp-compatible chat prompt.
 
-		Parameters:
-		-----------
-		user_input : str
-			The current user turn to append to the prompt.
+	Purpose:
+		Combines system instructions, optional semantic retrieval context, basic document
+		context, and in-memory chat history into the chat-template prompt consumed by the
+		local llama.cpp model.
 
-		Returns:
-		--------
-		str
-			A fully constructed prompt in chat template format.
+	Args:
+		user_input: User message or constructed prompt text for the current generation turn.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	system_instructions = st.session_state.get( 'system_instructions', '' )
 	use_semantic = bool( st.session_state.get( 'use_semantic', False ) )
@@ -685,33 +810,24 @@ def build_prompt( user_input: str ) -> str:
 
 def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_penalty: float,
 		max_tokens: int, stream: bool, output: Any | None = None ) -> str:
-	"""
-		Purpose:
-		--------
-		Run a single LLM turn using the application's shared prompt builder and either stream or
-		return the full response text.
-	
-		Parameters:
-		-----------
-		user_input : str
-			The user turn (already constructed, including any document/RAG context if applicable).
-		temperature : float
-			Sampling temperature.
-		top_p : float
-			Nucleus sampling probability.
-		repeat_penalty : float
-			Repeat penalty.
-		max_tokens : int
-			Maximum tokens to generate.
-		stream : bool
-			When True, stream tokens to the provided Streamlit placeholder.
-		output : Any | None
-			A Streamlit placeholder (e.g., st.empty()) used for streaming output.
-	
-		Returns:
-		--------
-		str
-			The assistant response text.
+	"""Run one local LLM generation turn.
+
+	Purpose:
+		Builds the shared prompt, loads the optional local llama.cpp model, and either streams
+		generated tokens into a Streamlit placeholder or returns the completed response text
+		for downstream workflows.
+
+	Args:
+		user_input: User message or constructed prompt text for the current generation turn.
+		temperature: Sampling temperature passed to the local model.
+		top_p: Nucleus sampling probability passed to the local model.
+		repeat_penalty: Repeat penalty passed to the local model.
+		max_tokens: Maximum number of generated tokens.
+		stream: Whether to stream generated text into the UI.
+		output: Optional Streamlit placeholder used for streaming output.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	if user_input is None:
 		return ''
@@ -761,19 +877,63 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 # ----------- DATABASE UTILITIES -------------------------
 
 def create_connection( ) -> sqlite3.Connection:
+	"""Create a SQLite connection.
+
+	Purpose:
+		Opens a connection to the configured application database used by chat history, prompt
+		records, semantic embeddings, and data-management tables.
+
+	Returns:
+		sqlite3.Connection: Return value produced by the operation.
+	"""
 	return sqlite3.connect( cfg.DB_PATH )
 
 def list_tables( ) -> List[ str ]:
+	"""List user-visible SQLite tables.
+
+	Purpose:
+		Reads table names from sqlite_master and returns them in sorted order for data-
+		management browsing, administration, and query workflows.
+
+	Returns:
+		list[str]: Return value produced by the operation.
+	"""
 	with create_connection( ) as conn:
 		_query = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
 		rows = conn.execute( _query ).fetchall( )
 		return [ r[ 0 ] for r in rows ]
 
 def create_schema( table: str ) -> List[ Tuple ]:
+	"""Read a SQLite table schema.
+
+	Purpose:
+		Retrieves PRAGMA table_info metadata for the selected table so data-management views
+		can display columns, types, nullability, defaults, and primary-key indicators.
+
+	Args:
+		table: SQLite table name.
+
+	Returns:
+		list[tuple]: Return value produced by the operation.
+	"""
 	with create_connection( ) as conn:
 		return conn.execute( f'PRAGMA table_info("{table}");' ).fetchall( )
 
-def read_table( table: str, limit: int=None, offset: int=0 ) -> pd.DataFrame:
+def read_table( table: str, limit: int = None, offset: int = 0 ) -> pd.DataFrame:
+	"""Read rows from a SQLite table.
+
+	Purpose:
+		Builds a SELECT query for the requested table and optional pagination arguments, then
+		returns the result as a pandas DataFrame for browsing and analysis.
+
+	Args:
+		table: SQLite table name.
+		limit: Optional maximum number of rows to return.
+		offset: Number of rows to skip before returning results.
+
+	Returns:
+		pd.DataFrame: Return value produced by the operation.
+	"""
 	query = f'SELECT rowid, * FROM "{table}"'
 	if limit:
 		query += f" LIMIT {limit} OFFSET {offset}"
@@ -781,15 +941,17 @@ def read_table( table: str, limit: int=None, offset: int=0 ) -> pd.DataFrame:
 		return pd.read_sql_query( query, conn )
 
 def drop_table( table: str ) -> None:
-	"""
-		Purpose:
-		--------
-		Safely drop a table if it exists.
-	
-		Parameters:
-		-----------
-		table : str
-			Table name.
+	"""Drop a SQLite table when requested.
+
+	Purpose:
+		Removes a selected table from the application database when the data-management
+		administrator explicitly requests deletion.
+
+	Args:
+		table: SQLite table name.
+
+	Raises:
+		ValueError: Raised when the requested table name is empty.
 	"""
 	if not table:
 		return
@@ -799,24 +961,18 @@ def drop_table( table: str ) -> None:
 		conn.commit( )
 
 def rename_table( old_name: str, new_name: str ) -> None:
-	"""
-		Purpose:
-		--------
-		Rename an existing SQLite table. Attempts native ALTER TABLE rename first; if it fails,
-		falls back to a schema-safe rebuild using the original CREATE TABLE statement and
-		preserves indexes.
+	"""Rename an existing SQLite table.
 
-		Parameters:
-		-----------
-		old_name : str
-			Existing table name.
+	Purpose:
+		Attempts a native SQLite ALTER TABLE rename and falls back to a schema-preserving
+		rebuild when needed. The fallback preserves column data and index SQL where possible.
 
-		new_name : str
-			New table name.
+	Args:
+		old_name: Existing table or column name.
+		new_name: Replacement table or column name.
 
-		Returns:
-		--------
-		None
+	Raises:
+		ValueError: Raised when the source table definition is missing or malformed.
 	"""
 	if not old_name or not new_name:
 		return
@@ -880,27 +1036,20 @@ def rename_table( old_name: str, new_name: str ) -> None:
 		conn.commit( )
 
 def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
-	"""
-		Purpose:
-		--------
-		Rename a column within an existing SQLite table. Attempts native ALTER TABLE rename
-		first; if it fails, falls back to a schema-safe rebuild preserving column order, data,
-		and indexes.
+	"""Rename a column within a SQLite table.
 
-		Parameters:
-		-----------
-		table_name : str
-			Table containing the column.
+	Purpose:
+		Attempts a native SQLite column rename and falls back to a schema-preserving table
+		rebuild that keeps column order, data, defaults, nullability, and index SQL where
+		possible.
 
-		old_name : str
-			Existing column name.
+	Args:
+		table_name: SQLite table name.
+		old_name: Existing table or column name.
+		new_name: Replacement table or column name.
 
-		new_name : str
-			New column name.
-
-		Returns:
-		--------
-		None
+	Raises:
+		ValueError: Raised when the table definition is missing or the selected column does not exist.
 	"""
 	if not table_name or not old_name or not new_name:
 		return
@@ -993,26 +1142,20 @@ def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
 				conn.execute( idx_sql )
 		
 		conn.commit( )
-		
+
 def create_index( table: str, column: str ) -> None:
-	"""
-		Purpose:
-		--------
-		Create a safe SQLite index on a specified table column.
-	
-		Handles:
-			- Spaces in column names
-			- Special characters
-			- Reserved words
-			- Duplicate index names
-			- Validation against actual table schema
-	
-		Parameters:
-		-----------
-		table : str
-			Table name.
-		column : str
-			Column name to index.
+	"""Create a safe SQLite index.
+
+	Purpose:
+		Validates the requested table and column against the active database schema, creates a
+		sanitized index name, and creates the index using quoted identifiers.
+
+	Args:
+		table: SQLite table name.
+		column: SQLite column name.
+
+	Raises:
+		ValueError: Raised when the table or column is not present in the active schema.
 	"""
 	if not table or not column:
 		return
@@ -1040,6 +1183,18 @@ def create_index( table: str, column: str ) -> None:
 		conn.commit( )
 
 def apply_filters( df: pd.DataFrame ) -> pd.DataFrame:
+	"""Apply an interactive DataFrame filter.
+
+	Purpose:
+		Renders Streamlit filter controls and applies the selected comparison or containment
+		operation to the provided DataFrame for data-management exploration.
+
+	Args:
+		df: DataFrame used by the operation.
+
+	Returns:
+		pd.DataFrame: Return value produced by the operation.
+	"""
 	st.subheader( 'Advanced Filters' )
 	col1, col2, col3 = st.columns( 3 )
 	column = col1.selectbox( 'Column', df.columns )
@@ -1063,7 +1218,16 @@ def apply_filters( df: pd.DataFrame ) -> pd.DataFrame:
 	
 	return df
 
-def create_aggregation( df: pd.DataFrame ):
+def create_aggregation( df: pd.DataFrame ) -> None:
+	"""Render an interactive aggregation result.
+
+	Purpose:
+		Renders Streamlit controls for selecting a numeric column and aggregation function,
+		computes the selected aggregate, and displays the result as a metric.
+
+	Args:
+		df: DataFrame used by the operation.
+	"""
 	st.subheader( 'Aggregation Engine' )
 	
 	numeric_cols = df.select_dtypes( include=[ 'number' ] ).columns.tolist( )
@@ -1090,7 +1254,17 @@ def create_aggregation( df: pd.DataFrame ):
 	
 	st.metric( 'Result', result )
 
-def create_visualization( df: pd.DataFrame ):
+def create_visualization( df: pd.DataFrame ) -> None:
+	"""Render an interactive DataFrame visualization.
+
+	Purpose:
+		Renders Streamlit chart controls and uses Plotly Express to display histograms, bars,
+		lines, scatter plots, boxes, pies, or correlation heatmaps from the provided
+		DataFrame.
+
+	Args:
+		df: DataFrame used by the operation.
+	"""
 	st.subheader( 'Visualization Engine' )
 	numeric_cols = df.select_dtypes( include=[ 'number' ] ).columns.tolist( )
 	categorical_cols = df.select_dtypes( include=[ 'object' ] ).columns.tolist( )
@@ -1135,7 +1309,17 @@ def create_visualization( df: pd.DataFrame ):
 		fig = px.imshow( corr, text_auto=True )
 		st.plotly_chart( fig, use_container_width=True )
 
-def convert_dataframe( table_name: str, df: pd.DataFrame ):
+def convert_dataframe( table_name: str, df: pd.DataFrame ) -> None:
+	"""Create a SQLite table from DataFrame columns.
+
+	Purpose:
+		Maps pandas column dtypes to SQLite storage types and creates a table definition using
+		normalized column names for imported tabular data.
+
+	Args:
+		table_name: SQLite table name.
+		df: DataFrame used by the operation.
+	"""
 	columns = [ ]
 	for col in df.columns:
 		sql_type = get_sqlite_type( df[ col ].dtype )
@@ -1148,7 +1332,17 @@ def convert_dataframe( table_name: str, df: pd.DataFrame ):
 		conn.execute( create_stmt )
 		conn.commit( )
 
-def insert_data( table_name: str, df: pd.DataFrame ):
+def insert_data( table_name: str, df: pd.DataFrame ) -> None:
+	"""Insert DataFrame rows into SQLite.
+
+	Purpose:
+		Normalizes DataFrame column names to SQLite-friendly identifiers and bulk-inserts row
+		values into the specified table.
+
+	Args:
+		table_name: SQLite table name.
+		df: DataFrame used by the operation.
+	"""
 	df = df.copy( )
 	df.columns = [ c.replace( ' ', '_' ) for c in df.columns ]
 	
@@ -1159,21 +1353,18 @@ def insert_data( table_name: str, df: pd.DataFrame ):
 		conn.executemany( stmt, df.values.tolist( ) )
 		conn.commit( )
 
-def get_sqlite_type( dtype ) -> str:
-	"""
-		Purpose:
-		--------
-		Map a pandas dtype to an appropriate SQLite column type.
-	
-		Parameters:
-		-----------
-		dtype : pandas dtype
-			The dtype of a pandas Series.
-	
-		Returns:
-		--------
-		str
-			SQLite column type.
+def get_sqlite_type( dtype: object ) -> str:
+	"""Map a pandas dtype to a SQLite type.
+
+	Purpose:
+		Converts pandas dtype information into the SQLite storage class used by import and
+		table-creation workflows.
+
+	Args:
+		dtype: Pandas dtype or dtype-like object.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	dtype_str = str( dtype ).lower( )
 	
@@ -1201,26 +1392,18 @@ def get_sqlite_type( dtype ) -> str:
 	return "TEXT"
 
 def create_custom_table( table_name: str, columns: list ) -> None:
-	"""
-		Purpose:
-		--------
-		Create a custom SQLite table from column definitions.
-	
-		Parameters:
-		-----------
-		table_name : str
-			Name of table.
-	
-		columns : list of dict
-			[
-				{
-					"name": str,
-					"type": str,
-					"not_null": bool,
-					"primary_key": bool,
-					"auto_increment": bool
-				}
-			]
+	"""Create a custom SQLite table.
+
+	Purpose:
+		Validates table and column identifiers, translates user-provided column definitions
+		into SQLite DDL, and creates the requested table when it does not exist.
+
+	Args:
+		table_name: SQLite table name.
+		columns: Column-definition dictionaries used to create the table.
+
+	Raises:
+		ValueError: Raised when table or column definitions are invalid.
 	"""
 	if not table_name:
 		raise ValueError( "Table name required." )
@@ -1244,7 +1427,7 @@ def create_custom_table( table_name: str, columns: list ) -> None:
 		
 		if col[ "not_null" ]:
 			definition += " NOT NULL"
-	
+		
 		col_defs.append( definition )
 	
 	sql = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join( col_defs )});'
@@ -1253,22 +1436,17 @@ def create_custom_table( table_name: str, columns: list ) -> None:
 		conn.commit( )
 
 def is_safe_query( query: str ) -> bool:
-	"""
-	
-		Purpose:
-		--------
-		Determine whether a SQL query is read-only and safe to execute.
-	
-		Allows:
-			SELECT
-			WITH (CTE returning SELECT)
-			EXPLAIN SELECT
-			PRAGMA (read-only)
-	
-		Blocks:
-			INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, ATTACH,
-			DETACH, VACUUM, REPLACE, TRIGGER, and multiple statements.
-			
+	"""Validate whether a SQL query is read-only.
+
+	Purpose:
+		Checks query text before execution in the SQL console, allowing read-oriented
+		statements and blocking destructive or mutating operations and multiple statements.
+
+	Args:
+		query: SQL or search query text.
+
+	Returns:
+		bool: Return value produced by the operation.
 	"""
 	if not query or not isinstance( query, str ):
 		return False
@@ -1300,16 +1478,20 @@ def is_safe_query( query: str ) -> bool:
 	return True
 
 def create_identifier( name: str ) -> str:
-	"""
-	
-		Purpose:
-		--------
-		Sanitize a string into a safe SQLite identifier.
-	
-		- Replaces invalid characters with underscores
-		- Ensures it starts with a letter or underscore
-		- Prevents empty names
-		
+	"""Create a safe SQLite identifier.
+
+	Purpose:
+		Normalizes arbitrary text into a SQLite-safe identifier by replacing invalid
+		characters, ensuring a valid leading character, and rejecting empty results.
+
+	Args:
+		name: Prompt caption or object name used by the operation.
+
+	Returns:
+		str: Return value produced by the operation.
+
+	Raises:
+		ValueError: Raised when the input cannot be converted into a valid identifier.
 	"""
 	if not name or not isinstance( name, str ):
 		raise ValueError( 'Invalid Identifier.' )
@@ -1323,12 +1505,35 @@ def create_identifier( name: str ) -> str:
 	
 	return safe
 
-def get_indexes( table: str ):
+def get_indexes( table: str ) -> List[ Tuple ]:
+	"""List indexes for a SQLite table.
+
+	Purpose:
+		Reads PRAGMA index_list metadata for the selected table so the data-management
+		administration UI can display available indexes.
+
+	Args:
+		table: SQLite table name.
+
+	Returns:
+		list[tuple]: Return value produced by the operation.
+	"""
 	with create_connection( ) as conn:
 		rows = conn.execute( f'PRAGMA index_list("{table}");' ).fetchall( )
 		return rows
 
-def add_column( table: str, column: str, col_type: str ):
+def add_column( table: str, column: str, col_type: str ) -> None:
+	"""Add a column to a SQLite table.
+
+	Purpose:
+		Sanitizes the requested column name and executes an ALTER TABLE statement that appends
+		the column with the requested SQLite type.
+
+	Args:
+		table: SQLite table name.
+		column: SQLite column name.
+		col_type: SQLite column type.
+	"""
 	column = create_identifier( column )
 	col_type = col_type.upper( )
 	
@@ -1337,7 +1542,19 @@ def add_column( table: str, column: str, col_type: str ):
 			f'ALTER TABLE "{table}" ADD COLUMN "{column}" {col_type};' )
 		conn.commit( )
 
-def create_profile_table( table: str ):
+def create_profile_table( table: str ) -> pd.DataFrame:
+	"""Create a profile summary for a SQLite table.
+
+	Purpose:
+		Reads the selected table into a DataFrame and computes per-column type, null
+		percentage, distinct percentage, and numeric summary statistics for exploration.
+
+	Args:
+		table: SQLite table name.
+
+	Returns:
+		pd.DataFrame: Return value produced by the operation.
+	"""
 	df = read_table( table )
 	profile_rows = [ ]
 	total_rows = len( df )
@@ -1350,7 +1567,8 @@ def create_profile_table( table: str ):
 					'column': col, 'dtype': str( series.dtype ),
 					'null_%': round( (null_count / total_rows) * 100, 2 ) if total_rows else 0,
 					'distinct_%': round( (
-								                     distinct_count / total_rows) * 100, 2 ) if total_rows else 0,
+							                     distinct_count / total_rows) * 100,
+						2 ) if total_rows else 0,
 			}
 		
 		if pd.api.types.is_numeric_dtype( series ):
@@ -1366,7 +1584,20 @@ def create_profile_table( table: str ):
 	
 	return pd.DataFrame( profile_rows )
 
-def drop_column( table: str, column: str ):
+def drop_column( table: str, column: str ) -> None:
+	"""Drop a column from a SQLite table.
+
+	Purpose:
+		Rebuilds the selected table without the specified column while preserving remaining
+		column definitions, data, and indexes that do not depend on the dropped column.
+
+	Args:
+		table: SQLite table name.
+		column: SQLite column name.
+
+	Raises:
+		ValueError: Raised when the table, column, or resulting schema would be invalid.
+	"""
 	if not table or not column:
 		raise ValueError( "Table and column required." )
 	
@@ -1444,8 +1675,18 @@ def drop_column( table: str, column: str ):
 # ------------- DOCQNA UTILITIES ----------------------
 
 def extract_text_from_bytes( file_bytes: bytes ) -> str:
-	"""
-		Extracts text from PDF or text-based documents.
+	"""Extract text from uploaded document bytes.
+
+	Purpose:
+		Attempts PDF extraction with PyMuPDF and falls back to defensive text decoding when
+		PDF parsing fails. The helper supports document preview, summarization, and retrieval
+		workflows.
+
+	Args:
+		file_bytes: Uploaded file bytes or PDF byte stream.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	try:
 		import fitz  # PyMuPDF
@@ -1463,20 +1704,17 @@ def extract_text_from_bytes( file_bytes: bytes ) -> str:
 			return ""
 
 def route_document_query( prompt: str ) -> str:
-	"""
-		Purpose:
-		--------
-		Route a document question through the unified chat pipeline and return a model-generated answer.
+	"""Route a document question through the chat pipeline.
 
-		Parameters:
-		-----------
-		prompt : str
-			The user question to answer about active documents.
+	Purpose:
+		Builds a retrieval-grounded Document Q&A input from the user prompt and submits it to
+		the shared local LLM generation workflow using current Streamlit runtime controls.
 
-		Returns:
-		--------
-		str
-			The assistant answer text.
+	Args:
+		prompt: Document question or prompt text.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	user_input = build_docqna_input( prompt )
 	if not user_input:
@@ -1490,8 +1728,14 @@ def route_document_query( prompt: str ) -> str:
 		stream=False, output=None )
 
 def summarize_active_document( ) -> str:
-	"""
-		Uses the routing layer to summarize the currently active document.
+	"""Summarize the active document context.
+
+	Purpose:
+		Constructs a structured summary prompt, combines it with current system instructions
+		when present, and routes the request through the Document Q&A workflow.
+
+	Returns:
+		str: Return value produced by the operation.
 	"""
 	system_instructions = st.session_state.get( "system_instructions", "" )
 	summary_prompt = """
@@ -1511,24 +1755,19 @@ def summarize_active_document( ) -> str:
 	return route_document_query( summary_prompt.strip( ) )
 
 def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
-	'''
-		
-		Purpose:
-		--------
-		Computes a stable fingerprint for the currently selected active documents and their byte contents.
-	
-		Parameters:
-		-----------
-		active_docs:
-			A List[ str ] of active document names.
-		doc_bytes:
-			A Dict[ str, bytes ] mapping document name to file bytes.
-	
-		Returns:
-		--------
-		A str fingerprint suitable for cache invalidation.
-	
-	'''
+	"""Compute a stable active-document fingerprint.
+
+	Purpose:
+		Hashes active document names, byte lengths, and byte content hashes to support cache
+		invalidation when uploaded Document Q&A inputs change.
+
+	Args:
+		active_docs: Active document names selected in session state.
+		doc_bytes: Mapping of document names to uploaded bytes.
+
+	Returns:
+		str: Return value produced by the operation.
+	"""
 	h = hashlib.sha256( )
 	for name in sorted( active_docs ):
 		b = doc_bytes.get( name, b'' )
@@ -1538,22 +1777,18 @@ def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ]
 	return h.hexdigest( )
 
 def extract_text( file_bytes: bytes ) -> str:
-	'''
-	
-		Purpose:
-		--------
-		Extracts text from a PDF byte stream using PyMuPDF.
-	
-		Parameters:
-		-----------
-		file_bytes:
-			The PDF bytes.
-	
-		Returns:
-		--------
-		A str containing extracted text.
-	
-	'''
+	"""Extract text from PDF bytes.
+
+	Purpose:
+		Uses PyMuPDF to read text from each page of a PDF byte stream and returns the combined
+		text for chunking and retrieval workflows.
+
+	Args:
+		file_bytes: Uploaded file bytes or PDF byte stream.
+
+	Returns:
+		str: Return value produced by the operation.
+	"""
 	if not file_bytes:
 		return ''
 	
@@ -1563,51 +1798,45 @@ def extract_text( file_bytes: bytes ) -> str:
 		for page in doc:
 			parts.append( page.get_text( 'text' ) or '' )
 		return '\n'.join( parts ).strip( )
-	except Exception:
+	except Exception as e:
+		write_error( e, 'document_qna', 'extract_text( file_bytes: bytes ) -> str' )
 		return ''
 
 def load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
-	'''
-		
-		Purpose:
-		--------
-		Attempts to load sqlite-vec into the provided SQLite connection.
-	
-		Parameters:
-		-----------
-		conn:
-			The sqlite3.Connection.
-	
-		Returns:
-		--------
-		True if sqlite-vec loaded successfully; otherwise False.
-		
-	'''
+	"""Load the sqlite-vec extension into a connection.
+
+	Purpose:
+		Attempts to register sqlite-vec support on the provided SQLite connection so Document
+		Q&A can use vector-table retrieval when available.
+
+	Args:
+		conn: SQLite connection.
+
+	Returns:
+		bool: Return value produced by the operation.
+	"""
 	try:
 		import sqlite_vec
 		
 		sqlite_vec.load( conn )
 		return True
-	except Exception:
+	except Exception as e:
+		write_error( e, 'document_qna', 'load_sqlite_vec( conn: sqlite3.Connection ) -> bool' )
 		return False
 
 def ensure_vec_schema( dim: int ) -> bool:
-	'''
-	
-		Purpose:
-		--------
-		Creates the sqlite-vec virtual table used for Document Q&A embeddings if possible.
-	
-		Parameters:
-		-----------
-		dim:
-			The embedding dimension (e.g., 384 for all-MiniLM-L6-v2).
-	
-		Returns:
-		--------
-		True if the schema exists and is usable; otherwise False.
-	
-	'''
+	"""Ensure the Document Q&A vector schema exists.
+
+	Purpose:
+		Loads sqlite-vec and creates the docqna_vec virtual table for document embeddings when
+		the extension is available in the runtime environment.
+
+	Args:
+		dim: Embedding dimension used by the vector table.
+
+	Returns:
+		bool: Return value produced by the operation.
+	"""
 	conn = create_connection( )
 	try:
 		ok = load_sqlite_vec( conn )
@@ -1627,28 +1856,23 @@ def ensure_vec_schema( dim: int ) -> bool:
 		)
 		conn.commit( )
 		return True
-	except Exception:
+	except Exception as e:
+		write_error( e, 'document_qna', 'ensure_vec_schema( dim: int ) -> bool' )
 		return False
 	finally:
 		conn.close( )
 
 def rebuild_index( embedder: SentenceTransformer ) -> None:
-	'''
-		
-		Purpose:
-		--------
-		Builds or refreshes the Document Q&A vector index when active documents change.
-	
-		Parameters:
-		-----------
-		embedder:
-			The SentenceTransformer used to generate embeddings.
-	
-		Returns:
-		--------
-		None
-		
-	'''
+	"""Build or refresh the Document Q&A vector index.
+
+	Purpose:
+		Compares the active document fingerprint with cached state, extracts active document
+		text, chunks content, creates embeddings, and stores vectors either in sqlite-vec or
+		in the in-memory fallback rows.
+
+	Args:
+		embedder: SentenceTransformer used to create embeddings.
+	"""
 	active_docs: List[ str ] = st.session_state.get( 'active_docs', [ ] )
 	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'doc_bytes', { } )
 	
@@ -1723,25 +1947,20 @@ def rebuild_index( embedder: SentenceTransformer ) -> None:
 		conn.close( )
 
 def retrieve_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
-	'''
-	
-		Purpose:
-		--------
-		Retrieves top-k document chunks relevant to the query, using sqlite-vec when available, and falling
-		back to in-memory cosine similarity when not.
-	
-		Parameters:
-		-----------
-		query:
-			The user query string.
-		k:
-			The number of chunks to return.
-	
-		Returns:
-		--------
-		A List[ Tuple[ str, str, float ] ] of (doc_name, chunk, score_or_distance).
-	
-	'''
+	"""Retrieve document chunks relevant to a query.
+
+	Purpose:
+		Embeds the user query, refreshes the document index when needed, retrieves nearest
+		chunks from sqlite-vec when available, and falls back to cosine similarity over cached
+		vectors.
+
+	Args:
+		query: SQL or search query text.
+		k: Number of retrieved chunks to include.
+
+	Returns:
+		list[tuple[str, str, float]]: Return value produced by the operation.
+	"""
 	if not query or not query.strip( ):
 		return [ ]
 	
@@ -1791,24 +2010,20 @@ def retrieve_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] 
 	return results[ : int( k ) ]
 
 def build_docqna_input( user_query: str, k: int = 6 ) -> str:
-	'''
-	
-		Purpose:
-		--------
-		Builds a Document Q&A prompt that injects retrieved chunks (RAG) instead of stuffing full documents.
-	
-		Parameters:
-		-----------
-		user_query:
-			The user question.
-		k:
-			The number of retrieved chunks to include.
-	
-		Returns:
-		--------
-		A str prompt suitable for llama.cpp completion.
-	
-	'''
+	"""Build a retrieval-grounded Document Q&A prompt.
+
+	Purpose:
+		Retrieves relevant document excerpts and combines them with optional system
+		instructions and the user question to form the prompt text submitted to the shared LLM
+		pipeline.
+
+	Args:
+		user_query: User question for the Document Q&A workflow.
+		k: Number of retrieved chunks to include.
+
+	Returns:
+		str: Return value produced by the operation.
+	"""
 	system = str( st.session_state.get( 'system_instructions', '' ) or '' ).strip( )
 	hits = retrieve_chunks( user_query, k=int( k ) )
 	
@@ -1837,69 +2052,49 @@ def build_docqna_input( user_query: str, k: int = 6 ) -> str:
 # -------------- LLM  UTILITIES -------------------
 @st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
-	"""
-	
-		Purpose:
-		--------
-		Load the sentence-transformers model used for embedding and retrieval workflows.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		SentenceTransformer
-			Loaded embedder instance.
-			
+	"""Load the sentence-transformer embedder.
+
+	Purpose:
+		Creates the cached sentence-transformers model used for semantic indexing, Document
+		Q&A retrieval, and fallback vector scoring.
+
+	Returns:
+		SentenceTransformer: Return value produced by the operation.
 	"""
 	return SentenceTransformer( 'all-MiniLM-L6-v2' )
 
 def local_llm_enabled( ) -> bool:
-	"""
-	
-		Purpose:
-		--------
-		Determine whether optional local llama.cpp support is enabled in
-		configuration and available in the current environment.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		bool
-			True when local LLM support is enabled and the GGUF exists.
-			
+	"""Determine whether local LLM support is enabled.
+
+	Purpose:
+		Checks configuration and model-file availability to decide whether the local llama.cpp
+		model should be loaded in the current runtime environment.
+
+	Returns:
+		bool: Return value produced by the operation.
 	"""
 	try:
 		_is_enabled = bool( getattr( cfg, 'ENABLE_LOCAL_LLM', False ) )
 		return bool( _is_enabled and local_llm_available( ) )
-	except Exception:
+	except Exception as e:
+		write_error( e, 'local_llm', 'local_llm_enabled( ) -> bool' )
 		return False
 
 @st.cache_resource
 def load_llm( ctx: int, threads: int ) -> Any | None:
-	"""
-	
-		Purpose:
-		--------
-		Lazily load the optional local llama.cpp model only when explicitly
-		enabled and physically available.
-	
-		Parameters:
-		-----------
-		ctx : int
-			Context window size.
-		threads : int
-			Number of CPU threads to allocate.
-	
-		Returns:
-		--------
-		Any | None
-			Instantiated llama.cpp model object, or None when unavailable.
-			
+	"""Load the optional local llama.cpp model.
+
+	Purpose:
+		Lazily imports llama_cpp and creates a cached Llama instance using the configured
+		model path, context window, CPU thread count, and batch settings when local support is
+		enabled.
+
+	Args:
+		ctx: Optional context window override.
+		threads: Optional CPU thread-count override.
+
+	Returns:
+		Any | None: Return value produced by the operation.
 	"""
 	try:
 		if not local_llm_enabled( ):
@@ -1917,29 +2112,23 @@ def load_llm( ctx: int, threads: int ) -> Any | None:
 			n_batch=512,
 			verbose=False
 		)
-	except Exception:
+	except Exception as e:
+		write_error( e, 'local_llm', 'load_llm( ctx: int, threads: int ) -> Any | None' )
 		return None
 
 def get_llm( ctx: int | None = None, threads: int | None = None ) -> Any | None:
-	"""
-	
-		Purpose:
-		--------
-		Return the optional local llama.cpp model only when enabled,
-		available, and loadable in the current environment.
-	
-		Parameters:
-		-----------
-		ctx : int | None
-			Optional context window override.
-		threads : int | None
-			Optional CPU thread override.
-	
-		Returns:
-		--------
-		Any | None
-			Loaded llama.cpp model instance, or None when disabled or unavailable.
-			
+	"""Return the available local llama.cpp model.
+
+	Purpose:
+		Applies default context and thread settings when overrides are not supplied and
+		returns the cached local model instance when enabled and loadable.
+
+	Args:
+		ctx: Optional context window override.
+		threads: Optional CPU thread-count override.
+
+	Returns:
+		Any | None: Return value produced by the operation.
 	"""
 	try:
 		if not local_llm_enabled( ):
@@ -1948,29 +2137,27 @@ def get_llm( ctx: int | None = None, threads: int | None = None ) -> Any | None:
 		_ctx = int( ctx ) if ctx else int( getattr( cfg, 'DEFAULT_CTX', 0 ) )
 		_threads = int( threads ) if threads else int( getattr( cfg, 'CORES', 1 ) )
 		return load_llm( _ctx, _threads )
-	except Exception:
+	except Exception as e:
+		write_error( e, 'local_llm',
+			'get_llm( ctx: int | None, threads: int | None ) -> Any | None' )
 		return None
 
 def get_embedder( ) -> SentenceTransformer | None:
-	"""
-		Purpose:
-		--------
-		Lazily return the embedding model only when needed.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		SentenceTransformer | None
-			Loaded embedder instance or None when unavailable.
+	"""Return the cached embedding model.
+
+	Purpose:
+		Returns the cached sentence-transformer model when it can be loaded and preserves a
+		None fallback when embedding support is unavailable.
+
+	Returns:
+		SentenceTransformer | None: Return value produced by the operation.
 	"""
 	try:
 		return load_embedder( )
-	except Exception:
+	except Exception as e:
+		write_error( e, 'embeddings', 'get_embedder( ) -> SentenceTransformer | None' )
 		return None
-	
+
 # ==============================================================================
 # Init
 # ==============================================================================
@@ -2003,15 +2190,15 @@ with st.sidebar:
 			st.caption( 'Local GGUF available.' )
 		else:
 			st.caption( 'Local GGUF not available in this environment.' )
-			
-	c1, c2 = st.columns( [ 0.05, 0.95] )
+	
+	c1, c2 = st.columns( [ 0.05, 0.95 ] )
 	with c2:
 		st.subheader( '⚙️ Application Mode' )
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		mode = st.radio( label='', options=cfg.MODES, index=0 )
 	
 	st.divider( )
-	
+
 # ==============================================================================
 # TEXT GENERATION MODE
 # ==============================================================================
@@ -2048,9 +2235,9 @@ if mode == 'Text Generation':
 				with mind_c1:
 					set_temperature = st.slider( label='Temperature', min_value=0.0, max_value=1.0,
 						help=cfg.TEMPERATURE, key='temperature' )
-				
-					temperature = st.session_state[ 'temperature' ]
 					
+					temperature = st.session_state[ 'temperature' ]
+				
 				# ------------- Top-P ----------
 				with mind_c2:
 					set_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
@@ -2071,7 +2258,7 @@ if mode == 'Text Generation':
 						key='is_grounded' )
 					
 					is_grounded = st.session_state[ 'is_grounded' ]
-					
+				
 				# ------------- Reset Settings ----------
 				if st.button( label='Reset', key='response_controls_reset', width='stretch' ):
 					for key in [ 'top_k', 'top_percent', 'temperature', 'is_grounded' ]:
@@ -2089,28 +2276,32 @@ if mode == 'Text Generation':
 				
 				# ------------- Repeat Window ----------
 				with prob_c1:
-					set_repeat_last_n = st.slider( label='Repeat Window', min_value=0, max_value=1024,
+					set_repeat_last_n = st.slider( label='Repeat Window', min_value=0,
+						max_value=1024,
 						step=16, key='repeat_window', help=cfg.REPEAT_WINDOW )
 					
 					repeat_window = st.session_state[ 'repeat_window' ]
 				
 				# ------------- Repeat Penalty ----------
 				with prob_c2:
-					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0, max_value=2.0,
+					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0,
+						max_value=2.0,
 						key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
 					
 					repeat_penalty = st.session_state[ 'repeat_penalty' ]
 				
 				# ------------- Presense Penalty ----------
 				with prob_c3:
-					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
+					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0,
+						max_value=2.0,
 						key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
 					
 					presense_penalty = st.session_state[ 'presense_penalty' ]
 				
 				# ------------- Frequency Penalty ----------
 				with prob_c4:
-					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0,
+						max_value=2.0,
 						key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
 					
 					frequency_penalty = st.session_state[ 'frequency_penalty' ]
@@ -2147,7 +2338,8 @@ if mode == 'Text Generation':
 				
 				# ------------- Max Tokens ----------
 				with ctx_c3:
-					set_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=4096, step=128,
+					set_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=4096,
+						step=128,
 						key='max_tokens', help=cfg.MAX_TOKENS, )
 				
 				# ------------- Random Seed ----------
@@ -2198,7 +2390,7 @@ if mode == 'Text Generation':
 		for r, c in st.session_state.messages:
 			with st.chat_message( r ):
 				st.markdown( c )
-			
+		
 		user_input = st.chat_input( 'Ask Leeroy…' )
 		if user_input:
 			save_message( 'user', user_input )
@@ -2226,7 +2418,7 @@ if mode == 'Text Generation':
 			clear_history( )
 			st.session_state.messages = [ ]
 			st.rerun( )
-		
+
 # ==============================================================================
 # RETRIEVAL AUGMENTATION
 # ==============================================================================
@@ -2255,7 +2447,8 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False ):
 			with st.expander( label='⚙️ Response Controls', expanded=False ):
-				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True, gap='medium' )
+				mind_c1, mind_c2, mind_c3 = st.columns( [ .33, .33, .33 ], border=True,
+					gap='medium' )
 				
 				# ------------- Temperature ----------
 				with mind_c1:
@@ -2296,28 +2489,32 @@ elif mode == 'Document Q&A':
 				
 				# ------------- Repeat Window ----------
 				with prob_c1:
-					set_repeat_last_n = st.slider( label='Repeat Window', min_value=0, max_value=1024,
+					set_repeat_last_n = st.slider( label='Repeat Window', min_value=0,
+						max_value=1024,
 						step=16, key='repeat_window', help=cfg.REPEAT_WINDOW )
 					
 					repeat_window = st.session_state[ 'repeat_window' ]
 				
 				# ------------- Repeat Penalty ----------
 				with prob_c2:
-					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0, max_value=2.0,
+					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0,
+						max_value=2.0,
 						key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
 					
 					repeat_penalty = st.session_state[ 'repeat_penalty' ]
 				
 				# ------------- Presense Penalty ----------
 				with prob_c3:
-					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0, max_value=2.0,
+					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0,
+						max_value=2.0,
 						key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
 					
 					presense_penalty = st.session_state[ 'presense_penalty' ]
 				
 				# ------------- Frequency Penalty ----------
 				with prob_c4:
-					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0, max_value=2.0,
+					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0,
+						max_value=2.0,
 						key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
 					
 					frequency_penalty = st.session_state[ 'frequency_penalty' ]
@@ -2354,7 +2551,8 @@ elif mode == 'Document Q&A':
 				
 				# ------------- Max Tokens ----------
 				with ctx_c3:
-					set_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=4096, step=128,
+					set_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=4096,
+						step=128,
 						key='max_tokens', help=cfg.MAX_TOKENS, )
 				
 				# ------------- Random Seed ----------
@@ -2419,7 +2617,8 @@ elif mode == 'Document Q&A':
 					names: List[ str ] = [ f.name for f in uploaded if getattr( f, 'name', None ) ]
 					st.session_state.active_docs = names
 					
-					if 'doc_bytes' not in st.session_state or not isinstance( st.session_state.doc_bytes, dict ):
+					if 'doc_bytes' not in st.session_state or not isinstance(
+							st.session_state.doc_bytes, dict ):
 						st.session_state.doc_bytes = { }
 					
 					for f in uploaded:
@@ -2448,7 +2647,7 @@ elif mode == 'Document Q&A':
 						st.info( "Document loaded but preview unavailable." )
 				else:
 					st.info( "No document loaded." )
-			
+		
 		# ------------------------------------------------------------------
 		# Chat History Render
 		# ------------------------------------------------------------------
@@ -2473,7 +2672,7 @@ elif mode == 'Document Q&A':
 				else:
 					role = ''
 					content = ''
-					
+			
 			if role not in ('user', 'assistant', 'system'):
 				continue
 			
@@ -2484,7 +2683,7 @@ elif mode == 'Document Q&A':
 			
 			with st.chat_message( role ):
 				st.markdown( content )
-				
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
@@ -2494,7 +2693,8 @@ elif mode == 'Document Q&A':
 		if user_input and isinstance( user_input, str ) and user_input.strip( ):
 			user_input = user_input.strip( )
 			
-			if 'messages' not in st.session_state or not isinstance( st.session_state.messages, list ):
+			if 'messages' not in st.session_state or not isinstance( st.session_state.messages,
+					list ):
 				st.session_state.messages = [ ]
 			
 			save_message( 'user', user_input )
@@ -2504,7 +2704,8 @@ elif mode == 'Document Q&A':
 				st.markdown( user_input )
 			
 			doc_user_input = build_docqna_input( user_input )
-			if not doc_user_input or not isinstance( doc_user_input, str ) or not doc_user_input.strip( ):
+			if not doc_user_input or not isinstance( doc_user_input,
+					str ) or not doc_user_input.strip( ):
 				doc_user_input = user_input
 			
 			with st.chat_message( 'assistant' ):
@@ -2524,7 +2725,7 @@ elif mode == 'Document Q&A':
 			response = response.strip( )
 			save_message( 'assistant', response )
 			st.session_state.messages.append( ('assistant', response) )
-			
+
 # ==============================================================================
 # SEMANTIC SEARCH
 # ==============================================================================
@@ -2683,14 +2884,14 @@ elif mode == 'Prompt Engineering':
 		table_rows = [ ]
 		for r in rows:
 			table_rows.append( {
-						'Selected': r[ 0 ] == st.session_state.pe_selected_id,
-						'PromptsId': r[ 0 ],
-						'Caption': r[ 1 ],
-						'Name': r[ 2 ],
-						'Text': r[ 3 ],
-						'Version': r[ 4 ],
-						'ID': r[ 5 ],
-				} )
+					'Selected': r[ 0 ] == st.session_state.pe_selected_id,
+					'PromptsId': r[ 0 ],
+					'Caption': r[ 1 ],
+					'Name': r[ 2 ],
+					'Text': r[ 3 ],
+					'Version': r[ 4 ],
+					'ID': r[ 5 ],
+			} )
 		
 		edited = st.data_editor( table_rows, hide_index=True, use_container_width=True,
 			key="prompt_table", )
@@ -2738,7 +2939,6 @@ elif mode == 'Prompt Engineering':
 			st.text_input( 'Name', key='pe_name' )
 			st.text_area( 'Text', key='pe_text', height=260 )
 			st.text_input( 'Version', key='pe_version' )
-			
 			
 			c1, c2, c3 = st.columns( 3 )
 			with c1:
@@ -3095,7 +3295,8 @@ elif mode == 'Data Management':
 			
 			st.subheader( 'Create Custom Table' )
 			new_table_name = st.text_input( 'Table Name' )
-			column_count = st.number_input( 'Number of Columns', min_value=1, max_value=20, value=1 )
+			column_count = st.number_input( 'Number of Columns', min_value=1, max_value=20,
+				value=1 )
 			columns = [ ]
 			for i in range( column_count ):
 				st.markdown( f'### Column {i + 1}' )
@@ -3291,7 +3492,7 @@ st.markdown(
 		max-width: 100%;
 	}
 	</style>
-	""", unsafe_allow_html=True,)
+	""", unsafe_allow_html=True, )
 
 # ======================================================================================
 # FOOTER RENDERING

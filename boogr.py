@@ -1,52 +1,12 @@
-'''
-  ******************************************************************************************
-      Assembly:                Leeroy
-      Filename:                boogr.py
-      Author:                  Terry D. Eppler
-      Created:                 05-31-2022
+"""SQLite-backed exception wrapping and logging utilities for Leeroy.
 
-      Last Modified By:        Terry D. Eppler
-      Last Modified On:        05-01-2026
-  ******************************************************************************************
-  <copyright file="boogr.py" company="Terry D. Eppler">
-
-	 boogr.py
-
-     Permission is hereby granted, free of charge, to any person obtaining a copy
-     of this software and associated documentation files (the “Software”),
-     to deal in the Software without restriction,
-     including without limitation the rights to use,
-     copy, modify, merge, publish, distribute, sublicense,
-     and/or sell copies of the Software,
-     and to permit persons to whom the Software is furnished to do so,
-     subject to the following conditions:
-
-     The above copyright notice and this permission notice shall be included in all
-     copies or substantial portions of the Software.
-
-     THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-     INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
-     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-     ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-     DEALINGS IN THE SOFTWARE.
-
-     You can contact me at:  terryeppler@gmail.com or eppler.terry@epa.gov
-
-  </copyright>
-  <summary>
-    Provides exception wrapping and SQLite-backed exception logging for Leeroy.
-
-    Purpose:
-        Defines the lightweight Error wrapper used throughout Fonky exception handlers and the
-        Logger utility used to persist wrapped exception details to the configured SQLite logging
-        database. The module centralizes error metadata capture so fetchers, loaders, processors,
-        scrapers, and tool adapters can report failures consistently without duplicating database
-        setup or traceback extraction logic.
-  </summary>
-  ******************************************************************************************
-  '''
+Purpose:
+	Defines the application exception wrapper and logger used by Leeroy source files to
+	capture structured diagnostic metadata and persist failure records to the configured
+	SQLite exception database. The module centralizes error metadata, traceback capture,
+	and database writes so application code can use a consistent logging pattern without
+	duplicating SQLite setup or traceback formatting logic.
+"""
 from __future__ import annotations
 
 import os
@@ -66,20 +26,21 @@ class Error( Exception ):
 	"""Wrap an exception with application-specific diagnostic metadata.
 
 	Purpose:
-		Captures the original exception, traceback text, optional heading, cause, module name,
-		and method signature used by Fonky exception handlers. The wrapper provides a stable
-		object that can be raised by calling code and written by the Logger without requiring
-		each caller to format traceback details manually.
+		Captures the original exception, active traceback text, optional display heading,
+		logical cause, source module, and stable method signature used by Leeroy exception
+		handlers. The wrapper provides a consistent diagnostic object that can be raised by
+		application code and written by ``Logger`` without forcing each caller to format
+		traceback details manually.
 
 	Attributes:
-		exception (Exception): Original exception instance being wrapped.
-		heading (str | None): Optional display heading associated with the error.
-		cause (str | None): Logical component or class responsible for the failure.
-		method (str | None): Stable method or function signature where the failure occurred.
-		module (str | None): Source module where the failure occurred.
-		type (type | None): Active exception type reported by ``sys.exc_info``.
-		trace (str): Formatted traceback text captured at wrapper construction time.
-		info (str): Combined exception type and formatted traceback text.
+		exception: Original exception instance being wrapped.
+		heading: Optional display heading associated with the error.
+		cause: Logical component or class responsible for the failure.
+		method: Stable method or function signature where the failure occurred.
+		module: Source module where the failure occurred.
+		type: Active exception type reported by ``sys.exc_info``.
+		trace: Formatted traceback text captured when the wrapper is constructed.
+		info: Combined exception type and formatted traceback text.
 	"""
 	
 	def __init__( self, error: Exception, heading: str = None, cause: str = None,
@@ -87,17 +48,17 @@ class Error( Exception ):
 		"""Initialize the error wrapper.
 
 		Purpose:
-			Initializes the wrapper with the original exception and optional diagnostic metadata.
-			The constructor captures traceback information immediately so downstream logging can
-			persist the same failure context even after control has moved out of the original
-			exception handler.
+			Stores the original exception and optional diagnostic metadata, then captures
+			the active exception type and traceback immediately. Immediate capture preserves
+			the failure context for later logging even after execution has left the original
+			``except`` block.
 
 		Args:
-			error (Exception): Original exception instance being wrapped.
-			heading (str): Optional display heading associated with the error.
-			cause (str): Logical component or class responsible for the failure.
-			method (str): Stable method or function signature where the failure occurred.
-			module (str): Source module where the failure occurred.
+			error: Original exception instance being wrapped.
+			heading: Optional display heading associated with the error.
+			cause: Logical component or class responsible for the failure.
+			method: Stable method or function signature where the failure occurred.
+			module: Source module where the failure occurred.
 		"""
 		super( ).__init__( )
 		self.exception = error
@@ -113,12 +74,12 @@ class Error( Exception ):
 		"""Return the captured diagnostic text.
 
 		Purpose:
-			Returns the formatted exception information captured when the wrapper was created.
-			This representation supports direct display, logging, and debugging without requiring
-			callers to inspect individual metadata fields.
+			Returns the formatted exception information captured when the wrapper was
+			created. This representation supports direct display, diagnostic logging, and
+			debugging without requiring callers to inspect individual metadata fields.
 
 		Returns:
-			Captured exception information when available.
+			str | None: Captured exception information when available.
 		"""
 		if self.info is not None:
 			return self.info
@@ -127,12 +88,12 @@ class Error( Exception ):
 		"""Return the public diagnostic member names.
 
 		Purpose:
-			Provides a stable member list for inspectors, debuggers, user-interface tooling, and
-			interactive sessions that need to display the important diagnostic fields carried by
-			the wrapper.
+			Provides a stable member list for inspectors, debuggers, documentation tools,
+			and interactive sessions that need to display the primary diagnostic fields
+			carried by the wrapper.
 
 		Returns:
-			Ordered diagnostic member names exposed by the wrapper.
+			list[str]: Ordered diagnostic member names exposed by the wrapper.
 		"""
 		return [ 'message', 'cause', 'method', 'module', 'scaler', 'stack_trace', 'info' ]
 
@@ -140,25 +101,27 @@ class Logger( ):
 	"""Persist wrapped exception details to the configured SQLite logging database.
 
 	Purpose:
-		Provides a small application logger that writes Error metadata to the SQLite database
-		identified by ``config.LOG_PATH`` and the table identified by ``config.LOG_FILE``. The
-		class creates the logging directory and table as needed, then records exception cause,
-		module, method, message, diagnostic information, traceback text, and creation time.
+		Writes ``Error`` metadata to the SQLite database identified by ``config.LOG_PATH``
+		and the table identified by ``config.LOG_FILE``. The class creates the logging
+		directory and exception table when needed, then records cause, module, method,
+		message, formatted diagnostic information, traceback text, and creation time for
+		later troubleshooting.
 
 	Attributes:
-		path (Path): Filesystem path to the SQLite logging database.
-		table (str): SQLite table name used for persisted exception records.
-		query (str | None): SQL statement prepared for the active logging operation.
-		values (tuple[Any, ...] | None): Values prepared for the active logging operation.
+		path: Filesystem path to the SQLite logging database.
+		table: SQLite table name used for persisted exception records.
+		query: SQL statement prepared for the active logging operation.
+		values: Values prepared for the active logging operation.
 	"""
 	
 	def __init__( self ) -> None:
 		"""Initialize the logger.
 
 		Purpose:
-			Initializes the logger from the central Fonky configuration and prepares local state
-			used by later write operations. The constructor does not open a persistent database
-			connection; connections are created only for bounded setup and write operations.
+			Loads the configured logging database path and exception table name from the
+			central Leeroy configuration. The constructor prepares local state for later
+			bounded setup and write operations without opening a persistent database
+			connection.
 		"""
 		self.path = Path( cfg.LOG_PATH ).resolve( )
 		self.table = str( cfg.LOG_FILE or 'Exceptions' )
@@ -169,11 +132,12 @@ class Logger( ):
 		"""Return the public logger member names.
 
 		Purpose:
-			Provides a stable member list for inspection and debugging of logger configuration,
-			including the configured path, table name, and write helper methods.
+			Provides a stable member list for inspection and debugging of logger
+			configuration, including the configured path, table name, SQL state, and write
+			helper methods.
 
 		Returns:
-			Ordered logger member names.
+			list[str]: Ordered logger member names.
 		"""
 		return [ 'path', 'table', 'query', 'values', 'create_table', 'write' ]
 	
@@ -181,9 +145,10 @@ class Logger( ):
 		"""Create the exception table when it does not already exist.
 
 		Purpose:
-			Ensures the logging directory and SQLite exception table exist before an exception
-			record is written. The schema stores stable diagnostic fields used by Fonky modules
-			and avoids raising setup failures back into application exception handlers.
+			Ensures the logging directory and SQLite exception table exist before exception
+			records are written. The schema stores stable diagnostic fields used by Leeroy
+			modules and suppresses setup failures so logging does not mask the original
+			application exception.
 		"""
 		try:
 			self.path.parent.mkdir( parents=True, exist_ok=True )
@@ -209,12 +174,13 @@ class Logger( ):
 		"""Write an error record to the logging database.
 
 		Purpose:
-			Persists a wrapped Error object to the configured SQLite database using the standard
-			Fonky exception schema. Logging is intentionally failure-safe: a database or filesystem
-			failure during logging is suppressed so it does not mask the original application error.
+			Persists a wrapped ``Error`` object to the configured SQLite database using the
+			standard Leeroy exception schema. Logging is intentionally failure-safe so a
+			database or filesystem problem during logging does not suppress or replace the
+			original application error.
 
 		Args:
-			error (Error): Wrapped exception object containing diagnostic metadata to persist.
+			error: Wrapped exception object containing diagnostic metadata to persist.
 		"""
 		try:
 			self.create_table( )

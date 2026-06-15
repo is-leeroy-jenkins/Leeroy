@@ -1,0 +1,96 @@
+site_name: Leeroy Documentation
+site_description: Documentation for Leeroy, a local-first Streamlit application for local LLM inference, document Q&A, semantic search, prompt engineering, and SQLite-backed data management.
+site_author: Terry D. Eppler
+site_url: https://is-leeroy-jenkins.github.io/Leeroy/
+
+repo_url: https://github.com/is-leeroy-jenkins/Leeroy
+repo_name: is-leeroy-jenkins/Leeroy
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+    - content.tabs.link
+  palette:
+    - scheme: slate
+      primary: blue
+      accent: blue
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: img/favicon.ico
+  logo: img/favicon.ico
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - .
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_signature_annotations: true
+            separate_signature: true
+            members_order: source
+            inherited_members: false
+            filters:
+              - "!^_"
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - assets/css/leeroy.css
+
+extra_javascript:
+  - assets/js/leeroy.js
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - User Guide:
+      - Overview: user-guide/index.md
+      - Text Generation: user-guide/text-generation.md
+      - Document Q&A: user-guide/document-qna.md
+      - Semantic Search: user-guide/semantic-search.md
+      - Prompt Engineering: user-guide/prompt-engineering.md
+      - Data Management: user-guide/data-management.md
+  - API Reference:
+      - Overview: api/index.md
+      - App: api/app.md
+      - Configuration: api/config.md
+      - Logging: api/boogr.md
+  - Development: development.md

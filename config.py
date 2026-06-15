@@ -1,46 +1,12 @@
-'''
-  ******************************************************************************************
-      Assembly:                Leeroy
-      Filename:                config.py
-      Author:                  Terry D. Eppler
-      Created:                 05-31-2022
+"""Application configuration and runtime constants for Leeroy.
 
-      Last Modified By:        Terry D. Eppler
-      Last Modified On:        05-01-2025
-  ******************************************************************************************
-  <copyright file="config.py" company="Terry D. Eppler">
-
-	     config.py
-	     Copyright ©  2022  Terry Eppler
-
-     Permission is hereby granted, free of charge, to any person obtaining a copy
-     of this software and associated documentation files (the “Software”),
-     to deal in the Software without restriction,
-     including without limitation the rights to use,
-     copy, modify, merge, publish, distribute, sublicense,
-     and/or sell copies of the Software,
-     and to permit persons to whom the Software is furnished to do so,
-     subject to the following conditions:
-
-     The above copyright notice and this permission notice shall be included in all
-     copies or substantial portions of the Software.
-
-     THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-     INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
-     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-     ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-     DEALINGS IN THE SOFTWARE.
-
-     You can contact me at:  terryeppler@gmail.com or eppler.terry@epa.gov
-
-  </copyright>
-  <summary>
-    config.py
-  </summary>
-  ******************************************************************************************
-'''
+Purpose:
+	Defines environment helpers, filesystem paths, model settings, database paths, logging
+	configuration, Streamlit UI labels, runtime defaults, mode names, compiled text patterns,
+	and help text used throughout the Leeroy application. The module keeps configuration
+	import-safe by returning defaults when optional environment variables are missing or
+	malformed.
+"""
 import os
 import re
 import multiprocessing
@@ -52,13 +18,13 @@ def throw_if( name: str, value: object ) -> None:
 	"""Raise a ``ValueError`` when a required value is empty.
 
 	Purpose:
-		Provides a small, consistent guard for required arguments and configuration values. The
-		function treats falsy values as invalid and raises a ``ValueError`` containing the
-		caller-supplied argument or setting name.
+		Provides a consistent guard for required arguments and configuration values used
+		by Leeroy helpers. The function treats falsy values as invalid and raises a
+		``ValueError`` containing the caller-supplied argument or setting name.
 
 	Args:
-		name (str): Name of the argument or configuration value being validated.
-		value (object): Value to validate.
+		name: Name of the argument or configuration value being validated.
+		value: Value to validate.
 
 	Raises:
 		ValueError: Raised when ``value`` is falsy.
@@ -70,17 +36,17 @@ def get_bool( name: str, default: bool = False ) -> bool:
 	"""Read a Boolean environment variable.
 
 	Purpose:
-		Converts environment-variable text into a deterministic Boolean value. Missing
-		variables return the caller-provided default. Values of ``1``, ``true``, ``yes``,
-		``y``, and ``on`` are treated as ``True``; all other defined values are treated as
-		``False``.
+		Converts environment-variable text into a deterministic Boolean value for optional
+		runtime settings. Missing variables return the caller-provided default. Values of
+		``1``, ``true``, ``yes``, ``y``, and ``on`` are treated as ``True``; all other
+		defined values are treated as ``False``.
 
 	Args:
-		name (str): Environment variable name.
-		default (bool): Default value used when the environment variable is not defined.
+		name: Environment variable name.
+		default: Default value used when the environment variable is not defined.
 
 	Returns:
-		Parsed Boolean value, or the original default value when parsing fails.
+		bool: Parsed Boolean value, or the original default value when parsing fails.
 	"""
 	try:
 		throw_if( 'name', name )
@@ -104,11 +70,11 @@ def get_int( name: str, default: int ) -> int:
 		safe even when deployment configuration is incomplete.
 
 	Args:
-		name (str): Environment variable name.
-		default (int): Default integer value used when parsing is not possible.
+		name: Environment variable name.
+		default: Default integer value used when parsing is not possible.
 
 	Returns:
-		Parsed integer value or the supplied default value.
+		int: Parsed integer value or the supplied default value.
 	"""
 	try:
 		throw_if( 'name', name )
@@ -126,11 +92,11 @@ def get_float( name: str, default: float ) -> float:
 		configuration without making module import dependent on perfect environment state.
 
 	Args:
-		name (str): Environment variable name.
-		default (float): Default floating-point value used when parsing is not possible.
+		name: Environment variable name.
+		default: Default floating-point value used when parsing is not possible.
 
 	Returns:
-		Parsed floating-point value or the supplied default value.
+		float: Parsed floating-point value or the supplied default value.
 	"""
 	try:
 		throw_if( 'name', name )
@@ -148,11 +114,11 @@ def get_path( name: str, default: Path ) -> Path:
 		default path rather than interrupting module import.
 
 	Args:
-		name (str): Environment variable name.
-		default (Path): Default path used when the environment variable is not defined.
+		name: Environment variable name.
+		default: Default path used when the environment variable is not defined.
 
 	Returns:
-		Resolved path value or the resolved default path.
+		Path: Resolved path value or the resolved default path.
 	"""
 	try:
 		throw_if( 'name', name )
@@ -171,11 +137,11 @@ def get_text( name: str, default: str ) -> str:
 		stable for callers that import the module early in application startup.
 
 	Args:
-		name (str): Environment variable name.
-		default (str): Default text value.
+		name: Environment variable name.
+		default: Default text value.
 
 	Returns:
-		Environment value or supplied default.
+		str: Environment value or supplied default.
 	"""
 	try:
 		throw_if( 'name', name )
