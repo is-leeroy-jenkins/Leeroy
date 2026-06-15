@@ -2,19 +2,21 @@
 
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/images/leeroy_project.png)
 
-<p align="center">
-  <a href="#-overview">Overview</a> |
-  <a href="#-features">Features</a> |
-  <a href="#-application-modes">Modes</a> |
-  <a href="#-requirements">Requirements</a> |
-  <a href="#-local-llm">LLM</a> |
-  <a href="#-installation">Installation</a> |
-  <a href="#-running-the-streamlit-application">Run</a> |
-  <a href="#-configuration">Configuration</a> |
-  <a href="#-design-and-architecture">Architecture</a> |
-  <a href="#-capabilities">Capabilities</a> |
-  <a href="#-data-management">Data</a> |
+<p align="left">
+  <a href="#-overview">Overview</a> ·
+  <a href="#-features">Features</a> ·
+  <a href="#-application-modes">Modes</a> ·
+  <a href="#-requirements">Requirements</a> ·
+  <a href="#-local-llm">LLM</a> ·
+  <a href="#-installation">Installation</a> ·
+  <a href="#-running-the-streamlit-application">Run</a> ·
+  <a href="#-configuration">Configuration</a> ·
+  <a href="#-design-and-architecture">Architecture</a> ·
+  <a href="#-capabilities">Capabilities</a> ·
+  <a href="#-data-management">Data</a>  ·
 </p>
+
+___
 
 Leeroy is a Python and Streamlit application for local language-model inference,
 retrieval-augmented generation, semantic search, prompt engineering, and SQLite-backed data

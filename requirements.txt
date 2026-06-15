@@ -8,3 +8,13 @@ typing_extensions
 PyMuPDF
 sqlite-vec
 torchvision
+
+# --------------------------------------------------------------------------------------------------
+# MkDocs
+# --------------------------------------------------------------------------------------------------
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+mkdocs-autorefs
+pymdown-extensions
+black
