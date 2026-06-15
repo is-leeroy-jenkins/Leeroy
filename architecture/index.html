@@ -83,6 +83,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#leeroy-architecture" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -393,6 +398,26 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -410,6 +435,313 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 System Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-module-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Source Module Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streamlit-interface-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🖥️ Streamlit Interface Layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🖥️ Streamlit Interface Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sidebar-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sidebar Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#main-view-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main View Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-model-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧠 Local Model Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-construction-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Prompt Construction Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-qa-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Document Q&amp;A Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📚 Document Q&amp;A Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#document-session-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Document Session State
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-search-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Semantic Search Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-engineering-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📝 Prompt Engineering Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗄️ Persistence Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🗄️ Persistence Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#application-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Application Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-management-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧮 Data Management Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧮 Data Management Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-utility-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Utility Groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guarded-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guarded SQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-and-logging-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧯 Error Handling and Logging Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📦 Dependency Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mkdocs-documentation-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 MkDocs Documentation Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Design Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Related Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -861,6 +1193,304 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 System Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-module-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧩 Source Module Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#streamlit-interface-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🖥️ Streamlit Interface Layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🖥️ Streamlit Interface Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sidebar-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sidebar Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#main-view-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main View Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-model-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧠 Local Model Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-construction-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Prompt Construction Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-qa-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Document Q&amp;A Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📚 Document Q&amp;A Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#document-session-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Document Session State
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-search-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Semantic Search Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prompt-engineering-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📝 Prompt Engineering Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistence-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗄️ Persistence Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🗄️ Persistence Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#application-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Application Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-management-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧮 Data Management Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧮 Data Management Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-utility-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Utility Groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guarded-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guarded SQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-and-logging-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧯 Error Handling and Logging Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📦 Dependency Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mkdocs-documentation-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 MkDocs Documentation Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Design Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Related Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -880,9 +1510,815 @@
   
 
 
-  <h1>Architecture</h1>
-
-
+<p><img alt="" src="../img/leeroy-architecture.png" /></p>
+<hr />
+<h1 id="leeroy-architecture">Leeroy Architecture<a class="headerlink" href="#leeroy-architecture" title="Permanent link">&para;</a></h1>
+<p>Leeroy is a local-first Streamlit application that combines local language-model inference, document
+retrieval, semantic search, prompt-template management, SQLite-backed data tools, and structured
+exception logging.</p>
+<p>The architecture is intentionally practical: one main application module coordinates the user
+interface and workflows, a configuration module centralizes runtime settings, and a logging module
+provides reusable exception capture and SQLite persistence.</p>
+<h2 id="purpose">🧭 Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>This page explains how Leeroy is organized, how data moves through the application, and how the main
+source files support the user-facing workflows.</p>
+<p>Leeroy is designed around five primary application modes:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Text Generation</td>
+<td>Chat with the configured local model using Streamlit chat controls and shared prompt construction.</td>
+</tr>
+<tr>
+<td>Document Q&amp;A</td>
+<td>Upload documents, retrieve relevant excerpts, and generate grounded answers.</td>
+</tr>
+<tr>
+<td>Semantic Search</td>
+<td>Build a local semantic index from uploaded text and use it as prompt context.</td>
+</tr>
+<tr>
+<td>Prompt Engineering</td>
+<td>Manage reusable prompt templates stored in SQLite.</td>
+</tr>
+<tr>
+<td>Data Management</td>
+<td>Import, inspect, profile, filter, aggregate, visualize, administer, and query SQLite tables.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="system-overview">🧱 System Overview<a class="headerlink" href="#system-overview" title="Permanent link">&para;</a></h2>
+<p>Leeroy uses a layered local application architecture.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌─────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│                              User                                   │
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>└───────────────────────────────┬─────────────────────────────────────┘
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                │
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                                ▼
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>┌─────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│                      Streamlit User Interface                       │
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│                                                                     │
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  Sidebar                                                            │
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│  ├── Logo                                                           │
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│  ├── Local model status                                             │
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│  └── Application mode selector                                      │
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│                                                                     │
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│  Main Mode Views                                                    │
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│  ├── Text Generation                                                │
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│  ├── Document Q&amp;A                                                   │
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│  ├── Semantic Search                                                │
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│  ├── Prompt Engineering                                             │
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│  └── Data Management                                                │
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>└───────────────────────────────┬─────────────────────────────────────┘
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                                │
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                                ▼
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>┌─────────────────────────────────────────────────────────────────────┐
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│                    Shared Application Services                      │
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│                                                                     │
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│  ├── Session-state initialization                                   │
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│  ├── Prompt construction                                            │
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│  ├── Chat-history persistence                                       │
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>│  ├── Document text extraction                                       │
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>│  ├── Text chunking                                                  │
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>│  ├── Embedding and retrieval                                        │
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>│  ├── SQLite table utilities                                         │
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>│  ├── Plotly visualization helpers                                   │
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>│  └── Structured exception logging                                   │
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>└───────────────┬───────────────────────┬─────────────────────────────┘
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>                │                       │
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>                ▼                       ▼
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>┌─────────────────────────────┐   ┌───────────────────────────────────┐
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>│       Local Model Layer     │   │        Persistence Layer          │
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>│                             │   │                                   │
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>│  llama.cpp / GGUF model     │   │  SQLite application database      │
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>│  SentenceTransformer model  │   │  SQLite exception log database    │
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>└─────────────────────────────┘   └───────────────────────────────────┘
+</span></code></pre></div>
+<h2 id="source-module-responsibilities">🧩 Source Module Responsibilities<a class="headerlink" href="#source-module-responsibilities" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>app.py</code></td>
+<td>Main Streamlit application. Defines UI layout, mode routing, local LLM helpers, prompt building, document retrieval, semantic indexing, prompt administration, SQLite data-management helpers, and visualization utilities.</td>
+</tr>
+<tr>
+<td><code>config.py</code></td>
+<td>Central runtime configuration. Defines paths, model settings, logging paths, UI constants, help text, app modes, environment helper functions, and validation helper <code>throw_if()</code>.</td>
+</tr>
+<tr>
+<td><code>boogr.py</code></td>
+<td>Exception and logging support. Defines <code>Error</code> for wrapped exception metadata and <code>Logger</code> for SQLite-backed diagnostic persistence.</td>
+</tr>
+<tr>
+<td><code>requirements.txt</code></td>
+<td>Runtime and documentation dependencies, including Streamlit, pandas, sentence-transformers, PyMuPDF, sqlite-vec, MkDocs, and mkdocstrings.</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td>Repository-facing overview, installation notes, local model description, and application summary.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="streamlit-interface-layer">🖥️ Streamlit Interface Layer<a class="headerlink" href="#streamlit-interface-layer" title="Permanent link">&para;</a></h2>
+<p>The Streamlit interface is the user-facing entry point. It is organized around a sidebar mode
+selector and mode-specific main content blocks.</p>
+<h3 id="sidebar-responsibilities">Sidebar Responsibilities<a class="headerlink" href="#sidebar-responsibilities" title="Permanent link">&para;</a></h3>
+<p>The sidebar provides:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Logo</td>
+<td>Displays the Leeroy project identity.</td>
+</tr>
+<tr>
+<td>Local model status</td>
+<td>Indicates whether the configured local GGUF file is available.</td>
+</tr>
+<tr>
+<td>Mode selector</td>
+<td>Routes the user to Text Generation, Document Q&amp;A, Semantic Search, Prompt Engineering, or Data Management.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="main-view-responsibilities">Main View Responsibilities<a class="headerlink" href="#main-view-responsibilities" title="Permanent link">&para;</a></h3>
+<p>Each mode renders its own controls and workflows.</p>
+<table>
+<thead>
+<tr>
+<th>View</th>
+<th>Main Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Text Generation</td>
+<td>Chat UI, system instructions, response controls, probability controls, context controls, streaming output, and chat persistence.</td>
+</tr>
+<tr>
+<td>Document Q&amp;A</td>
+<td>Document loading, preview, active document state, retrieval prompt construction, and grounded chat output.</td>
+</tr>
+<tr>
+<td>Semantic Search</td>
+<td>Upload files, chunk text, embed chunks, and store vectors in SQLite.</td>
+</tr>
+<tr>
+<td>Prompt Engineering</td>
+<td>Browse, search, sort, page, select, create, edit, update, and delete prompt records.</td>
+</tr>
+<tr>
+<td>Data Management</td>
+<td>Work with SQLite tables through import, browse, CRUD, explore, filter, aggregate, visualize, admin, and SQL workflows.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="local-model-layer">🧠 Local Model Layer<a class="headerlink" href="#local-model-layer" title="Permanent link">&para;</a></h2>
+<p>Leeroy supports optional local LLM execution through a configured GGUF model path.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Configuration
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  │
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  ├── ENABLE_LOCAL_LLM
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  ├── MODEL_PATH
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  ├── DEFAULT_CTX
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  └── CORES
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  │
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  ▼
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>Model Availability Check
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  │
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  ▼
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>Cached llama.cpp Loader
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>  │
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>  ▼
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>Shared LLM Turn Execution
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>  │
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>  ▼
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>Streamlit Chat Output
+</span></code></pre></div>
+<p>The local model layer is intentionally defensive. If local LLM support is disabled or the configured
+GGUF file does not exist, the application can still load the interface and display a clear
+model-unavailable message.</p>
+<h2 id="prompt-construction-layer">🧾 Prompt Construction Layer<a class="headerlink" href="#prompt-construction-layer" title="Permanent link">&para;</a></h2>
+<p>Prompt construction is shared across Text Generation and Document Q&amp;A.</p>
+<p>The prompt builder can include:</p>
+<table>
+<thead>
+<tr>
+<th>Prompt Component</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System instructions</td>
+<td>Streamlit session state or prompt template cascade.</td>
+</tr>
+<tr>
+<td>Semantic context</td>
+<td>Retrieved chunks from stored embeddings.</td>
+</tr>
+<tr>
+<td>Basic document context</td>
+<td>Session-state document snippets.</td>
+</tr>
+<tr>
+<td>Chat history</td>
+<td>SQLite-backed message history and current session state.</td>
+</tr>
+<tr>
+<td>User input</td>
+<td>Current user prompt or document-grounded question.</td>
+</tr>
+</tbody>
+</table>
+<p>Prompt construction follows this general flow:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>User Input
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  │
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  ├── Read System Instructions
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  ├── Read Semantic Toggle
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  ├── Read Basic Context
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  ├── Read Chat History
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  └── Retrieve Optional Semantic Chunks
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  │
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  ▼
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>Assemble Prompt
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  │
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  ▼
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>Send to Local Model
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>  │
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>  ▼
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>Return Assistant Response
+</span></code></pre></div>
+<h2 id="document-qa-architecture">📚 Document Q&amp;A Architecture<a class="headerlink" href="#document-qa-architecture" title="Permanent link">&para;</a></h2>
+<p>Document Q&amp;A mode uses a retrieval-augmented generation pattern.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Uploaded File
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  │
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  ▼
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Document Bytes Stored in Session State
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  │
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  ▼
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>Text Extraction
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  │
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  ▼
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>Chunking
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  │
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  ▼
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>Embedding
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>  │
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>  ├── sqlite-vec virtual table when available
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>  └── In-memory cosine fallback when sqlite-vec is unavailable
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>  │
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>  ▼
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>Top-k Relevant Chunks
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>  │
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>  ▼
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>Grounded Document Prompt
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>  │
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>  ▼
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>Local Model Answer
+</span></code></pre></div>
+<h3 id="document-session-state">Document Session State<a class="headerlink" href="#document-session-state" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Session Key</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uploaded</code></td>
+<td>Stores uploaded Streamlit file objects.</td>
+</tr>
+<tr>
+<td><code>active_docs</code></td>
+<td>Stores active document names.</td>
+</tr>
+<tr>
+<td><code>doc_bytes</code></td>
+<td>Maps document names to raw file bytes.</td>
+</tr>
+<tr>
+<td><code>doc_source</code></td>
+<td>Tracks the selected document source.</td>
+</tr>
+<tr>
+<td><code>docqna_vec_ready</code></td>
+<td>Indicates whether sqlite-vec retrieval is active.</td>
+</tr>
+<tr>
+<td><code>docqna_fingerprint</code></td>
+<td>Tracks document/index freshness.</td>
+</tr>
+<tr>
+<td><code>docqna_chunk_count</code></td>
+<td>Stores the number of indexed chunks.</td>
+</tr>
+<tr>
+<td><code>docqna_fallback_rows</code></td>
+<td>Stores fallback chunk/vector rows when sqlite-vec is unavailable.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="retrieval-strategy">Retrieval Strategy<a class="headerlink" href="#retrieval-strategy" title="Permanent link">&para;</a></h3>
+<p>Leeroy uses a two-path retrieval strategy:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sqlite-vec path</td>
+<td>Preferred path. Stores document vectors in a SQLite virtual vector table and retrieves nearest chunks by vector distance.</td>
+</tr>
+<tr>
+<td>Cosine fallback path</td>
+<td>Backup path. Stores chunk vectors in memory/session state and ranks chunks by cosine similarity.</td>
+</tr>
+</tbody>
+</table>
+<p>This makes the Document Q&amp;A workflow resilient across environments where sqlite-vec may or may not
+be available.</p>
+<h2 id="semantic-search-architecture">🔍 Semantic Search Architecture<a class="headerlink" href="#semantic-search-architecture" title="Permanent link">&para;</a></h2>
+<p>Semantic Search mode creates a reusable local semantic index.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Uploaded Text Files
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  │
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  ▼
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Decode Text
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  │
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  ▼
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Chunk Text
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  │
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  ▼
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Encode Chunks with SentenceTransformer
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>  │
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>  ▼
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>Store Chunk and Vector Blob in SQLite
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>  │
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>  ▼
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>Use Similar Chunks in Prompt Builder
+</span></code></pre></div>
+<p>The semantic index is stored in the SQLite <code>embeddings</code> table.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>Row identifier.</td>
+</tr>
+<tr>
+<td><code>chunk</code></td>
+<td>Text chunk used as semantic context.</td>
+</tr>
+<tr>
+<td><code>vector</code></td>
+<td>Embedding vector stored as bytes.</td>
+</tr>
+</tbody>
+</table>
+<p>When semantic context is enabled, the prompt builder can retrieve similar chunks and add them to the
+model context.</p>
+<h2 id="prompt-engineering-architecture">📝 Prompt Engineering Architecture<a class="headerlink" href="#prompt-engineering-architecture" title="Permanent link">&para;</a></h2>
+<p>Prompt Engineering mode provides a local prompt-template management interface backed by SQLite.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Prompt Table
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  │
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  ├── Search
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  ├── Sort
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  ├── Page
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  ├── Select
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  ├── Edit
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  ├── Create
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  ├── Update
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>  └── Delete
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  │
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  ▼
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>Reusable Prompt Templates
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>  │
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>  ▼
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>System Instructions
+</span></code></pre></div>
+<p>Prompt records use the <code>Prompts</code> table.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PromptsId</code></td>
+<td>Primary key.</td>
+</tr>
+<tr>
+<td><code>Caption</code></td>
+<td>Display label used by template selectors.</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td>Prompt name.</td>
+</tr>
+<tr>
+<td><code>Text</code></td>
+<td>Prompt body.</td>
+</tr>
+<tr>
+<td><code>Version</code></td>
+<td>Prompt version.</td>
+</tr>
+<tr>
+<td><code>ID</code></td>
+<td>Optional external or user-defined identifier.</td>
+</tr>
+</tbody>
+</table>
+<p>Prompt templates support repeatable workflows by allowing users to store standard instructions,
+analytical formats, or drafting constraints and reuse them across sessions.</p>
+<h2 id="persistence-architecture">🗄️ Persistence Architecture<a class="headerlink" href="#persistence-architecture" title="Permanent link">&para;</a></h2>
+<p>Leeroy uses SQLite as its persistence backbone.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>SQLite Persistence
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  │
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  ├── Application Database
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  │   ├── chat_history
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  │   ├── embeddings
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  │   ├── Prompts
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  │   └── imported/user-created tables
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  │
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  └── Logging Database
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>      └── Exceptions
+</span></code></pre></div>
+<h3 id="application-database">Application Database<a class="headerlink" href="#application-database" title="Permanent link">&para;</a></h3>
+<p>The application database stores operational data.</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chat_history</code></td>
+<td>Persists user and assistant chat messages.</td>
+</tr>
+<tr>
+<td><code>embeddings</code></td>
+<td>Stores semantic-search chunks and vector bytes.</td>
+</tr>
+<tr>
+<td><code>Prompts</code></td>
+<td>Stores reusable prompt templates.</td>
+</tr>
+<tr>
+<td>User/imported tables</td>
+<td>Stores tabular data used by Data Management mode.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="logging-database">Logging Database<a class="headerlink" href="#logging-database" title="Permanent link">&para;</a></h3>
+<p>The logging database stores structured exception records.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>created</code></td>
+<td>Exception record timestamp.</td>
+</tr>
+<tr>
+<td><code>cause</code></td>
+<td>Logical component or class associated with the failure.</td>
+</tr>
+<tr>
+<td><code>module</code></td>
+<td>Source module where the failure occurred.</td>
+</tr>
+<tr>
+<td><code>method</code></td>
+<td>Stable function or method signature.</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td>Original exception message.</td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td>Combined exception type and traceback information.</td>
+</tr>
+<tr>
+<td><code>trace</code></td>
+<td>Formatted traceback text.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="data-management-architecture">🧮 Data Management Architecture<a class="headerlink" href="#data-management-architecture" title="Permanent link">&para;</a></h2>
+<p>Data Management mode provides a practical SQLite administration and analysis layer.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>SQLite Tables
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  │
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  ├── List Tables
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  ├── Inspect Schema
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  ├── Read Rows
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  ├── Import Data
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  ├── Create Tables
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  ├── Add / Rename / Drop Columns
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  ├── Create Indexes
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  ├── Profile Tables
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  ├── Filter Rows
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  ├── Aggregate Values
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  ├── Visualize Data
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>  └── Run Guarded SQL
+</span></code></pre></div>
+<h3 id="data-utility-groups">Data Utility Groups<a class="headerlink" href="#data-utility-groups" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Utilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connection</td>
+<td><code>create_connection()</code></td>
+</tr>
+<tr>
+<td>Table discovery</td>
+<td><code>list_tables()</code>, <code>create_schema()</code>, <code>get_indexes()</code></td>
+</tr>
+<tr>
+<td>Table reading</td>
+<td><code>read_table()</code></td>
+</tr>
+<tr>
+<td>Schema actions</td>
+<td><code>create_custom_table()</code>, <code>add_column()</code>, <code>rename_column()</code>, <code>rename_table()</code>, <code>drop_column()</code>, <code>drop_table()</code>, <code>create_index()</code></td>
+</tr>
+<tr>
+<td>Data import</td>
+<td><code>convert_dataframe()</code>, <code>insert_data()</code>, <code>get_sqlite_type()</code></td>
+</tr>
+<tr>
+<td>Profiling</td>
+<td><code>create_profile_table()</code></td>
+</tr>
+<tr>
+<td>Analysis</td>
+<td><code>apply_filters()</code>, <code>create_aggregation()</code>, <code>create_visualization()</code></td>
+</tr>
+<tr>
+<td>SQL safety</td>
+<td><code>is_safe_query()</code>, <code>create_identifier()</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="guarded-sql">Guarded SQL<a class="headerlink" href="#guarded-sql" title="Permanent link">&para;</a></h3>
+<p>The SQL safety layer allows read-oriented queries while blocking destructive operations.</p>
+<p>Allowed patterns include:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>SELECT
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>WITH
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>EXPLAIN
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>PRAGMA
+</span></code></pre></div>
+<p>Blocked operations include:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>INSERT
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>UPDATE
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>DELETE
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>DROP
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>ALTER
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>CREATE
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>ATTACH
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>DETACH
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>VACUUM
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>REPLACE
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>TRIGGER
+</span></code></pre></div>
+<h2 id="error-handling-and-logging-architecture">🧯 Error Handling and Logging Architecture<a class="headerlink" href="#error-handling-and-logging-architecture" title="Permanent link">&para;</a></h2>
+<p>Leeroy uses a structured exception wrapper and SQLite-backed logger.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Exception Occurs
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  │
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  ▼
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>Wrap with Error
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  │
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  ├── Original exception
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  ├── Module
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  ├── Cause
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  ├── Stable method signature
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>  ├── Traceback
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>  └── Diagnostic info
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>  │
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  ▼
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>Logger.write()
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>  │
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  ▼
+</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>SQLite Exceptions Table
+</span></code></pre></div>
+<p>Standard pattern:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">exception</span> <span class="o">=</span> <span class="n">Error</span><span class="p">(</span> <span class="n">e</span> <span class="p">)</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">exception</span><span class="o">.</span><span class="n">module</span> <span class="o">=</span> <span class="s1">&#39;app&#39;</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">exception</span><span class="o">.</span><span class="n">cause</span> <span class="o">=</span> <span class="s1">&#39;database&#39;</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">exception</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;function_name( arg: type ) -&gt; return_type&#39;</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">Logger</span><span class="p">(</span> <span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="n">exception</span> <span class="p">)</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="k">raise</span> <span class="n">exception</span>
+</span></code></pre></div>
+<p>Fallback-safe pattern:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="n">exception</span> <span class="o">=</span> <span class="n">Error</span><span class="p">(</span> <span class="n">e</span> <span class="p">)</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="n">exception</span><span class="o">.</span><span class="n">module</span> <span class="o">=</span> <span class="s1">&#39;app&#39;</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="n">exception</span><span class="o">.</span><span class="n">cause</span> <span class="o">=</span> <span class="s1">&#39;runtime&#39;</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="n">exception</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;helper_name( ) -&gt; bool&#39;</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="n">Logger</span><span class="p">(</span> <span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="n">exception</span> <span class="p">)</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="k">return</span> <span class="kc">False</span>
+</span></code></pre></div>
+<p>The method string is a stable signature. It should not contain user input, document text, dataframe
+contents, file paths, prompts, tokens, secrets, SQL text, or object memory addresses.</p>
+<h2 id="dependency-architecture">📦 Dependency Architecture<a class="headerlink" href="#dependency-architecture" title="Permanent link">&para;</a></h2>
+<p>Leeroy combines runtime, data, retrieval, visualization, and documentation dependencies.</p>
+<table>
+<thead>
+<tr>
+<th>Dependency Area</th>
+<th>Packages</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UI</td>
+<td><code>streamlit</code></td>
+</tr>
+<tr>
+<td>Data</td>
+<td><code>pandas</code>, <code>numpy</code>, <code>pydantic</code>, <code>typing_extensions</code></td>
+</tr>
+<tr>
+<td>PDF/document handling</td>
+<td><code>PyMuPDF</code></td>
+</tr>
+<tr>
+<td>Retrieval</td>
+<td><code>sentence-transformers</code>, <code>sqlite-vec</code></td>
+</tr>
+<tr>
+<td>Visualization</td>
+<td><code>plotly-express</code></td>
+</tr>
+<tr>
+<td>Local model support</td>
+<td><code>llama-cpp-python</code> when installed/configured</td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td><code>mkdocs</code>, <code>mkdocs-material</code>, <code>mkdocstrings[python]</code>, <code>mkdocs-autorefs</code>, <code>pymdown-extensions</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="mkdocs-documentation-architecture">🧱 MkDocs Documentation Architecture<a class="headerlink" href="#mkdocs-documentation-architecture" title="Permanent link">&para;</a></h2>
+<p>The documentation site is generated from Markdown pages and source docstrings.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docs/
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  │
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  ├── index.md
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  ├── architecture.md
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  ├── development.md
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>  │
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>  ├── user-guide/
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>  │   ├── index.md
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>  │   ├── text-generation.md
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>  │   ├── document-qna.md
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>  │   ├── semantic-search.md
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>  │   ├── prompt-engineering.md
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>  │   └── data-management.md
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>  │
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>  ├── api/
+</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>  │   ├── index.md
+</span><span id="__span-13-17"><a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>  │   ├── app.md
+</span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>  │   ├── config.md
+</span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>  │   └── boogr.md
+</span><span id="__span-13-20"><a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>  │
+</span><span id="__span-13-21"><a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>  └── assets/
+</span><span id="__span-13-22"><a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>      ├── css/leeroy.css
+</span><span id="__span-13-23"><a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a>      └── js/leeroy.js
+</span></code></pre></div>
+<p>The API reference uses mkdocstrings pages such as:</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gh"># App</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>::: app
+</span></code></pre></div>
+<p>This keeps the API documentation source-driven and reduces duplication between Markdown and Python
+docstrings.</p>
+<h2 id="design-principles">✅ Design Principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h2>
+<p>Leeroy follows several practical design principles.</p>
+<table>
+<thead>
+<tr>
+<th>Principle</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local-first operation</td>
+<td>Core workflows use local files, local databases, and optional local models.</td>
+</tr>
+<tr>
+<td>Graceful degradation</td>
+<td>The UI can load even when optional model or vector features are unavailable.</td>
+</tr>
+<tr>
+<td>Source-driven documentation</td>
+<td>API documentation is generated from Google-style source docstrings.</td>
+</tr>
+<tr>
+<td>SQLite durability</td>
+<td>Chat history, prompts, embeddings, tabular data, and logs use local SQLite stores.</td>
+</tr>
+<tr>
+<td>Controlled retrieval</td>
+<td>Document Q&amp;A retrieves relevant chunks instead of blindly stuffing full documents.</td>
+</tr>
+<tr>
+<td>Stable logging</td>
+<td>Exception records use stable metadata and avoid user content in method signatures.</td>
+</tr>
+<tr>
+<td>Preserve behavior</td>
+<td>Documentation and logging improvements should not alter Streamlit layout or runtime workflows.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="related-pages">🔗 Related Pages<a class="headerlink" href="#related-pages" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../">Home</a></td>
+<td>Project overview and quick start.</td>
+</tr>
+<tr>
+<td><a href="../user-guide/">User Guide</a></td>
+<td>Task-oriented usage instructions.</td>
+</tr>
+<tr>
+<td><a href="../user-guide/text-generation/">Text Generation</a></td>
+<td>Chat and local model workflow.</td>
+</tr>
+<tr>
+<td><a href="../user-guide/document-qna/">Document Q&amp;A</a></td>
+<td>Retrieval-augmented document workflow.</td>
+</tr>
+<tr>
+<td><a href="../user-guide/semantic-search/">Semantic Search</a></td>
+<td>Local semantic indexing workflow.</td>
+</tr>
+<tr>
+<td><a href="../user-guide/prompt-engineering/">Prompt Engineering</a></td>
+<td>Prompt-template management workflow.</td>
+</tr>
+<tr>
+<td><a href="../user-guide/data-management/">Data Management</a></td>
+<td>SQLite administration and analytical tooling.</td>
+</tr>
+<tr>
+<td><a href="../api/">API Reference</a></td>
+<td>Source-generated API documentation.</td>
+</tr>
+<tr>
+<td><a href="../development/">Development</a></td>
+<td>Validation, documentation build, and deployment workflow.</td>
+</tr>
+</tbody>
+</table>
 
 
 
