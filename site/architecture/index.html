@@ -1510,7 +1510,7 @@
   
 
 
-<p><img alt="" src="../img/leeroy_project.png" /></p>
+<p><img alt="" src="../img/leeroy-architecture.png" /></p>
 <hr />
 <h1 id="leeroy-architecture">Leeroy Architecture<a class="headerlink" href="#leeroy-architecture" title="Permanent link">&para;</a></h1>
 <p>Leeroy is a local-first Streamlit application that combines local language-model inference, document
@@ -1593,10 +1593,10 @@ source files support the user-facing workflows.</p>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>                │                       │
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>                ▼                       ▼
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>┌─────────────────────────────┐   ┌───────────────────────────────────┐
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>│       Local Model Layer     │   │        Persistence Layer           │
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>│       Local Model Layer     │   │        Persistence Layer          │
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>│                             │   │                                   │
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>│  llama.cpp / GGUF model     │   │  SQLite application database       │
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>│  SentenceTransformer model  │   │  SQLite exception log database     │
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>│  llama.cpp / GGUF model     │   │  SQLite application database      │
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>│  SentenceTransformer model  │   │  SQLite exception log database    │
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>└─────────────────────────────┘   └───────────────────────────────────┘
 </span></code></pre></div>
 <h2 id="source-module-responsibilities">🧩 Source Module Responsibilities<a class="headerlink" href="#source-module-responsibilities" title="Permanent link">&para;</a></h2>
