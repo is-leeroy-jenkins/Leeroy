@@ -18,6 +18,9 @@
 
 ___
 
+
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0078FC?style=for-the-badge&logo=github)](<<PATH TO DOCS GITHUB PAGES>>)
+
 Leeroy is a Python and Streamlit application for local language-model inference,
 retrieval-augmented generation, semantic search, prompt engineering, and SQLite-backed data
 management. It is designed for federal analysts, technical users, and data-science workflows that
@@ -28,10 +31,9 @@ Leeroy uses an optional local GGUF model through `llama.cpp`, supports document 
 `sentence-transformers`, persists chat history and prompts in SQLite, and provides a Streamlit user
 interface for text generation, document Q&A, semantic indexing, prompt administration, and database
 operations.
-___
 
 ## 🎥 Demo
-
+[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
 
 ## 🧱 Databricks
