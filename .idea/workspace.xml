@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8c4485b5-ee7a-4248-a172-0b2b0775c3c7" name="Changes" comment="update" />
+    <list default="true" id="8c4485b5-ee7a-4248-a172-0b2b0775c3c7" name="Changes" comment="update">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/development.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/development.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/user-guide/data-management.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/data-management.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/user-guide/document-qna.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/document-qna.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/user-guide/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/user-guide/prompt-engineering.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/prompt-engineering.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/user-guide/semantic-search.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/semantic-search.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/user-guide/text-generation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/text-generation.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -84,7 +93,7 @@
       <workItem from="1779483959731" duration="474000" />
       <workItem from="1779485891727" duration="3569000" />
       <workItem from="1780351836709" duration="146000" />
-      <workItem from="1781546753418" duration="4713000" />
+      <workItem from="1781546753418" duration="5835000" />
     </task>
     <task id="LOCAL-00001" summary="update">
       <option name="closed" value="true" />
@@ -206,7 +215,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781552031981</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="update">
+      <option name="closed" value="true" />
+      <created>1781552192118</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1781552192118</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
