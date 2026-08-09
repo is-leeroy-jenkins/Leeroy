@@ -150,6 +150,14 @@ def get_text( name: str, default: str ) -> str:
 	except Exception:
 		return default
 
+def get_bool_env( name: str, default: bool = False ) -> bool:
+	value = os.getenv( name )
+	
+	if value is None:
+		return default
+	
+	return value.strip( ).lower( ) in { "1", "true", "yes", "y", "on" }
+
 # ------ CONSTANTS  -------------------
 
 BASE_DIR = Path( __file__ ).resolve( ).parent
@@ -162,7 +170,6 @@ BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 
 APP_TITLE = 'Leeroy'
 APP_SUBTITLE = 'An AI based on LLama 3.2'
 DB_PATH = 'stores/sqlite/leeroy.db'
-MODEL_PATH = 'models/Leeroy-3B-Instruct.Q4_K_M.gguf'
 DEFAULT_CTX = 4096
 CORES = multiprocessing.cpu_count( )
 FAVICON = r'resources/images/favicon.ico'
@@ -171,8 +178,8 @@ XML_BLOCK_PATTERN = re.compile( r"<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>",
 MARKDOWN_HEADING_PATTERN = re.compile( r"^##\s+(?P<title>.+?)\s*$" )
 MODES = [ 'Text Generation', 'Document Q&A', 'Semantic Search',
           'Prompt Engineering', 'Data Management' ]
-ENABLE_LOCAL_LLM = True
-
+ENABLE_LOCAL_LLM = get_bool_env( "ENABLE_LOCAL_LLM", default=False )
+MODEL_PATH = os.getenv( "LEEROY_LLM_PATH", "" )
 # ---------- DEFINITIONS -------------------
 SYSTEM_INSTRUCTIONS = r'''Optional. Gives the model high-level instructions on how it should behave while
 		generating a response, including tone, goals, and examples of correct responses. Any
