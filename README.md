@@ -21,7 +21,7 @@ ___
 
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0078FC?style=for-the-badge&logo=github)](https://is-leeroy-jenkins.github.io/Leeroy/)
 
-Leeroy is a Python and Streamlit application for local language-model inference,
+Leeroy is a Python application for local language-model inference,
 retrieval-augmented generation, semantic search, prompt engineering, and SQLite-backed data
 management. It is designed for federal analysts, technical users, and data-science workflows that
 benefit from local execution, durable prompt storage, document-grounded question answering, and
