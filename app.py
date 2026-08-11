@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import math
 import re
 import sqlite3
 import time
@@ -170,6 +171,30 @@ if 'selected_prompt_id' not in st.session_state:
 if 'pending_system_prompt_name' not in st.session_state:
 	st.session_state[ 'pending_system_prompt_name' ] = ''
 
+if 'text_instruction_category' not in st.session_state:
+	st.session_state[ 'text_instruction_category' ] = None
+
+if 'text_instruction_prompt_id' not in st.session_state:
+	st.session_state[ 'text_instruction_prompt_id' ] = None
+
+if 'docqna_instruction_category' not in st.session_state:
+	st.session_state[ 'docqna_instruction_category' ] = None
+
+if 'docqna_instruction_prompt_id' not in st.session_state:
+	st.session_state[ 'docqna_instruction_prompt_id' ] = None
+
+if 'active_prompt_id' not in st.session_state:
+	st.session_state[ 'active_prompt_id' ] = None
+
+if 'active_prompt_caption' not in st.session_state:
+	st.session_state[ 'active_prompt_caption' ] = ''
+
+if 'active_prompt_name' not in st.session_state:
+	st.session_state[ 'active_prompt_name' ] = ''
+
+if 'active_prompt_category' not in st.session_state:
+	st.session_state[ 'active_prompt_category' ] = ''
+
 # -------- DOCQNA ---------------------
 
 if 'uploaded' not in st.session_state:
@@ -286,9 +311,7 @@ def initialize_database( ) -> None:
 
 	Purpose:
 		Ensures the local SQLite storage directory exists and creates the tables required for
-		chat history, semantic embeddings, and prompt templates. The function also applies a
-		defensive schema update for the Prompts table so prompt-selection utilities can rely
-		on the Caption column.
+		chat history, semantic embeddings, and categorized prompt templates.
 
 	Raises:
 		Error: Raised when SQLite initialization fails after writing diagnostic metadata.
@@ -333,38 +356,15 @@ def initialize_database( ) -> None:
 			"""
             CREATE TABLE IF NOT EXISTS Prompts
             (
-                PromptsId
-                INTEGER
-                NOT
-                NULL
-                PRIMARY
-                KEY
-                AUTOINCREMENT,
-                Caption
-                TEXT,
-                Name
-                TEXT
-            (
-                80
-            ),
-                Text TEXT,
-                Version TEXT
-            (
-                80
-            ),
-                ID TEXT
-            (
-                80
-            )
-                )
+				ID INTEGER NOT NULL UNIQUE,
+				Caption TEXT(80),
+				Name TEXT(80),
+				Category TEXT(80),
+				Text TEXT(2048),
+				PRIMARY KEY(ID AUTOINCREMENT)
+			)
 			"""
 		)
-		
-		prompt_columns = [ row[ 1 ] for row in
-		                   conn.execute( 'PRAGMA table_info("Prompts");' ).fetchall( ) ]
-		
-		if 'Caption' not in prompt_columns:
-			conn.execute( 'ALTER TABLE "Prompts" ADD COLUMN "Caption" TEXT;' )
 		
 		conn.commit( )
 
@@ -616,55 +616,85 @@ def clear_history( ) -> None:
 
 # -------- PROMPT ENGINEERING UTILITIES ----------------
 
-def fetch_prompt_names( db_path: str ) -> list[ str ]:
-	"""Retrieve available prompt-template captions.
+def supports_prompt_category( category: str ) -> bool:
+	"""Determine whether a prompt category fits the local text model.
 
 	Purpose:
-		Reads prompt captions from the configured SQLite Prompts table for use by Streamlit
-		template selectors. Database failures preserve the existing safe fallback by returning
-		an empty list.
+		Excludes categories that clearly require unsupported image, audio, video, speech, or
+		hosted-tool capabilities while retaining text, code, retrieval, and document workflows.
+
+	Args:
+		category: Stored prompt category name.
+
+	Returns:
+		bool: True when the category is suitable for Leeroy's local Llama 3.2 model.
+	"""
+	unsupported_terms = ( 'audio', 'computer use', 'hosted tool', 'image', 'speech',
+		'text-to-speech', 'video', 'vision' )
+	category_name = category.casefold( )
+	return not any( term in category_name for term in unsupported_terms )
+
+def fetch_prompt_categories( db_path: str ) -> List[ str ]:
+	"""Retrieve prompt categories supported by the local text model.
+
+	Purpose:
+		Reads distinct category names from the configured Prompts table and returns the
+		alphabetically ordered categories that fit Leeroy's text-only local model.
 
 	Args:
 		db_path: SQLite database path.
 
 	Returns:
-		list[str]: Return value produced by the operation.
+		list[str]: Supported prompt categories.
 	"""
 	try:
-		conn = sqlite3.connect( db_path )
-		cur = conn.cursor( )
-		cur.execute( "SELECT Caption FROM Prompts ORDER BY PromptsId;" )
-		rows = cur.fetchall( )
-		conn.close( )
-		return [ r[ 0 ] for r in rows if r and r[ 0 ] is not None ]
+		with sqlite3.connect( db_path ) as conn:
+			rows = conn.execute(
+				"SELECT DISTINCT Category FROM Prompts "
+				"WHERE Category IS NOT NULL AND TRIM(Category) <> '' ORDER BY Category;"
+			).fetchall( )
+		return [ str( row[ 0 ] ) for row in rows if supports_prompt_category( str( row[ 0 ] ) ) ]
 	except Exception as e:
-		write_error( e, 'prompts', 'fetch_prompt_names( db_path: str ) -> list[str]' )
+		write_error( e, 'prompts', 'fetch_prompt_categories( db_path: str ) -> List[str]' )
 		return [ ]
 
-def fetch_prompt_text( db_path: str, name: str ) -> str | None:
-	"""Retrieve prompt-template text by caption.
+def fetch_prompt_choices( db_path: str, category: str ) -> List[ Tuple[ int, str ] ]:
+	"""Retrieve prompt identifiers and display labels for a category.
 
 	Purpose:
-		Reads a single prompt body from the configured SQLite Prompts table using the selected
-		caption. Database failures preserve the existing safe fallback by returning None.
+		Loads category-filtered prompt choices using the primary key as the selector value and
+		Caption plus Name as the human-readable label.
 
 	Args:
 		db_path: SQLite database path.
-		name: Prompt caption or object name used by the operation.
+		category: Selected prompt category.
 
 	Returns:
-		str | None: Return value produced by the operation.
+		list[tuple[int, str]]: Prompt identifiers paired with display labels.
 	"""
+	if not category:
+		return [ ]
+
 	try:
-		conn = sqlite3.connect( db_path )
-		cur = conn.cursor( )
-		cur.execute( "SELECT Text FROM Prompts WHERE Caption = ?;", (name,) )
-		row = cur.fetchone( )
-		conn.close( )
-		return str( row[ 0 ] ) if row and row[ 0 ] is not None else None
+		with sqlite3.connect( db_path ) as conn:
+			rows = conn.execute(
+				"SELECT ID, Caption, Name FROM Prompts WHERE Category = ? "
+				"ORDER BY Caption, Name, ID;", (category,) ).fetchall( )
+		choices: List[ Tuple[ int, str ] ] = [ ]
+		for prompt_id, caption, name in rows:
+			caption_text = str( caption or '' ).strip( )
+			name_text = str( name or '' ).strip( )
+			label = caption_text
+			if name_text and name_text != caption_text:
+				label = f'{caption_text} — {name_text}' if caption_text else name_text
+			if not label:
+				label = f'Prompt {prompt_id}'
+			choices.append( (int( prompt_id ), label) )
+		return choices
 	except Exception as e:
-		write_error( e, 'prompts', 'fetch_prompt_text( db_path: str, name: str ) -> str | None' )
-		return None
+		write_error( e, 'prompts',
+			'fetch_prompt_choices( db_path: str, category: str ) -> List[Tuple[int, str]]' )
+		return [ ]
 
 def fetch_prompts( ) -> pd.DataFrame:
 	"""Load prompt metadata for prompt administration.
@@ -679,7 +709,7 @@ def fetch_prompts( ) -> pd.DataFrame:
 	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		df = pd.read_sql_query(
-			"SELECT PromptsId, Caption,  Name, Version, ID FROM Prompts ORDER BY PromptsId DESC",
+			"SELECT ID, Caption, Name, Category, Text FROM Prompts ORDER BY ID DESC",
 			conn )
 	df.insert( 0, "Selected", False )
 	return df
@@ -688,7 +718,7 @@ def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
 	"""Load a prompt record by primary key.
 
 	Purpose:
-		Retrieves the full prompt record for a selected PromptsId value and returns a
+		Retrieves the full prompt record for a selected ID value and returns a
 		dictionary keyed by SQLite column names for prompt-editing workflows.
 
 	Args:
@@ -699,7 +729,7 @@ def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
 	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		cur = conn.execute(
-			"SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE PromptsId=?",
+			"SELECT ID, Caption, Name, Category, Text FROM Prompts WHERE ID=?",
 			(pid,)
 		)
 		row = cur.fetchone( )
@@ -720,7 +750,7 @@ def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
 	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		cur = conn.execute(
-			"SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE Caption=?",
+			"SELECT ID, Caption, Name, Category, Text FROM Prompts WHERE Caption=? ORDER BY ID",
 			(name,)
 		)
 		row = cur.fetchone( )
@@ -738,15 +768,15 @@ def insert_prompt( data: Dict[ str, Any ] ) -> None:
 	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
-			'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?, ?)',
-			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ]) )
+			'INSERT INTO Prompts (Caption, Name, Category, Text) VALUES (?, ?, ?, ?)',
+			(data[ 'Caption' ], data[ 'Name' ], data[ 'Category' ], data[ 'Text' ]) )
 
 def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
 	"""Update an existing prompt record.
 
 	Purpose:
 		Updates an existing prompt-template record in the configured SQLite Prompts table
-		using the selected PromptsId value and edited field values.
+		using the selected ID value and edited field values.
 
 	Args:
 		pid: Prompt primary key value.
@@ -754,9 +784,8 @@ def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
 	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
-			"UPDATE Prompts SET Caption=?, Name=?, Text=?, Version=?, ID=? WHERE PromptsId=?",
-			(data[ "Caption" ], data[ "Name" ], data[ "Text" ], data[ "Version" ], data[ "ID" ],
-			 pid)
+			"UPDATE Prompts SET Caption=?, Name=?, Category=?, Text=? WHERE ID=?",
+			(data[ 'Caption' ], data[ 'Name' ], data[ 'Category' ], data[ 'Text' ], pid)
 		)
 
 def delete_prompt( pid: int ) -> None:
@@ -764,13 +793,103 @@ def delete_prompt( pid: int ) -> None:
 
 	Purpose:
 		Removes a prompt-template record from the configured SQLite Prompts table using the
-		selected PromptsId value.
+		selected ID value.
 
 	Args:
 		pid: Prompt primary key value.
 	"""
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute( "DELETE FROM Prompts WHERE PromptsId=?", (pid,) )
+		conn.execute( "DELETE FROM Prompts WHERE ID=?", (pid,) )
+
+def clear_active_prompt_metadata( ) -> None:
+	"""Clear metadata for the active system-instruction template.
+
+	Purpose:
+		Resets the shared prompt identity fields without changing conversation, document,
+		retrieval, or inference state.
+
+	Returns:
+		None: This function performs its work through side effects and does not return a value.
+	"""
+	st.session_state[ 'active_prompt_id' ] = None
+	st.session_state[ 'active_prompt_caption' ] = ''
+	st.session_state[ 'active_prompt_name' ] = ''
+	st.session_state[ 'active_prompt_category' ] = ''
+
+def render_system_instructions( category_key: str, prompt_key: str, clear_key: str ) -> None:
+	"""Render a categorized System Instructions expander.
+
+	Purpose:
+		Displays the shared editable system text with mode-specific category and ID-backed
+		template selectors. The selector exposes only categories supported by Leeroy's local
+		text model while keeping selection state independent between application modes.
+
+	Args:
+		category_key: Session-state key for the mode-specific category selector.
+		prompt_key: Session-state key for the mode-specific prompt selector.
+		clear_key: Widget key for the mode-specific clear button.
+
+	Returns:
+		None: This function performs its work through side effects and does not return a value.
+	"""
+	categories = fetch_prompt_categories( cfg.DB_PATH )
+	selected_category = st.session_state.get( category_key )
+	if selected_category not in categories:
+		st.session_state[ category_key ] = None
+		selected_category = None
+
+	prompt_choices = fetch_prompt_choices( cfg.DB_PATH, str( selected_category or '' ) )
+	prompt_labels = { prompt_id: label for prompt_id, label in prompt_choices }
+	prompt_ids = list( prompt_labels.keys( ) )
+	if st.session_state.get( prompt_key ) not in prompt_ids:
+		st.session_state[ prompt_key ] = None
+
+	def on_category_change( ) -> None:
+		st.session_state[ prompt_key ] = None
+		clear_active_prompt_metadata( )
+
+	def on_template_change( ) -> None:
+		prompt_id = st.session_state.get( prompt_key )
+		if prompt_id is None:
+			clear_active_prompt_metadata( )
+			return None
+
+		prompt_record = fetch_prompt_by_id( int( prompt_id ) )
+		if prompt_record is None:
+			clear_active_prompt_metadata( )
+			return None
+
+		st.session_state[ 'system_instructions' ] = str( prompt_record.get( 'Text' ) or '' )
+		st.session_state[ 'active_prompt_id' ] = int( prompt_record[ 'ID' ] )
+		st.session_state[ 'active_prompt_caption' ] = str(
+			prompt_record.get( 'Caption' ) or '' )
+		st.session_state[ 'active_prompt_name' ] = str( prompt_record.get( 'Name' ) or '' )
+		st.session_state[ 'active_prompt_category' ] = str(
+			prompt_record.get( 'Category' ) or '' )
+
+	def on_clear( ) -> None:
+		st.session_state[ 'system_instructions' ] = ''
+		st.session_state[ category_key ] = None
+		st.session_state[ prompt_key ] = None
+		clear_active_prompt_metadata( )
+
+	with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+		ins_left, ins_right = st.columns( [ 0.8, 0.2 ] )
+
+		with ins_left:
+			st.text_area( label='Enter Text', height=50, width='stretch',
+				help=cfg.SYSTEM_INSTRUCTIONS, key='system_instructions' )
+
+		with ins_right:
+			st.selectbox( label='Category', options=categories, index=None, key=category_key,
+				on_change=on_category_change, placeholder='Select category' )
+			st.selectbox( label='Use Template', options=prompt_ids, index=None, key=prompt_key,
+				format_func=lambda prompt_id: prompt_labels.get( prompt_id, str( prompt_id ) ),
+				on_change=on_template_change, disabled=selected_category is None,
+				placeholder='Select template' )
+
+		st.button( label='Clear Instructions', width='stretch', key=clear_key,
+			on_click=on_clear )
 
 def build_prompt( user_input: str ) -> str:
 	"""Build a llama.cpp-compatible chat prompt.
@@ -1752,13 +1871,12 @@ def summarize_active_document( ) -> str:
 	"""Summarize the active document context.
 
 	Purpose:
-		Constructs a structured summary prompt, combines it with current system instructions
-		when present, and routes the request through the Document Q&A workflow.
+		Constructs a structured summary prompt and routes the request through the Document Q&A
+		workflow. The shared generation pipeline applies current system instructions once.
 
 	Returns:
 		str: Return value produced by the operation.
 	"""
-	system_instructions = st.session_state.get( "system_instructions", "" )
 	summary_prompt = """
 		Provide a clear, structured summary of this document.
 		Include:
@@ -1770,9 +1888,6 @@ def summarize_active_document( ) -> str:
 		
 		Be precise and concise.
 		"""
-	if system_instructions:
-		summary_prompt = f"{system_instructions}\n\n{summary_prompt}"
-	
 	return route_document_query( summary_prompt.strip( ) )
 
 def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
@@ -2034,9 +2149,9 @@ def build_docqna_input( user_query: str, k: int = 6 ) -> str:
 	"""Build a retrieval-grounded Document Q&A prompt.
 
 	Purpose:
-		Retrieves relevant document excerpts and combines them with optional system
-		instructions and the user question to form the prompt text submitted to the shared LLM
-		pipeline.
+		Retrieves relevant document excerpts and combines them with the user question to form
+		the grounded input submitted to the shared LLM pipeline. System instructions remain in
+		the dedicated system-message path.
 
 	Args:
 		user_query: User question for the Document Q&A workflow.
@@ -2045,7 +2160,6 @@ def build_docqna_input( user_query: str, k: int = 6 ) -> str:
 	Returns:
 		str: Return value produced by the operation.
 	"""
-	system = str( st.session_state.get( 'system_instructions', '' ) or '' ).strip( )
 	hits = retrieve_chunks( user_query, k=int( k ) )
 	
 	context_blocks: List[ str ] = [ ]
@@ -2055,9 +2169,6 @@ def build_docqna_input( user_query: str, k: int = 6 ) -> str:
 	context = '\n\n'.join( context_blocks ).strip( )
 	
 	prompt_parts: List[ str ] = [ ]
-	
-	if system:
-		prompt_parts.append( system )
 	
 	if context:
 		prompt_parts.append(
@@ -2379,32 +2490,8 @@ if mode == 'Text Generation':
 		# ------------------------------------------------------------------
 		# Expander — System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			ins_left, ins_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			
-			with ins_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='system_instructions' )
-			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'system_instructions' ] = text
-			
-			with ins_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+		render_system_instructions( category_key='text_instruction_category',
+			prompt_key='text_instruction_prompt_id', clear_key='text_instruction_clear' )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
@@ -2592,32 +2679,8 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		# Expander — System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			ins_left, ins_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			
-			with ins_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='system_instructions' )
-			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'system_instructions' ] = text
-			
-			with ins_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+		render_system_instructions( category_key='docqna_instruction_category',
+			prompt_key='docqna_instruction_prompt_id', clear_key='docqna_instruction_clear' )
 		
 		# ------------------------------------------------------------------
 		# Document Selection UI
@@ -2791,114 +2854,174 @@ elif mode == 'Prompt Engineering':
 	with center:
 		st.subheader( '📝 Prompt Engineering', help=cfg.PROMPT_ENGINEERING )
 		st.divider( )
-		import sqlite3
-		import math
-		
+
 		TABLE = 'Prompts'
 		PAGE_SIZE = 10
 		st.session_state.setdefault( 'pe_cascade_enabled', False )
 		st.checkbox( 'Cascade selection into System Instructions', key='pe_cascade_enabled' )
-		
+
 		# ------------------------------------------------------------------
 		# Session state
 		# ------------------------------------------------------------------
 		st.session_state.setdefault( 'pe_page', 1 )
 		st.session_state.setdefault( 'pe_search', '' )
-		st.session_state.setdefault( 'pe_sort_col', 'PromptsId' )
+		st.session_state.setdefault( 'pe_sort_col', 'ID' )
 		st.session_state.setdefault( 'pe_sort_dir', 'ASC' )
 		st.session_state.setdefault( 'pe_selected_id', None )
 		st.session_state.setdefault( 'pe_caption', '' )
 		st.session_state.setdefault( 'pe_name', '' )
+		st.session_state.setdefault( 'pe_category', '' )
 		st.session_state.setdefault( 'pe_text', '' )
-		st.session_state.setdefault( 'pe_version', '' )
-		st.session_state.setdefault( 'pe_id', 0 )
-		
+		st.session_state.setdefault( 'pe_jump_id', 1 )
+		st.session_state.setdefault( 'pe_notice', '' )
+		sort_columns = [ 'ID', 'Caption', 'Name', 'Category', 'Text' ]
+		if st.session_state.pe_sort_col not in sort_columns:
+			st.session_state.pe_sort_col = 'ID'
+		if st.session_state.pe_sort_dir not in [ 'ASC', 'DESC' ]:
+			st.session_state.pe_sort_dir = 'ASC'
+
 		# ------------------------------------------------------------------
 		# DB helpers
 		# ------------------------------------------------------------------
-		def get_conn( ):
+		def get_conn( ) -> sqlite3.Connection:
+			"""Create a Prompt Engineering database connection.
+
+			Returns:
+				sqlite3.Connection: Open connection to the configured application database.
+			"""
 			return sqlite3.connect( cfg.DB_PATH )
-		
-		def reset_selection( ):
+
+		def reset_selection( ) -> None:
+			"""Reset the Prompt Engineering record selection and editor fields.
+
+			Returns:
+				None: This function performs its work through side effects and does not return a value.
+			"""
 			st.session_state.pe_selected_id = None
 			st.session_state.pe_caption = ''
 			st.session_state.pe_name = ''
+			st.session_state.pe_category = ''
 			st.session_state.pe_text = ''
-			st.session_state.pe_version = ''
-			st.session_state.pe_id = 0
-		
+
 		def load_prompt( pid: int ) -> None:
+			"""Load one prompt into the Prompt Engineering editor.
+
+			Args:
+				pid: Prompt primary key value.
+
+			Returns:
+				None: This function performs its work through side effects and does not return a value.
+			"""
 			with get_conn( ) as conn:
-				_select = f"SELECT Caption, Name, Text, Version, ID FROM {TABLE} WHERE PromptsId=?"
-				cur = conn.execute( _select, (pid,), )
+				select_query = f"SELECT Caption, Name, Category, Text FROM {TABLE} WHERE ID=?"
+				cur = conn.execute( select_query, (pid,), )
 				row = cur.fetchone( )
 				if not row:
 					return
-				st.session_state.pe_caption = row[ 0 ]
-				st.session_state.pe_name = row[ 1 ]
-				st.session_state.pe_text = row[ 2 ]
-				st.session_state.pe_version = row[ 3 ]
-				st.session_state.pe_id = row[ 4 ]
-		
+				st.session_state.pe_caption = str( row[ 0 ] or '' )
+				st.session_state.pe_name = str( row[ 1 ] or '' )
+				st.session_state.pe_category = str( row[ 2 ] or '' )
+				st.session_state.pe_text = str( row[ 3 ] or '' )
+				if st.session_state.pe_cascade_enabled:
+					st.session_state.system_instructions = str( row[ 3 ] or '' )
+					st.session_state.active_prompt_id = int( pid )
+					st.session_state.active_prompt_caption = str( row[ 0 ] or '' )
+					st.session_state.active_prompt_name = str( row[ 1 ] or '' )
+					st.session_state.active_prompt_category = str( row[ 2 ] or '' )
+
+		def save_prompt_record( ) -> None:
+			"""Create or update the prompt currently shown in the editor.
+
+			Returns:
+				None: This function performs its work through side effects and does not return a value.
+			"""
+			data = {
+				'Caption': st.session_state.pe_caption,
+				'Name': st.session_state.pe_name,
+				'Category': st.session_state.pe_category,
+				'Text': st.session_state.pe_text,
+			}
+			if st.session_state.pe_selected_id is None:
+				insert_prompt( data )
+			else:
+				update_prompt( int( st.session_state.pe_selected_id ), data )
+			st.session_state.pe_notice = 'Saved.'
+			reset_selection( )
+
+		def delete_prompt_record( ) -> None:
+			"""Delete the selected prompt record.
+
+			Returns:
+				None: This function performs its work through side effects and does not return a value.
+			"""
+			if st.session_state.pe_selected_id is not None:
+				delete_prompt( int( st.session_state.pe_selected_id ) )
+				st.session_state.pe_notice = 'Deleted.'
+				reset_selection( )
+
+		if st.session_state.pe_notice:
+			st.success( st.session_state.pop( 'pe_notice' ) )
+
 		# ------------------------------------------------------------------
 		# Filters
 		# ------------------------------------------------------------------
 		c1, c2, c3, c4 = st.columns( [ 4, 2, 2, 3 ] )
 		with c1:
-			st.text_input( 'Search (Name/Text contains)', key='pe_search' )
-		
+			st.text_input( 'Search (Caption/Name/Category/Text contains)', key='pe_search' )
+
 		with c2:
-			st.selectbox( 'Sort by', [ 'PromptsId', 'Caption', 'Name', 'Text', 'Version', 'ID' ],
-				key='pe_sort_col', )
-		
+			st.selectbox( 'Sort by', sort_columns, key='pe_sort_col' )
+
 		with c3:
 			st.selectbox( 'Direction', [ 'ASC', 'DESC' ], key='pe_sort_dir' )
-		
+
 		with c4:
 			st.markdown(
 				"<div style='font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;'>Go to ID</div>",
 				unsafe_allow_html=True, )
-			
+
 			a1, a2, a3 = st.columns( [ 2, 1, 1 ] )
 			with a1:
-				jump_id = st.number_input( 'Go to ID', min_value=1,
-					step=1, label_visibility='collapsed', )
-			
+				st.number_input( 'Go to ID', min_value=1, step=1, label_visibility='collapsed',
+					key='pe_jump_id' )
+
 			with a2:
 				if st.button( 'Go' ):
-					st.session_state.pe_selected_id = int( jump_id )
-					load_prompt( int( jump_id ) )
-			
+					st.session_state.pe_selected_id = int( st.session_state.pe_jump_id )
+					load_prompt( int( st.session_state.pe_jump_id ) )
+
 			with a3:
 				st.button( 'Clear', on_click=reset_selection )
-		
+
 		# ------------------------------------------------------------------
 		# Load prompt table
 		# ------------------------------------------------------------------
-		where = ""
+		where = ''
 		params = [ ]
 		if st.session_state.pe_search:
-			where = 'WHERE Name LIKE ? OR Text LIKE ?'
-			s = f"%{st.session_state.pe_search}%"
-			params.extend( [ s, s ] )
-		
+			where = 'WHERE Caption LIKE ? OR Name LIKE ? OR Category LIKE ? OR Text LIKE ?'
+			search_text = f"%{st.session_state.pe_search}%"
+			params.extend( [ search_text, search_text, search_text, search_text ] )
+
+		count_query = f"SELECT COUNT(*) FROM {TABLE} {where}"
+		with get_conn( ) as conn:
+			total_rows = conn.execute( count_query, params ).fetchone( )[ 0 ]
+
+		total_pages = max( 1, math.ceil( total_rows / PAGE_SIZE ) )
+		st.session_state.pe_page = max( 1,
+			min( int( st.session_state.pe_page ), total_pages ) )
 		offset = (st.session_state.pe_page - 1) * PAGE_SIZE
 		query = f"""
-	        SELECT PromptsId, Caption, Name, Text, Version, ID
+	        SELECT ID, Caption, Name, Category, Text
 	        FROM {TABLE}
 	        {where}
 	        ORDER BY {st.session_state.pe_sort_col} {st.session_state.pe_sort_dir}
 	        LIMIT {PAGE_SIZE} OFFSET {offset}
 	    """
-		
-		count_query = f"SELECT COUNT(*) FROM {TABLE} {where}"
-		
+
 		with get_conn( ) as conn:
 			rows = conn.execute( query, params ).fetchall( )
-			total_rows = conn.execute( count_query, params ).fetchone( )[ 0 ]
-		
-		total_pages = max( 1, math.ceil( total_rows / PAGE_SIZE ) )
-		
+
 		# ------------------------------------------------------------------
 		# Prompt table
 		# ------------------------------------------------------------------
@@ -2906,33 +3029,33 @@ elif mode == 'Prompt Engineering':
 		for r in rows:
 			table_rows.append( {
 					'Selected': r[ 0 ] == st.session_state.pe_selected_id,
-					'PromptsId': r[ 0 ],
+					'ID': r[ 0 ],
 					'Caption': r[ 1 ],
 					'Name': r[ 2 ],
-					'Text': r[ 3 ],
-					'Version': r[ 4 ],
-					'ID': r[ 5 ],
+					'Category': r[ 3 ],
+					'Text': r[ 4 ],
 			} )
-		
+
 		edited = st.data_editor( table_rows, hide_index=True, use_container_width=True,
-			key="prompt_table", )
-		
+			disabled=[ 'ID', 'Caption', 'Name', 'Category', 'Text' ], key='prompt_table_v2' )
+
 		# ------------------------------------------------------------------
 		# SELECTION PROCESSING (must run BEFORE widgets below)
 		# ------------------------------------------------------------------
 		selected = [ r for r in edited if isinstance( r, dict ) and r.get( 'Selected' ) ]
 		if len( selected ) == 1:
-			pid = int( selected[ 0 ][ 'PromptsId' ] )
+			pid = int( selected[ 0 ][ 'ID' ] )
 			if pid != st.session_state.pe_selected_id:
 				st.session_state.pe_selected_id = pid
 				load_prompt( pid )
-		
-		elif len( selected ) == 0:
+
+		elif len( selected ) == 0 and any(
+				row[ 0 ] == st.session_state.pe_selected_id for row in rows ):
 			reset_selection( )
-		
+
 		elif len( selected ) > 1:
 			st.warning( 'Select exactly one prompt row.' )
-		
+
 		# ------------------------------------------------------------------
 		# Paging
 		# ------------------------------------------------------------------
@@ -2940,76 +3063,35 @@ elif mode == 'Prompt Engineering':
 		with p1:
 			if st.button( "◀ Prev" ) and st.session_state.pe_page > 1:
 				st.session_state.pe_page -= 1
-		
+
 		with p2:
 			st.markdown( f"Page **{st.session_state.pe_page}** of **{total_pages}**" )
-		
+
 		with p3:
 			if st.button( "Next ▶" ) and st.session_state.pe_page < total_pages:
 				st.session_state.pe_page += 1
-		
+
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
-		
+
 		# ------------------------------------------------------------------
 		# Edit Prompt
 		# ------------------------------------------------------------------
 		with st.expander( "🖊️ Edit Prompt", expanded=False ):
-			st.text_input( "PromptsId", value=st.session_state.pe_selected_id or "",
-				disabled=True )
+			st.text_input( 'ID', value=st.session_state.pe_selected_id or '', disabled=True )
 			st.text_input( 'Caption', key='pe_caption' )
 			st.text_input( 'Name', key='pe_name' )
+			st.text_input( 'Category', key='pe_category' )
 			st.text_area( 'Text', key='pe_text', height=260 )
-			st.text_input( 'Version', key='pe_version' )
-			
+
 			c1, c2, c3 = st.columns( 3 )
 			with c1:
 				save_label = '💾 Save Changes' if st.session_state.pe_selected_id else '➕ Create Prompt'
-				if st.button( save_label ):
-					with get_conn( ) as conn:
-						if st.session_state.pe_selected_id:
-							conn.execute(
-								f"""
-	                            UPDATE {TABLE}
-	                            SET Caption=?, Name=?, Text=?, Version=?, ID=?
-	                            WHERE PromptsId=?
-	                            """,
-								(
-										st.session_state.pe_caption,
-										st.session_state.pe_name,
-										st.session_state.pe_text,
-										st.session_state.pe_version,
-										st.session_state.pe_id,
-										st.session_state.pe_selected_id
-								), )
-						else:
-							conn.execute(
-								f"""
-	                            INSERT INTO {TABLE} (Caption, Name, Text, Version, ID)
-	                            VALUES (?, ?, ?, ? , ?)
-	                            """,
-								(
-										st.session_state.pe_caption,
-										st.session_state.pe_name,
-										st.session_state.pe_text,
-										st.session_state.pe_version,
-										st.session_state.pe_id
-								),
-							)
-						conn.commit( )
-					
-					st.success( 'Saved.' )
-					reset_selection( )
-			
+				st.button( save_label, on_click=save_prompt_record )
+
 			with c2:
-				if st.session_state.pe_selected_id and st.button( 'Delete' ):
-					with get_conn( ) as conn:
-						conn.execute(
-							f'DELETE FROM {TABLE} WHERE PromptsId=?',
-							(st.session_state.pe_selected_id,), )
-						conn.commit( )
-					reset_selection( )
-					st.success( 'Deleted.' )
-			
+				st.button( 'Delete', disabled=st.session_state.pe_selected_id is None,
+					on_click=delete_prompt_record )
+
 			with c3:
 				st.button( '🧹 Clear Selection', on_click=reset_selection )
 

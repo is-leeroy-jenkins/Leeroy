@@ -166,7 +166,7 @@ LOG_DIR: Path = get_path( 'LOG_DIR', ROOT_DIR / 'logging' )
 LOG_PATH: str = get_text( 'LOG_PATH', str( LOG_DIR / 'Exceptions.db' ) )
 LOG_FILE: str = get_text( 'LOG_FILE', 'Exceptions' )
 LEEROY_LLM_PATH = os.getenv( 'LEEROY_LLM_PATH' )
-BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
+BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:30px 0 30px 0;'></div>"
 APP_TITLE = 'Leeroy'
 APP_SUBTITLE = 'An AI based on LLama 3.2'
 DB_PATH = 'stores/sqlite/leeroy.db'
@@ -180,7 +180,9 @@ MODES = [ 'Text Generation', 'Document Q&A', 'Semantic Search',
           'Prompt Engineering', 'Data Management' ]
 ENABLE_LOCAL_LLM = get_bool_env( "ENABLE_LOCAL_LLM", default=False )
 MODEL_PATH = os.getenv( "LEEROY_LLM_PATH", "" )
+
 # ---------- DEFINITIONS -------------------
+
 SYSTEM_INSTRUCTIONS = r'''Optional. Gives the model high-level instructions on how it should behave while
 		generating a response, including tone, goals, and examples of correct responses. Any
 		instructions provided this way will take priority over a prompt in the input parameter.'''
