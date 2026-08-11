@@ -3478,11 +3478,11 @@ st.markdown(
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		background-color: rgba(17, 17, 17, 0.95);
-		border-top: 1px solid #2a2a2a;
+		background-color: rgba(27, 27, 27, 0.95);
+		border-top: 1px solid #4d4d4d;
 		padding: 10px 16px;
 		font-size: 0.80rem;
-		color: #35618c;
+		color: #4aa2f7;
 		z-index: 1000;
 	}
 	.boo-status-inner {
