@@ -1,135 +1,171 @@
-# Leeroy Documentation
+# 👤 User Guide
 
-Leeroy is a local-first Streamlit application for local language-model inference,
-retrieval-augmented generation, semantic search, prompt engineering, and SQLite-backed data
-management.
+## 📋 Purpose
 
-The application is designed for analysts, developers, and data-science users who need a controlled
-desktop or server-hosted assistant that can work with local prompts, uploaded documents, reusable
-templates, embedded text, and tabular data.
+The AI-Powered Alcohol Label Verification prototype helps a compliance agent compare information visible on an alcohol beverage label with corresponding application data. It reduces repetitive matching work while keeping the agent responsible for the final compliance decision.
 
-## 🧭 Purpose
-
-Leeroy provides a practical interface around a local GGUF model, local document retrieval,
-persistent prompt storage, and SQLite data tooling. The application favors a durable architecture:
-source files remain readable, runtime state is visible, and critical application data is stored in
-local databases rather than hidden behind external services.
-
-Leeroy supports five primary workflows:
-
-| Workflow           | Description                                                                          |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| Text Generation    | Chat with the configured local model using Streamlit chat controls.                  |
-| Document Q&A       | Upload documents, extract text, build retrieval context, and ask grounded questions. |
-| Semantic Search    | Embed uploaded text and use vector similarity for semantic context.                  |
-| Prompt Engineering | Create, search, edit, and reuse prompt templates stored in SQLite.                   |
-| Data Management    | Import, inspect, profile, filter, aggregate, visualize, and query SQLite tables.     |
-
-## 🧱 Application Position
-
-Leeroy sits between a user-facing Streamlit interface and a local model/runtime stack.
-
-```text
-User
-  │
-  ▼
-Streamlit Interface
-  │
-  ├── Text Generation
-  ├── Document Q&A
-  ├── Semantic Search
-  ├── Prompt Engineering
-  └── Data Management
-  │
-  ▼
-Shared Prompt, Retrieval, and Persistence Utilities
-  │
-  ├── Local GGUF model through llama.cpp
-  ├── Sentence-transformer embeddings
-  ├── SQLite persistence
-  ├── sqlite-vec when available
-  └── Plotly/pandas analytical views
-```
-
-## ✨ Key Capabilities
-
-| Capability            | Purpose                                                                                        |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| Local model execution | Runs an optional local GGUF model through `llama-cpp-python`.                                  |
-| Lazy model loading    | Allows the interface to load even when the model file is unavailable.                          |
-| Streaming chat        | Streams generated output into the Streamlit chat interface.                                    |
-| System instructions   | Lets users apply persistent behavioral instructions to model responses.                        |
-| Prompt templates      | Stores reusable prompts in the SQLite `Prompts` table.                                         |
-| Chat persistence      | Saves conversation history in SQLite.                                                          |
-| Document upload       | Accepts user documents for preview and retrieval workflows.                                    |
-| Text extraction       | Uses PyMuPDF for PDF text extraction and defensive decoding for text-like content.             |
-| Chunking              | Splits documents into overlapping retrieval windows.                                           |
-| Embeddings            | Uses `sentence-transformers` for vector representations.                                       |
-| Vector retrieval      | Uses sqlite-vec when available, with cosine-similarity fallback.                               |
-| SQLite management     | Provides table browsing, CRUD-style operations, profiling, schema actions, and guarded SQL.    |
-| Visualization         | Renders histograms, bars, lines, scatter plots, box plots, pies, and correlations with Plotly. |
-| Exception logging     | Writes wrapped exception diagnostics to the configured SQLite logging database.                |
-
-## 🧩 Main Source Files
-
-| File               | Purpose                                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `app.py`           | Main Streamlit application, mode routing, prompt pipeline, document retrieval, semantic search, and data-management utilities. |
-| `config.py`        | Central configuration for paths, model settings, runtime defaults, UI labels, app modes, logging paths, and help text.         |
-| `boogr.py`         | Exception wrapper and SQLite-backed logger used by application error-handling paths.                                           |
-| `requirements.txt` | Runtime and documentation dependencies.                                                                                        |
-| `README.md`        | Project overview, installation notes, local model details, and application summary.                                            |
-
-## 🧠 Local-First Design
-
-Leeroy is built around a local-first operational model.
-
-The model file can live outside the repository, the application database is local SQLite, and the
-document retrieval pipeline can operate without requiring a remote vector database. This makes the
-project suitable for controlled environments where repeatability, explainability, and operational
-simplicity matter.
-
-## 📚 Documentation Layout
-
-| Section       | Description                                                                        |
-| ------------- | ---------------------------------------------------------------------------------- |
-| Architecture  | Explains the application layers, data flow, retrieval flow, and persistence model. |
-| User Guide    | Provides task-oriented instructions for using each application mode.               |
-| API Reference | Renders source-driven API documentation from Google-style Python docstrings.       |
-| Development   | Describes setup, validation, MkDocs build steps, and GitHub Pages deployment.      |
+The prototype does not approve a label, replace regulatory judgment, or write information to COLA.
 
 ## 🚀 Quick Start
 
-Install dependencies from the repository root.
+Complete a single-label review in three actions:
 
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
+1. Enter or paste the application values.
+2. Upload the label image.
+3. Select **Verify Label**.
 
-Run the Streamlit app.
+The result shows the expected application value, the value detected on the label, the comparison status, severity, OCR confidence, and supporting evidence.
 
-```powershell
-streamlit run app.py
-```
+## 📥 Supported Inputs
 
-Build the documentation.
+The interface should identify the formats enabled by the deployed build. A typical prototype configuration supports JPEG and PNG images and may support PDF label artwork. Batch mode may accept multiple selected files or a ZIP archive when ZIP processing is enabled.
 
-```powershell
-mkdocs build
-```
+For the best results:
 
-Serve the documentation locally.
+* Use the original digital artwork when available.
+* Include the complete label rather than a tightly cropped field.
+* Keep text upright, in focus, and large enough to read.
+* Avoid reflections, glare, fingers, and background clutter.
+* Use one label application reference per uploaded item.
 
-```powershell
-mkdocs serve
-```
+The system attempts to handle skew, low contrast, and moderate glare, but it must request manual review when the image does not provide dependable evidence.
 
-## ✅ Recommended Reading Order
+## 📝 Application Fields
 
-1. Read the [Architecture](architecture.md) page to understand the system.
-2. Review the [User Guide](user-guide/index.md) for task-oriented workflows.
-3. Use the [API Reference](api/index.md) for source-level details.
-4. Use the [Development](development.md) page when changing code or publishing documentation.
+Enter the values exactly as they appear in the application. Depending on beverage type, the review may include:
+
+| Field | Example | Notes |
+|---|---|---|
+| Brand name | `OLD TOM DISTILLERY` | Case and minor punctuation differences may be acceptable |
+| Class/type | `Kentucky Straight Bourbon Whiskey` | Use the full application designation |
+| Alcohol content | `45% Alc./Vol. (90 Proof)` | Include ABV and proof when present |
+| Net contents | `750 mL` | Include the unit |
+| Producer/bottler | Name and address | Enter the complete application value |
+| Country of origin | `United States` | Primarily applicable to imported products |
+| Government warning | Prescribed warning statement | Evaluated under strict text and formatting rules |
+
+Required information varies among distilled spirits, wine, and malt beverages. TTB publishes product-specific labeling guidance and Beverage Alcohol Manuals through its [labeling resources](https://www.ttb.gov/regulated-commodities/labeling/labeling-resources).
+
+## 🖼️ Single-Label Review
+
+1. Open the label verification page.
+2. Select the beverage type.
+3. Enter the application reference if the interface provides one. Use a non-sensitive reference for prototype testing.
+4. Complete the applicable application fields.
+5. Choose or drag the label image into the upload area.
+6. Confirm the image preview is complete and readable.
+7. Select **Verify Label** once.
+8. Follow the progress indicator until the results appear.
+9. Review every failed, missing, low-confidence, or manual-review field.
+10. Download the result if a record is needed outside the prototype.
+
+## 📦 Batch Review
+
+Batch processing is intended for several independent label/application pairs. The initial prototype target is 20–50 images, even though future operational workloads may be larger.
+
+1. Prepare files using the naming or manifest convention shown by the deployed interface.
+2. Confirm that each application row maps to exactly one label image.
+3. Upload the files or supported archive.
+4. Resolve duplicate, missing, or unmapped references before processing.
+5. Select **Verify Batch**.
+6. Monitor completed, remaining, and failed counts.
+7. Open any failed item to see its correction instructions.
+8. Review all critical and manual-review findings.
+9. Download the CSV summary.
+
+A failed image must not erase or invalidate successful results from other items.
+
+## 📊 Understanding Results
+
+### Status
+
+| Status | Meaning | Agent action |
+|---|---|---|
+| Pass | The available evidence satisfies the configured comparison rule | Confirm the evidence as part of the normal review |
+| Fail | The observed value conflicts with the expected value or required rule | Examine the evidence and determine the compliance action |
+| Manual review | The system cannot reach a dependable automated conclusion | Inspect the image and application directly |
+| Not found | The field could not be located on the submitted label image | Check whether it is absent, obscured, or outside the image |
+| Not applicable | The field does not apply to the selected beverage or application | No action unless the beverage type is incorrect |
+
+### Severity
+
+* **Critical** identifies a failure with substantial compliance significance, such as an absent or incorrect government warning.
+* **Major** identifies a material field mismatch that needs agent attention.
+* **Minor** identifies a variation likely to be acceptable but worth confirming.
+* **Info** provides context without asserting a compliance failure.
+
+### Confidence
+
+Confidence describes how certain the extraction system is that it read the text correctly. It does not measure legal compliance. A high-confidence OCR value can still fail a compliance rule, and a low-confidence match still requires manual review.
+
+## ⚖️ Matching Behavior
+
+### Fuzzy matching
+
+Brand names and similar descriptive fields may ignore harmless differences in capitalization, spacing, punctuation, and typographic apostrophes. For example, `STONE'S THROW` and `Stone’s Throw` can be treated as equivalent while the result continues to show both original values.
+
+Fuzzy matching must not be used to conceal missing words, changed quantities, changed addresses, or materially different class/type designations.
+
+### Numeric matching
+
+The system extracts a number and unit before comparing alcohol content and net contents. It may compare equivalent unit representations, but it must not treat a materially different quantity as a formatting difference.
+
+### Government health warning
+
+The government warning receives strict review. TTB requires `GOVERNMENT WARNING` in capital letters and bold type, with the prescribed statement presented continuously and separately from other information. See the current [TTB health-warning guidance](https://www.ttb.gov/regulated-commodities/beverage-alcohol/distilled-spirits/ds-labeling-home/ds-health-warning).
+
+The system should require manual review when the image does not reliably show capitalization, bold type, continuity, contrast, placement, or size. A matching OCR string alone is not sufficient evidence of correct formatting.
+
+## ♿ Accessibility Features
+
+The deployed interface should provide:
+
+* Full keyboard operation.
+* A visible focus indicator.
+* High-contrast mode.
+* Large-text support without clipped controls.
+* Status icons and text in addition to color.
+* Progress and error messages readable by assistive technology.
+* Tooltips or help text explaining comparisons.
+
+If an interaction cannot be completed using the keyboard, record the browser, page, and affected control for the development team.
+
+## 🛠️ Correcting Common Problems
+
+| Problem | Resolution |
+|---|---|
+| File type is not accepted | Convert the image to an enabled format without reducing readability |
+| Image is blurred | Upload the original artwork or take a new, steady, well-lit photograph |
+| Image contains glare | Re-photograph the container with indirect lighting and a changed angle |
+| Text is skewed | Retake the image face-on or upload the original flat label |
+| Required field is not found | Confirm that the complete front, back, and side label content was submitted |
+| Values were paired with the wrong image | Correct the application/image mapping and run that item again |
+| Processing exceeds the expected time | Wait for the current request; retry only after an error is shown |
+| Service is unavailable | Retain the request ID shown in the error and contact support |
+| Result appears wrong | Use the displayed evidence, perform a manual review, and report the case without sensitive content |
+
+## 🔐 Privacy and Data Handling
+
+The prototype is intended for test material and is not authorized merely by its existence to process production data. Do not upload sensitive or personally identifiable information unless the deployment owner has explicitly approved that use.
+
+Uploaded images and extracted values should be held only long enough to complete processing and return the result. Download any permitted result before leaving the page because the prototype may not retain it.
+
+## ✅ Review Checklist
+
+Before relying on a result, confirm that:
+
+* The image belongs to the intended application.
+* The image includes every relevant label panel.
+* The application values were entered correctly.
+* Each field has been reviewed, not only the overall status.
+* Critical, failed, missing, and manual-review findings were examined.
+* The government warning was visually inspected when formatting evidence is uncertain.
+* The final compliance decision was made by an authorized reviewer.
+
+## 🔗 Related Documentation
+
+* [Documentation Home](../index.md)
+* [System Architecture](../architecture.md)
+* [API Reference](../api/index.md)
+* [Development Guide](../development.md)
+

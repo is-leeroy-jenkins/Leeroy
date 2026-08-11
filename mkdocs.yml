@@ -2,6 +2,7 @@ site_name: Leeroy Documentation
 site_description: Documentation for Leeroy, a local-first Streamlit application for local LLM inference, document Q&A, semantic search, prompt engineering, and SQLite-backed data management.
 site_author: Terry D. Eppler
 site_url: https://is-leeroy-jenkins.github.io/Leeroy/
+docs_dir: docs
 
 repo_url: https://github.com/is-leeroy-jenkins/Leeroy
 repo_name: is-leeroy-jenkins/Leeroy
