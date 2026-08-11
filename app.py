@@ -2392,7 +2392,8 @@ if mode == 'Text Generation':
 					is_grounded = st.session_state[ 'is_grounded' ]
 				
 				# ------------- Reset Settings ----------
-				if st.button( label='Reset', key='response_controls_reset', width='stretch' ):
+				if st.button( label='Reset', key='response_controls_reset',
+						width='stretch', icon='🔄' ):
 					for key in [ 'top_k', 'top_percent', 'temperature', 'is_grounded' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
@@ -2439,7 +2440,8 @@ if mode == 'Text Generation':
 					frequency_penalty = st.session_state[ 'frequency_penalty' ]
 				
 				# ------------- Reset Settings ----------
-				if st.button( label='Reset', key='probability_controls_reset', width='stretch' ):
+				if st.button( label='Reset', key='probability_controls_reset',
+						width='stretch', icon='🔄'  ):
 					for key in [ 'frequency_penalty', 'presense_penalty',
 					             'temperature', 'repeat_penalty', 'repeat_window' ]:
 						if key in st.session_state:
@@ -2480,7 +2482,8 @@ if mode == 'Text Generation':
 						key='random_seed', help=cfg.SEED )
 				
 				# ------------- Reset Settings ----------
-				if st.button( label='Reset', key='context_controls_reset', width='stretch' ):
+				if st.button( label='Reset', key='context_controls_reset',
+						width='stretch', icon='🔄' ):
 					for key in [ 'random_seed', 'max_tokens', 'cpu_threads', 'context_window' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
@@ -2509,15 +2512,9 @@ if mode == 'Text Generation':
 			
 			with st.chat_message( 'assistant' ):
 				out = st.empty( )
-				buf = run_llm_turn(
-					user_input=user_input,
-					temperature=float( temperature ),
-					top_p=float( top_percent ),
-					repeat_penalty=float( repeat_penalty ),
-					max_tokens=1024,
-					stream=True,
-					output=out
-				)
+				buf = run_llm_turn( user_input=user_input, temperature=float( temperature ),
+					top_p=float( top_percent ), repeat_penalty=float( repeat_penalty ),
+					max_tokens=1024, stream=True, output=out )
 			
 			save_message( 'assistant', buf )
 			st.session_state.messages.append( ('assistant', buf) )
@@ -2581,7 +2578,8 @@ elif mode == 'Document Q&A':
 					top_k = st.session_state[ 'top_k' ]
 				
 				# ------------- Reset Settings ----------
-				if st.button( label='Reset', key='response_controls_reset', width='stretch' ):
+				if st.button( label='Reset', key='response_controls_reset',
+						width='stretch', icon='🔄'  ):
 					for key in [ 'top_k', 'top_percent', 'temperature' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
@@ -2606,29 +2604,27 @@ elif mode == 'Document Q&A':
 				# ------------- Repeat Penalty ----------
 				with prob_c2:
 					set_repeat_penalty = st.slider( label='Repeat Penalty', min_value=0.0,
-						max_value=2.0,
-						key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
+						max_value=2.0, key='repeat_penalty', step=0.05, help=cfg.REPEAT_PENALTY )
 					
 					repeat_penalty = st.session_state[ 'repeat_penalty' ]
 				
 				# ------------- Presense Penalty ----------
 				with prob_c3:
 					set_presence_penalty = st.slider( label='Presence Penalty', min_value=0.0,
-						max_value=2.0,
-						key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
+						max_value=2.0, key='presense_penalty', step=0.05, help=cfg.PRESENCE_PENALTY )
 					
 					presense_penalty = st.session_state[ 'presense_penalty' ]
 				
 				# ------------- Frequency Penalty ----------
 				with prob_c4:
 					set_frequency_penalty = st.slider( label='Frequency Penalty', min_value=0.0,
-						max_value=2.0,
-						key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
+						max_value=2.0, key='frequency_penalty', step=0.05, help=cfg.FREQUENCY_PENALTY )
 					
 					frequency_penalty = st.session_state[ 'frequency_penalty' ]
 				
 				# ------------- Reset Settings ----------
-				if st.button( label='Reset', key='probability_controls_reset', width='stretch' ):
+				if st.button( label='Reset', key='probability_controls_reset',
+						width='stretch', icon='🔄'  ):
 					for key in [ 'frequency_penalty', 'presense_penalty',
 					             'temperature', 'repeat_penalty', 'repeat_window' ]:
 						if key in st.session_state:
@@ -2669,7 +2665,8 @@ elif mode == 'Document Q&A':
 						key='random_seed', help=cfg.SEED )
 				
 				# ------------- Reset Settings ----------
-				if st.button( label='Reset', key='context_controls_reset', width='stretch' ):
+				if st.button( label='Reset', key='context_controls_reset',
+						width='stretch', icon='🔄'  ):
 					for key in [ 'random_seed', 'max_tokens', 'cpu_threads', 'context_window' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
@@ -2700,7 +2697,6 @@ elif mode == 'Document Q&A':
 					
 					names: List[ str ] = [ f.name for f in uploaded if getattr( f, 'name', None ) ]
 					st.session_state.active_docs = names
-					
 					if 'doc_bytes' not in st.session_state or not isinstance(
 							st.session_state.doc_bytes, dict ):
 						st.session_state.doc_bytes = { }
@@ -2724,7 +2720,6 @@ elif mode == 'Document Q&A':
 				if st.session_state.get( 'active_docs' ):
 					name = st.session_state.active_docs[ 0 ]
 					file_bytes = st.session_state.doc_bytes.get( name )
-					
 					if file_bytes:
 						st.pdf( file_bytes, height=420 )
 					else:
