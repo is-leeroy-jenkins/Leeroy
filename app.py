@@ -112,6 +112,7 @@ def local_llm_available( ) -> bool:
 # ==============================================================================
 # SESSION STATE INITIALIZATION
 # ==============================================================================
+
 if 'mode' not in st.session_state:
 	st.session_state[ 'mode' ] = ''
 
@@ -223,6 +224,28 @@ if 'token_usage' not in st.session_state:
 # ==============================================================================
 # UTILITIES
 # ==============================================================================
+
+def throw_if( name: str, value: object ) -> None:
+	"""Throw if.
+	
+	Purpose:
+	    Validates that a required argument contains a usable value before the surrounding workflow
+	    continues. This guard centralizes early validation so provider wrappers and UI routines
+	    fail
+	    with consistent, readable error messages.
+	
+	Args:
+	    name (str): Name value used by the operation.
+	    value (object): Value value used by the operation.
+	
+	Returns:
+	    None: This function performs its work through side effects and does not return a value."""
+	if value is None:
+		raise ValueError( f'Argument "{name}" cannot be None.' )
+	
+	if isinstance( value, str ) and not value.strip( ):
+		raise ValueError( f'Argument "{name}" cannot be empty.' )
+	
 def image_to_base64( path: str ) -> str:
 	"""Convert an image file to a Base64 text string.
 
@@ -833,10 +856,8 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 		return ''
 	
 	prompt = build_prompt( user_input )
-	local_model = get_llm(
-		int( st.session_state.get( 'context_window', cfg.DEFAULT_CTX ) ),
-		int( st.session_state.get( 'cpu_threads', cfg.CORES ) )
-	)
+	local_model = get_llm( int( st.session_state.get( 'context_window', cfg.DEFAULT_CTX ) ),
+		int( st.session_state.get( 'cpu_threads', cfg.CORES ) ) )
 	
 	if local_model is None:
 		st.error( 'Local llama.cpp model is unavailable in this environment.' )
