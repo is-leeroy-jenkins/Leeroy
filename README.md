@@ -6,7 +6,7 @@
   <a href="#-overview">Overview</a> ·
   <a href="#-features">Features</a> ·
   <a href="#-application-modes">Modes</a> ·
-  <a href="#-requirements">Requirements</a> ·
+  <a href="https://github.com/is-leeroy-jenkins/Leeroy/blob/main/requirements.txt">Requirements</a> ·
   <a href="#-local-llm">LLM</a> ·
   <a href="#-installation">Installation</a> ·
   <a href="#-running-the-streamlit-application">Run</a> ·
