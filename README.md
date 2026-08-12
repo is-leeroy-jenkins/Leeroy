@@ -122,6 +122,8 @@ The application is intentionally simple and durable:
 Leeroy uses optional local LLM support. The model is loaded only when local LLM support is enabled
 and the configured GGUF file exists.
 
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy) 
+
 The relevant configuration pattern is:
 
 ```python
