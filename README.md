@@ -10,7 +10,7 @@
   <a href="#-local-llm">LLM</a> ·
   <a href="#-installation">Installation</a> ·
   <a href="#-running-the-streamlit-application">Run</a> ·
-  <a href="#-configuration">Configuration</a> ·
+  <a href="#%EF%B8%8F-configuration">Configuration</a> ·
   <a href="#-design-and-architecture">Architecture</a> ·
   <a href="#-capabilities">Capabilities</a> ·
   <a href="#-data-management">Data</a>  ·
