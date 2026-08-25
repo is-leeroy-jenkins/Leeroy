@@ -51,7 +51,7 @@ operations.
 [![Containerized](https://img.shields.io/badge/Docker-App-2496ED?logo=docker&logoColor=white)](https://leeroy.bravebay-606b4efb.eastus.azurecontainerapps.io)
 
 
-## 🧱 Databricks
+### 🧱 Databricks
 
 [![Leeroy](https://img.shields.io/badge/Databricks-Leeroy-FF3621?logo=databricks\&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152438493?o=7474645703081351)
 
