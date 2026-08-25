@@ -33,12 +33,20 @@ interface for text generation, document Q&A, semantic indexing, prompt administr
 operations.
 
 ## 🎥 Demo
+
+
+
+### 🔥 Streamlit
+
+- Web App
+
+
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
 
 
 ### 🧊 Azure
 
-- Container
+- Container App
   
 [![Containerized](https://img.shields.io/badge/Docker-App-2496ED?logo=docker&logoColor=white)](https://leeroy.bravebay-606b4efb.eastus.azurecontainerapps.io)
 
