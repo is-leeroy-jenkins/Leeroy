@@ -33,8 +33,20 @@ interface for text generation, document Q&A, semantic indexing, prompt administr
 operations.
 
 ## 🎥 Demo
+
+### 🔥 Streamlit
+
+- Web UI
+
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
-![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
+
+
+### 🧊 Azure
+
+- Container
+  
+[![Containerized](https://img.shields.io/badge/Docker-App-2496ED?logo=docker&logoColor=white)](https://leeroy.bravebay-606b4efb.eastus.azurecontainerapps.io)
+
 
 ## 🧱 Databricks
 
@@ -42,6 +54,10 @@ operations.
 
 * Databricks workspace repository for the Leeroy codebase.
 * Supports collaborative development, analytics, notebook execution, and application deployment.
+
+
+![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
+
 
 ## 🧠 Custom LLM
 
