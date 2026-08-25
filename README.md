@@ -34,12 +34,11 @@ operations.
 
 ## 🎥 Demo
 
-
+___ 
 
 ### 🔥 Streamlit
 
 - Web App
-
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
 
