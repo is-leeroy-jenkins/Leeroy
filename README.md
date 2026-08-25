@@ -33,6 +33,7 @@ interface for text generation, document Q&A, semantic indexing, prompt administr
 operations.
 
 ## 🎥 Demo
+
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
 

@@ -5,21 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8c4485b5-ee7a-4248-a172-0b2b0775c3c7" name="Changes" comment="update">
+      <change beforePath="$PROJECT_DIR$/.idea/Leeroy.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Leeroy.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/api/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/api/index.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/development.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/development.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/user-guide/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/user-guide/index.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mkdocs.yml" beforeDir="false" afterPath="$PROJECT_DIR$/mkdocs.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/api/app/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/api/app/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/api/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/api/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/architecture/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/architecture/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/development/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/development/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/objects.inv" beforeDir="false" afterPath="$PROJECT_DIR$/site/objects.inv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/search/search_index.json" beforeDir="false" afterPath="$PROJECT_DIR$/site/search/search_index.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/sitemap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/site/sitemap.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/sitemap.xml.gz" beforeDir="false" afterPath="$PROJECT_DIR$/site/sitemap.xml.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/site/user-guide/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/user-guide/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +50,9 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
     "last_opened_file_path": "C:/Users/terry/source/repos/Leeroy/docs/img",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -82,8 +72,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-PY-252.28539.58" />
-        <option value="bundled-python-sdk-3d8931ec2368-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28539.58" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-PY-262.9437.214" />
+        <option value="bundled-python-sdk-821f704e66d9-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.9437.214" />
       </set>
     </attachedChunks>
   </component>
@@ -104,7 +94,8 @@
       <workItem from="1781546753418" duration="10010000" />
       <workItem from="1781720252823" duration="2016000" />
       <workItem from="1786293103779" duration="892000" />
-      <workItem from="1786481498358" duration="4899000" />
+      <workItem from="1786481498358" duration="5778000" />
+      <workItem from="1787686303013" duration="945000" />
     </task>
     <task id="LOCAL-00001" summary="update">
       <option name="closed" value="true" />
@@ -330,7 +321,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786485468192</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="update">
+      <option name="closed" value="true" />
+      <created>1786487812413</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1786487812413</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
