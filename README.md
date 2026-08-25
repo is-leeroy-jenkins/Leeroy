@@ -53,10 +53,10 @@ operations.
 
 ### 🧱 Databricks
 
-[![Leeroy](https://img.shields.io/badge/Databricks-Leeroy-FF3621?logo=databricks\&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152438493?o=7474645703081351)
-
 * Databricks workspace repository for the Leeroy codebase.
 * Supports collaborative development, analytics, notebook execution, and application deployment.
+
+[![Leeroy](https://img.shields.io/badge/Databricks-Leeroy-FF3621?logo=databricks\&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152438493?o=7474645703081351)
 
 ___
 
