@@ -6,14 +6,14 @@
   <a href="#-overview">Overview</a> ·
   <a href="#-features">Features</a> ·
   <a href="#-application-modes">Modes</a> ·
-  <a href="#-requirements">Requirements</a> ·
+  <a href="https://github.com/is-leeroy-jenkins/Leeroy/blob/main/requirements.txt">Requirements</a> ·
   <a href="#-local-llm">LLM</a> ·
   <a href="#-installation">Installation</a> ·
   <a href="#-running-the-streamlit-application">Run</a> ·
-  <a href="#-configuration">Configuration</a> ·
+  <a href="#%EF%B8%8F-configuration">Configuration</a> ·
   <a href="#-design-and-architecture">Architecture</a> ·
   <a href="#-capabilities">Capabilities</a> ·
-  <a href="#-data-management">Data</a>  ·
+  <a href="#%EF%B8%8F-data-management">Data</a>  ·
 </p>
 
 ___
@@ -122,6 +122,8 @@ The application is intentionally simple and durable:
 
 Leeroy uses optional local LLM support. The model is loaded only when local LLM support is enabled
 and the configured GGUF file exists.
+
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/leeroy) 
 
 The relevant configuration pattern is:
 
