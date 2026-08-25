@@ -55,6 +55,8 @@ operations.
 * Databricks workspace repository for the Leeroy codebase.
 * Supports collaborative development, analytics, notebook execution, and application deployment.
 
+___
+
 
 ![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
 
