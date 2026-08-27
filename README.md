@@ -34,33 +34,46 @@ operations.
 
 ## 🎥 Demo
 
+![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
+
 ___ 
 
-### 🔥 Streamlit
-
-- Web App
-
-[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://leeroy.streamlit.app/)
+## ☁️ Cloud
 
 
-### 🧊 Azure
-
-- Container App
-  
-[![Containerized](https://img.shields.io/badge/Docker-App-2496ED?logo=docker&logoColor=white)](https://leeroy.bravebay-606b4efb.eastus.azurecontainerapps.io)
-
-
-### 🧱 Databricks
-
-* Databricks workspace repository for the Leeroy codebase.
-* Supports collaborative development, analytics, notebook execution, and application deployment.
-
-[![Leeroy](https://img.shields.io/badge/Databricks-Leeroy-FF3621?logo=databricks\&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152438493?o=7474645703081351)
+<table>
+<tr>
+<th align="center"><img width="190" height="1" alt=""><br>🧊 Azure</th>
+<th align="center"><img width="190" height="1" alt=""><br>🧠 GPT</th>
+<th align="center"><img width="190" height="1" alt=""><br>🔥 Streamlit</th>
+<th align="center"><img width="190" height="1" alt=""><br>🧱 Databricks</th>
+</tr>
+<tr>
+<td align="center">
+<a href="https://leeroy.bravebay-606b4efb.eastus.azurecontainerapps.io">
+<img src="https://img.shields.io/badge/Docker-App-2496ED?logo=docker&logoColor=white" alt="Docker App">
+</a>
+</td>
+<td align="center">
+<a href="https://chatgpt.com/g/g-675793bd23708191ae15dc4ab347438e-leeroy">
+<img src="https://img.shields.io/badge/OpenAI-ChatGPT-412991?logo=openai&logoColor=white" alt="OpenAI GPT">
+</a>
+</td>
+<td align="center">
+<a href="https://leeroy.streamlit.app/">
+<img src="https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit App">
+</a>
+</td>
+<td align="center">
+<a href="https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152438493?o=7474645703081351">
+<img src="https://img.shields.io/badge/Databricks-Bro-FF3621?logo=databricks&logoColor=white" alt="Databricks Bro">
+</a>
+</td>
+</tr>
+</table>
 
 ___
 
-
-![](https://github.com/is-leeroy-jenkins/Leeroy/blob/main/resources/leeroy-demo.gif)
 
 
 ## 🧠 Custom LLM
