@@ -73,8 +73,8 @@ ___
 
 <td align="center">
 <img width="190" height="1" alt=""><br>
-<a href="[<LINK>](https://leeroy.usw-16.palantirfoundry.com/shares/links/jlenpgkpip5p2)">
-<img src="https://img.shields.io/badge/Palantir%20Foundry-Repository-101113?logo=palantir&logoColor=white" alt="Palantir Repo">
+<a href="https://leeroy.usw-16.palantirfoundry.com/shares/links/jlenpgkpip5p2">
+<img src="https://img.shields.io/badge/Palantir%20Foundry-Repo-101113?logo=palantir&logoColor=white" alt="Palantir Repo">
 </a>
 </td>
 
